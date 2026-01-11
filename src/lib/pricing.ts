@@ -25,6 +25,32 @@ export const RENEWAL_PRICING = {
   tenYear: 199,
 }
 
+// Upgrade pricing (Future Feature)
+export const UPGRADE_PRICING = {
+  additionalPhotos: 10,    // +20 photos for $10
+  additionalVideos: 20,    // +10 videos for $20
+  tierUpgradeFee: 10,      // Price difference + $10 fee
+}
+
+// Photo/video limits per tier
+export const TIER_LIMITS: Record<HostingDuration, { photos: number; videos: number }> = {
+  5: { photos: 20, videos: 2 },
+  10: { photos: 40, videos: 3 },
+  25: { photos: 60, videos: 5 },
+}
+
+// Calculate tier upgrade cost
+export function getTierUpgradeCost(
+  currentTier: HostingDuration,
+  newTier: HostingDuration,
+  productType: ProductType
+): number {
+  if (newTier <= currentTier) return 0
+  const currentPrice = DEFAULT_PRICING[currentTier][productType]
+  const newPrice = DEFAULT_PRICING[newTier][productType]
+  return (newPrice - currentPrice) + UPGRADE_PRICING.tierUpgradeFee
+}
+
 export function getPrice(
   duration: HostingDuration,
   productType: ProductType,
