@@ -300,7 +300,7 @@ export interface Database {
         Row: {
           id: string
           memorial_id: string
-          activity_type: 'created' | 'viewed' | 'updated' | 'renewal_reminder' | 'expired' | 'renewed' | 'published'
+          activity_type: 'created' | 'viewed' | 'updated' | 'renewal_reminder' | 'expired' | 'renewed' | 'published' | 'upgraded'
           details: Json | null
           ip_address: string | null
           user_agent: string | null
@@ -309,7 +309,7 @@ export interface Database {
         Insert: {
           id?: string
           memorial_id: string
-          activity_type: 'created' | 'viewed' | 'updated' | 'renewal_reminder' | 'expired' | 'renewed' | 'published'
+          activity_type: 'created' | 'viewed' | 'updated' | 'renewal_reminder' | 'expired' | 'renewed' | 'published' | 'upgraded'
           details?: Json | null
           ip_address?: string | null
           user_agent?: string | null
@@ -318,7 +318,7 @@ export interface Database {
         Update: {
           id?: string
           memorial_id?: string
-          activity_type?: 'created' | 'viewed' | 'updated' | 'renewal_reminder' | 'expired' | 'renewed' | 'published'
+          activity_type?: 'created' | 'viewed' | 'updated' | 'renewal_reminder' | 'expired' | 'renewed' | 'published' | 'upgraded'
           details?: Json | null
           ip_address?: string | null
           user_agent?: string | null
@@ -355,6 +355,44 @@ export interface Database {
           effective_from?: string
           effective_to?: string | null
           created_at?: string
+        }
+      }
+      memorial_upgrades: {
+        Row: {
+          id: string
+          memorial_id: string
+          upgrade_type: 'storage' | 'tier_upgrade'
+          additional_photos: number
+          additional_videos: number
+          previous_tier: number | null
+          new_tier: number | null
+          upgrade_fee: number
+          stripe_payment_id: string | null
+          purchased_at: string
+        }
+        Insert: {
+          id?: string
+          memorial_id: string
+          upgrade_type: 'storage' | 'tier_upgrade'
+          additional_photos?: number
+          additional_videos?: number
+          previous_tier?: number | null
+          new_tier?: number | null
+          upgrade_fee: number
+          stripe_payment_id?: string | null
+          purchased_at?: string
+        }
+        Update: {
+          id?: string
+          memorial_id?: string
+          upgrade_type?: 'storage' | 'tier_upgrade'
+          additional_photos?: number
+          additional_videos?: number
+          previous_tier?: number | null
+          new_tier?: number | null
+          upgrade_fee?: number
+          stripe_payment_id?: string | null
+          purchased_at?: string
         }
       }
     }
@@ -405,8 +443,10 @@ export type SupplierOrder = Database['public']['Tables']['supplier_orders']['Row
 export type ActivityLog = Database['public']['Tables']['activity_log']['Row']
 export type Pricing = Database['public']['Tables']['pricing_history']['Row']
 export type CurrentPricing = Database['public']['Views']['current_pricing']['Row']
+export type MemorialUpgrade = Database['public']['Tables']['memorial_upgrades']['Row']
 
 export type HostingDuration = 5 | 10 | 25
 export type ProductType = 'nfc_only' | 'qr_only' | 'both'
 export type DeceasedType = 'pet' | 'human'
 export type OrderStatus = 'pending' | 'paid' | 'processing' | 'shipped' | 'completed' | 'cancelled'
+export type UpgradeType = 'storage' | 'tier_upgrade'

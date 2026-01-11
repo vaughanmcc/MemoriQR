@@ -132,12 +132,33 @@ CREATE TABLE supplier_orders (
 CREATE TABLE activity_log (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     memorial_id UUID REFERENCES memorial_records(id) ON DELETE CASCADE,
-    activity_type TEXT NOT NULL CHECK (activity_type IN ('created', 'viewed', 'updated', 'renewal_reminder', 'expired', 'renewed', 'published')),
+    activity_type TEXT NOT NULL CHECK (activity_type IN ('created', 'viewed', 'updated', 'renewal_reminder', 'expired', 'renewed', 'published', 'upgraded')),
     details JSONB,
     ip_address TEXT,
     user_agent TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
+
+-- =====================================================
+-- MEMORIAL UPGRADES TABLE (Future Feature)
+-- =====================================================
+CREATE TABLE memorial_upgrades (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    memorial_id UUID REFERENCES memorial_records(id) ON DELETE CASCADE,
+    upgrade_type TEXT NOT NULL CHECK (upgrade_type IN ('storage', 'tier_upgrade')),
+    additional_photos INTEGER DEFAULT 0,
+    additional_videos INTEGER DEFAULT 0,
+    previous_tier INTEGER, -- For tier upgrades: 5, 10, or 25
+    new_tier INTEGER, -- For tier upgrades: 5, 10, or 25
+    upgrade_fee DECIMAL(10,2) NOT NULL,
+    stripe_payment_id TEXT,
+    purchased_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Upgrade pricing reference:
+-- +20 photos: $10
+-- +10 videos: $20
+-- Upgrade to next tier: Price difference + $10 fee
 
 -- =====================================================
 -- PRICING HISTORY TABLE
@@ -197,6 +218,7 @@ CREATE INDEX idx_orders_number ON orders(order_number);
 CREATE INDEX idx_activity_memorial ON activity_log(memorial_id);
 CREATE INDEX idx_activity_type ON activity_log(activity_type);
 CREATE INDEX idx_activation_partner ON retail_activation_codes(partner_id);
+CREATE INDEX idx_upgrades_memorial ON memorial_upgrades(memorial_id);
 
 -- =====================================================
 -- ROW LEVEL SECURITY POLICIES
@@ -211,6 +233,7 @@ ALTER TABLE retail_activation_codes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE supplier_orders ENABLE ROW LEVEL SECURITY;
 ALTER TABLE activity_log ENABLE ROW LEVEL SECURITY;
 ALTER TABLE pricing_history ENABLE ROW LEVEL SECURITY;
+ALTER TABLE memorial_upgrades ENABLE ROW LEVEL SECURITY;
 
 -- Public can view published memorials
 CREATE POLICY "Public can view published memorials"
@@ -249,6 +272,10 @@ CREATE POLICY "Service role full access to supplier orders"
 
 CREATE POLICY "Service role full access to activity log"
     ON activity_log FOR ALL
+    USING (auth.role() = 'service_role');
+
+CREATE POLICY "Service role full access to memorial upgrades"
+    ON memorial_upgrades FOR ALL
     USING (auth.role() = 'service_role');
 
 -- =====================================================

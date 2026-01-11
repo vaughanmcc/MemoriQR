@@ -17,8 +17,16 @@ const faqs = [
     answer: 'You choose your hosting duration at checkout: 5, 10, or 25 years prepaid. After your prepaid period, you can renew for $24/year. We\'ll send reminders before expiry, and there\'s a 30-day grace period if you need more time.',
   },
   {
+    question: 'Why do you use curated photo galleries instead of unlimited?',
+    answer: 'We believe in quality over quantity. Choose your 20, 40, or 60 most meaningful photos (depending on plan) to create a fast-loading memorial that truly tells their story. Benefits: 1) Your memorial loads in under 2 seconds on any device. 2) Curated galleries create more impact – each photo you choose captures something special. 3) Sustainable service – we can guarantee your memorial will be here for the full 5, 10, or 25 years you\'ve prepaid. Need more space? Upgrade anytime for $10 per 20 additional photos or $15 per additional video.',
+  },
+  {
     question: 'Can I add or change photos later?',
-    answer: 'Yes! You can update your memorial anytime throughout the hosting period. Add new photos, update the story, or make any changes you like through your memorial dashboard.',
+    answer: 'Yes! You can swap photos in and out anytime while staying within your plan\'s curated gallery. Update your memorial throughout the hosting period – add new photos, update the story, or make any changes you like through your memorial dashboard.',
+  },
+  {
+    question: 'What if I need more photo or video capacity?',
+    answer: 'Need more space? Upgrade anytime! You can purchase add-on packs: +20 photos for $10, or +1 video for $15. You can also upgrade from a 5-year to 10-year or 25-year plan to get a larger curated gallery and extend your hosting. For videos, you can upload to YouTube (set to "unlisted" for privacy) and link them in your memorial at no extra cost.',
   },
   {
     question: 'Is my memorial private?',
@@ -27,6 +35,10 @@ const faqs = [
   {
     question: 'What if I lose my tag or it gets damaged?',
     answer: 'Your memorial stays online regardless of what happens to the physical tag. If you need a replacement tag, contact us and we\'ll send a new one linked to your existing memorial (replacement fee applies).',
+  },
+  {
+    question: 'What happens to my photos if I don\'t renew?',
+    answer: 'You have 90 days after hosting expires to download all your content in a zip file. We\'ll never delete your memories without giving you time to save them. During the 30-day grace period after expiry, your memorial remains accessible with a renewal banner.',
   },
   {
     question: 'Do you ship to Australia?',
