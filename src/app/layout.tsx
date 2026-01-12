@@ -12,7 +12,7 @@ export const metadata: Metadata = {
     default: 'MemoriQR - Digital Memorials for Pets & People',
     template: '%s | MemoriQR',
   },
-  description: 'Create lasting digital memorials with NFC tags and QR-engraved stainless steel plates. Preserve memories of loved ones with photos, videos, and stories - hosted for 5, 10, or 25 years.',
+  description: 'Create lasting digital memorials with NFC tags and QR-engraved Metalphoto® plates. Preserve memories of loved ones with photos, videos, and stories - hosted for 5, 10, or 25 years.',
   keywords: ['pet memorial', 'QR code memorial', 'NFC memorial tag', 'digital memorial', 'pet loss', 'remembrance', 'New Zealand'],
   authors: [{ name: 'MemoriQR' }],
   creator: 'MemoriQR',
@@ -29,10 +29,10 @@ export const metadata: Metadata = {
     url: 'https://memoriqr.co.nz',
     siteName: 'MemoriQR',
     title: 'MemoriQR - Digital Memorials for Pets & People',
-    description: 'Create lasting digital memorials with NFC tags and QR-engraved stainless steel plates.',
+    description: 'Create lasting digital memorials with NFC tags and QR-engraved Metalphoto® plates.',
     images: [
       {
-        url: '/og-image.jpg',
+        url: '/og-image.png',
         width: 1200,
         height: 630,
         alt: 'MemoriQR - Digital Memorials',
@@ -43,7 +43,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'MemoriQR - Digital Memorials',
     description: 'Preserve memories of loved ones with scannable memorial tags.',
-    images: ['/og-image.jpg'],
+    images: ['/og-image.png'],
   },
   robots: {
     index: true,
@@ -55,6 +55,11 @@ export const metadata: Metadata = {
       'max-image-preview': 'large',
       'max-snippet': -1,
     },
+  },
+  icons: {
+    icon: '/favicon.png',
+    shortcut: '/favicon.png',
+    apple: '/favicon.png',
   },
 }
 

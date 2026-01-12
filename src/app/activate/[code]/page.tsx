@@ -1,6 +1,6 @@
 import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/server'
 import { Header } from '@/components/layout/Header'
 import { Footer } from '@/components/layout/Footer'
 import { MemorialUploadForm } from '@/components/activate/MemorialUploadForm'
@@ -20,7 +20,7 @@ export const metadata: Metadata = {
 }
 
 export default async function ActivateCodePage({ params }: Props) {
-  const supabase = createClient()
+  const supabase = createAdminClient()
   const code = params.code.toUpperCase()
 
   // Try to find the memorial associated with this code
@@ -35,22 +35,31 @@ export default async function ActivateCodePage({ params }: Props) {
     .single() as { data: RetailActivationCode | null }
 
   if (retailCode) {
-    if (retailCode.is_used) {
+    // If the code is used and linked to a memorial, fetch the memorial data
+    if (retailCode.memorial_id) {
+      const { data: memorial } = await supabase
+        .from('memorial_records')
+        .select('*')
+        .eq('id', retailCode.memorial_id)
+        .single() as { data: Memorial | null }
+
       return (
         <>
           <Header />
-          <main className="min-h-screen bg-memorial-cream flex items-center justify-center">
-            <div className="text-center max-w-md px-4">
-              <h1 className="text-2xl font-serif text-gray-900 mb-4">
-                Code Already Used
-              </h1>
-              <p className="text-gray-600 mb-6">
-                This activation code has already been used to create a memorial.
-                If you need help accessing your memorial, please contact support.
-              </p>
-              <a href="/contact" className="btn-primary">
-                Contact Support
-              </a>
+          <main className="min-h-screen bg-memorial-cream py-12 md:py-20">
+            <div className="container-wide">
+              <MemorialUploadForm
+                activationType="retail"
+                activationCode={code}
+                productType={retailCode.product_type}
+                hostingDuration={retailCode.hosting_duration}
+                partnerId={retailCode.partner_id ?? undefined}
+                memorialId={memorial?.id}
+                deceasedName={memorial?.deceased_name}
+                deceasedType={memorial?.deceased_type}
+                species={memorial?.species}
+                // ...add other fields as needed
+              />
             </div>
           </main>
           <Footer />
@@ -58,6 +67,7 @@ export default async function ActivateCodePage({ params }: Props) {
       )
     }
 
+    // If not used or not linked, show blank form
     return (
       <>
         <Header />
@@ -130,6 +140,7 @@ export default async function ActivateCodePage({ params }: Props) {
                 memorialSlug={memorial.memorial_slug}
                 deceasedName={memorial.deceased_name}
                 deceasedType={memorial.deceased_type}
+                species={memorial.species}
                 productType={memorial.product_type}
                 hostingDuration={memorial.hosting_duration}
               />

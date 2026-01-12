@@ -1,0 +1,29 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "nextjs",
+  "buildCommand": "npm run build",
+  "devCommand": "npm run dev",
+  "installCommand": "npm install",
+  "regions": ["syd1"],
+  "env": {
+    "NEXT_PUBLIC_SITE_URL": "https://memoriqr.co.nz"
+  },
+  "headers": [
+    {
+      "source": "/memorial/(.*)",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow"
+        }
+      ]
+    }
+  ],
+  "redirects": [
+    {
+      "source": "/m/:slug",
+      "destination": "/memorial/:slug",
+      "permanent": true
+    }
+  ]
+}

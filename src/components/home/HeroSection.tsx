@@ -51,7 +51,7 @@ export function HeroSection() {
             </div>
             <div className="flex items-center gap-2">
               <Heart className="h-5 w-5 text-memorial-gold" />
-              <span>Marine-Grade Steel</span>
+              <span>Metalphoto® Plates</span>
             </div>
           </div>
         </div>

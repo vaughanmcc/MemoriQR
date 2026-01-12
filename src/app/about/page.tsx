@@ -59,23 +59,23 @@ export default function AboutPage() {
                 <div className="grid grid-cols-2 gap-6">
                   <div className="text-center p-4">
                     <Heart className="h-8 w-8 text-primary-600 mx-auto mb-3" />
-                    <div className="text-2xl font-bold text-gray-900">500+</div>
-                    <div className="text-sm text-gray-500">Memorials Created</div>
+                    <div className="text-2xl font-bold text-gray-900">5-25</div>
+                    <div className="text-sm text-gray-500">Years Prepaid Hosting</div>
                   </div>
                   <div className="text-center p-4">
                     <Users className="h-8 w-8 text-memorial-sage mx-auto mb-3" />
-                    <div className="text-2xl font-bold text-gray-900">1000+</div>
-                    <div className="text-sm text-gray-500">Families Served</div>
+                    <div className="text-2xl font-bold text-gray-900">Local</div>
+                    <div className="text-sm text-gray-500">Auckland-Based Team</div>
                   </div>
                   <div className="text-center p-4">
                     <MapPin className="h-8 w-8 text-memorial-gold mx-auto mb-3" />
                     <div className="text-2xl font-bold text-gray-900">NZ & AU</div>
-                    <div className="text-sm text-gray-500">Markets Served</div>
+                    <div className="text-sm text-gray-500">Fast Shipping</div>
                   </div>
                   <div className="text-center p-4">
                     <Award className="h-8 w-8 text-primary-600 mx-auto mb-3" />
-                    <div className="text-2xl font-bold text-gray-900">316</div>
-                    <div className="text-sm text-gray-500">Marine-Grade Steel</div>
+                    <div className="text-2xl font-bold text-gray-900">20+</div>
+                    <div className="text-sm text-gray-500">Year UV Resistance</div>
                   </div>
                 </div>
               </div>
@@ -112,8 +112,10 @@ export default function AboutPage() {
                   Quality Materials
                 </h3>
                 <p className="text-gray-600">
-                  Our 316 marine-grade stainless steel plates are built to 
-                  last decades, not months.
+                  Our Metalphoto® anodised aluminium plates feature sub-surface 
+                  printing sealed under an 8 micron protective layer, providing 
+                  20+ years of UV resistance. They withstand temperatures over 
+                  300°C and meet military-grade specifications – built to last outdoors for decades.
                 </p>
               </div>
 

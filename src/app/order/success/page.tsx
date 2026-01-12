@@ -94,6 +94,19 @@ export default function OrderSuccessPage() {
               </Link>
             </div>
           </div>
+
+          {/* Order another memorial */}
+          <div className="mt-8 bg-white rounded-2xl shadow-sm p-8 text-center">
+            <h2 className="text-xl font-serif text-gray-900 mb-3">
+              Need Another Memorial?
+            </h2>
+            <p className="text-gray-600 mb-6">
+              Honour another loved one with their own dedicated memorial page.
+            </p>
+            <Link href="/order" className="btn-primary">
+              Order Another Memorial
+            </Link>
+          </div>
         </div>
       </main>
       <Footer />

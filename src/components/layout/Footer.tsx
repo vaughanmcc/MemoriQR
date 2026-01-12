@@ -34,7 +34,7 @@ export function Footer() {
             </Link>
             <p className="text-gray-400 mb-6 max-w-sm">
               Creating lasting digital memorials for pets and people. 
-              Premium NFC tags and QR-engraved stainless steel plates, 
+              Premium NFC tags and QR-engraved Metalphoto® plates, 
               proudly made in New Zealand.
             </p>
             <div className="space-y-2 text-sm">
@@ -44,8 +44,8 @@ export function Footer() {
               </div>
               <div className="flex items-center gap-2">
                 <Mail className="h-4 w-4 text-primary-400" />
-                <a href="mailto:hello@memoriqr.co.nz" className="hover:text-white transition-colors">
-                  hello@memoriqr.co.nz
+                <a href="mailto:info@memoriqr.co.nz" className="hover:text-white transition-colors">
+                  info@memoriqr.co.nz
                 </a>
               </div>
             </div>

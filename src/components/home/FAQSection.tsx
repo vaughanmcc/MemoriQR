@@ -10,7 +10,15 @@ const faqs = [
   },
   {
     question: 'What\'s the difference between NFC tags and QR plates?',
-    answer: 'NFC tags are small stickers that you tap with your phone – great for quick access and younger, tech-savvy users. QR plates are laser-engraved stainless steel plates that you scan with your camera – they\'re weather-proof, permanent, and work with any camera phone. The "Both" option gives you complete flexibility.',
+    answer: 'NFC tags are premium disc tags that you tap with your phone – they\'re durable, compact, and great for quick access. QR plates are Metalphoto® anodised aluminium plates with sub-surface printed QR codes – they\'re weather-proof with 20+ year UV resistance, and work with any camera phone. The "Both" option gives you complete flexibility.',
+  },
+  {
+    question: 'How long do NFC tags last outdoors?',
+    answer: 'Our NFC disc tags are sourced from a specialist supplier who has tested their products outdoors in real weather conditions for over 3 years. The PVC and ABS disc tags we use held up with minimal change and retained full scan distance even after years of exposure to sun, rain, frost, and wind. For maximum durability on headstones or outdoor memorials, we recommend pairing with a QR plate.',
+  },
+  {
+    question: 'What is Metalphoto® technology?',
+    answer: 'Metalphoto® is a premium imaging process where the QR code is photographically sealed beneath an 8 micron protective anodic layer on anodised aluminium. This creates permanent, sub-surface images with 20+ year UV resistance. The plates withstand temperatures over 300°C and meet military-grade specifications – making them ideal for permanent outdoor memorial installations.',
   },
   {
     question: 'How long does hosting last?',
@@ -26,7 +34,11 @@ const faqs = [
   },
   {
     question: 'What if I need more photo or video capacity?',
-    answer: 'Need more space? Upgrade anytime! You can purchase add-on packs: +20 photos for $10, or +1 video for $15. You can also upgrade from a 5-year to 10-year or 25-year plan to get a larger curated gallery and extend your hosting. For videos, you can upload to YouTube (set to "unlisted" for privacy) and link them in your memorial at no extra cost.',
+    answer: 'Need more space? Upgrade anytime! You can purchase add-on packs: +20 photos for $10, or +1 video for $15. You can also upgrade from a 5-year to 10-year or 25-year plan to get a larger curated gallery and extend your hosting.',
+  },
+  {
+    question: 'How do video uploads work?',
+    answer: 'You have two options for adding videos: 1) Upload directly (max 50MB per file) - great for short clips and phone videos. 2) Link a YouTube video (unlimited size, no extra cost) - perfect for longer videos or slideshows. Set your YouTube video to "unlisted" if you want to keep it private. YouTube hosting is completely free and has no size limits.',
   },
   {
     question: 'Is my memorial private?',

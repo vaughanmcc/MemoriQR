@@ -72,7 +72,12 @@ export default async function MemorialPageRoute({ params }: Props) {
     )
   }
 
-  if (!memorial.is_hosting_active) {
+  // Check if hosting has expired by comparing hosting_expires_at with current date
+  const isHostingActive = memorial.hosting_expires_at 
+    ? new Date(memorial.hosting_expires_at) > new Date()
+    : true // If no expiry date set, assume active
+
+  if (!isHostingActive) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-memorial-cream px-4">
         <div className="text-center max-w-md">

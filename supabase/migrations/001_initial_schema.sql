@@ -62,13 +62,6 @@ CREATE TABLE memorial_records (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Generated columns for expiry tracking
-ALTER TABLE memorial_records ADD COLUMN is_hosting_active BOOLEAN 
-    GENERATED ALWAYS AS (NOW() < hosting_expires_at) STORED;
-
-ALTER TABLE memorial_records ADD COLUMN days_until_expiry INTEGER 
-    GENERATED ALWAYS AS (EXTRACT(DAY FROM (hosting_expires_at - NOW()))::INTEGER) STORED;
-
 -- =====================================================
 -- ORDERS TABLE
 -- =====================================================
@@ -189,6 +182,18 @@ WHERE effective_from <= NOW()
 ORDER BY hosting_duration, product_type, effective_from DESC;
 
 -- =====================================================
+-- MEMORIAL STATUS VIEW (replaces generated columns)
+-- =====================================================
+CREATE VIEW memorial_status AS
+SELECT 
+    id,
+    memorial_slug,
+    hosting_expires_at,
+    NOW() < hosting_expires_at AS is_hosting_active,
+    EXTRACT(DAY FROM (hosting_expires_at - NOW()))::INTEGER AS days_until_expiry
+FROM memorial_records;
+
+-- =====================================================
 -- INSERT INITIAL PRICING (January 2026)
 -- =====================================================
 INSERT INTO pricing_history (hosting_duration, product_type, price, currency) VALUES
@@ -238,7 +243,7 @@ ALTER TABLE memorial_upgrades ENABLE ROW LEVEL SECURITY;
 -- Public can view published memorials
 CREATE POLICY "Public can view published memorials"
     ON memorial_records FOR SELECT
-    USING (is_published = true AND is_hosting_active = true);
+    USING (is_published = true AND NOW() < hosting_expires_at);
 
 -- Public can view current pricing
 CREATE POLICY "Public can view pricing"

@@ -9,20 +9,20 @@ const steps = [
   },
   {
     number: '02',
-    title: 'Receive Your Tag',
-    description: 'We\'ll ship your premium stainless steel plate or NFC tag directly to your door within days.',
-    icon: Heart,
-  },
-  {
-    number: '03',
     title: 'Upload Memories',
     description: 'Add photos, videos, and a heartfelt message to create a beautiful memorial page.',
     icon: Upload,
   },
   {
+    number: '03',
+    title: 'Receive Your Tag',
+    description: 'We\'ll ship your premium Metalphoto® plate or NFC tag directly to your door within days.',
+    icon: Heart,
+  },
+  {
     number: '04',
     title: 'Share & Remember',
-    description: 'Scan the tag anytime to visit the memorial. Share the link with family and friends.',
+    description: 'Scan the tag anytime to visit the memorial. Share the link with loved ones anywhere in the world – they can view the tribute from any device.',
     icon: Smartphone,
   },
 ]

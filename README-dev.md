@@ -1,12 +1,12 @@
 # MemoriQR
 
-Digital memorial service creating lasting tributes for pets and people through NFC tags and QR-engraved stainless steel plates.
+Digital memorial service creating lasting tributes for pets and people through NFC tags and QR-engraved Metalphoto® plates.
 
 ## 🌟 Features
 
 - **NFC Tags** - Tap-to-view technology, no app required
-- **QR Plates** - 316 marine-grade stainless steel, laser-engraved
-- **Digital Memorials** - Unlimited photos, YouTube video hosting
+- **QR Plates** - Metalphoto® anodised aluminium, sub-surface printed
+- **Digital Memorials** - Curated photo galleries (20/40/60 photos by tier)
 - **Flexible Hosting** - 5, 10, or 25-year prepaid plans
 - **Local Service** - Based in Auckland, NZ with fast shipping
 
@@ -16,8 +16,9 @@ Digital memorial service creating lasting tributes for pets and people through N
 
 - Node.js 18+
 - npm or pnpm
-- Supabase account
+- Supabase account (create 2 projects: dev + prod)
 - Stripe account
+- Vercel account (for deployment)
 
 ### Installation
 
@@ -31,6 +32,22 @@ cp .env.example .env.local
 # Fill in your environment variables in .env.local
 ```
 
+### Environment Setup
+
+#### Development vs Production
+
+| Environment | Supabase | Stripe | URL |
+|-------------|----------|--------|-----|
+| **Local Dev** | Dev project | Test keys (`sk_test_`) | localhost:3000 |
+| **Vercel Preview** | Dev project | Test keys | *.vercel.app |
+| **Production** | Prod project | Live keys (`sk_live_`) | memoriqr.co.nz |
+
+#### Environment Files
+
+- `.env.local` - Your local development (gitignored, copy from .env.example)
+- `.env.development` - Default dev values (committed)
+- `.env.production` - Production template (actual values in Vercel)
+
 ### Environment Variables
 
 ```env
@@ -39,32 +56,26 @@ NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
 
-# Stripe
+# Stripe (use sk_test_ for dev, sk_live_ for prod)
 NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=your_stripe_publishable_key
 STRIPE_SECRET_KEY=your_stripe_secret_key
 STRIPE_WEBHOOK_SECRET=your_stripe_webhook_secret
 
-# Cloudinary (for image hosting)
-NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME=your_cloudinary_cloud_name
-CLOUDINARY_API_KEY=your_cloudinary_api_key
-CLOUDINARY_API_SECRET=your_cloudinary_api_secret
-
-# SendGrid (for email)
-SENDGRID_API_KEY=your_sendgrid_api_key
-SENDGRID_FROM_EMAIL=hello@memoriqr.co.nz
+# Email (Pipedream webhook to Hostinger SMTP)
+PIPEDREAM_WEBHOOK_URL=your_pipedream_webhook_url
 
 # App
-NEXT_PUBLIC_APP_URL=http://localhost:3000
+NEXT_PUBLIC_SITE_URL=http://localhost:3000
 ```
 
 ### Database Setup
 
-1. Create a new Supabase project
-2. Run the migration script:
+1. Create a new Supabase project (one for dev, one for prod)
+2. Run the migration in Supabase SQL Editor:
 
 ```bash
-# In Supabase SQL Editor, run:
-# supabase/migrations/001_initial_schema.sql
+# Copy contents of supabase/migrations/001_initial_schema.sql
+# Paste into Supabase SQL Editor and run
 ```
 
 ### Development
@@ -75,6 +86,13 @@ npm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) to view the site.
+
+### Deployment with Vercel
+
+1. Connect your GitHub repo to Vercel
+2. Set environment variables in Vercel dashboard
+3. Preview deployments auto-created for each PR
+4. Production deploys from `main` branch
 
 ## 📁 Project Structure
 
