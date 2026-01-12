@@ -19,7 +19,6 @@ export async function POST(request: NextRequest) {
     const birthDate = formData.get('birthDate') as string | null
     const deathDate = formData.get('deathDate') as string | null
     const memorialText = sanitizeText(formData.get('memorialText') as string || '')
-    const videoUrl = formData.get('videoUrl') as string | null
     const hostingDuration = parseInt(formData.get('hostingDuration') as string) as HostingDuration
     const productType = formData.get('productType') as ProductType
     
@@ -36,29 +35,60 @@ export async function POST(request: NextRequest) {
     const supabase = createAdminClient()
 
     // Process photos - in production, upload to Cloudinary
-    // For now, we'll create placeholder URLs
+    // For now, we'll use placeholder image
     const photos = photoFiles.map((file, index) => ({
       id: `photo-${Date.now()}-${index}`,
-      url: `/placeholder-photo-${index}.jpg`, // In production: Cloudinary URL
+      url: '/placeholder-photo.svg', // In production: Cloudinary URL
       publicId: `memorial/${Date.now()}-${index}`,
       width: 800,
       height: 600,
-      caption: '',
+      caption: file.name.replace(/\.[^/.]+$/, ''), // Use filename as caption
       order: index,
     }))
 
     // Process video
     const videos = []
-    if (videoUrl) {
-      const youtubeId = getYouTubeId(videoUrl)
-      if (youtubeId) {
-        videos.push({
-          id: `video-${Date.now()}`,
-          youtubeId,
-          title: '',
-          order: 0,
-        })
+    let videoOrder = 0
+
+    // Handle YouTube URLs
+    const videoUrlsJson = formData.get('videoUrls') as string | null
+    if (videoUrlsJson) {
+      try {
+        const videoUrls = JSON.parse(videoUrlsJson) as string[]
+        for (const url of videoUrls) {
+          const youtubeId = getYouTubeId(url)
+          if (youtubeId) {
+            videos.push({
+              id: `video-${Date.now()}-${videoOrder}`,
+              type: 'youtube',
+              youtubeId,
+              url: null,
+              title: '',
+              order: videoOrder,
+            })
+            videoOrder++
+          }
+        }
+      } catch (e) {
+        console.error('Failed to parse videoUrls:', e)
       }
+    }
+
+    // Handle uploaded video files
+    const videoFiles = formData.getAll('videoFiles') as File[]
+    for (const videoFile of videoFiles) {
+      // TODO: Upload to Supabase Storage in production
+      // For now, create placeholder
+      const videoId = `video-${Date.now()}-${videoOrder}`
+      videos.push({
+        id: videoId,
+        type: 'upload',
+        youtubeId: null,
+        url: null, // In production: Supabase Storage URL
+        title: videoFile.name,
+        order: videoOrder,
+      })
+      videoOrder++
     }
 
     let memorialSlug: string

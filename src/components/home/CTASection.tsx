@@ -1,11 +1,14 @@
 import Link from 'next/link'
-import { Heart } from 'lucide-react'
 
 export function CTASection() {
   return (
     <section className="section bg-primary-600 text-white">
       <div className="container-wide text-center">
-        <Heart className="h-12 w-12 mx-auto mb-6 text-primary-200" />
+        <img 
+          src="/logo-badge.png" 
+          alt="MemoriQR" 
+          className="h-28 w-auto mx-auto mb-6"
+        />
         
         <h2 className="text-3xl md:text-4xl font-serif mb-4">
           Ready to Create a Lasting Memorial?

@@ -17,8 +17,8 @@ const features = [
   },
   {
     icon: Shield,
-    title: 'Marine-Grade Steel',
-    description: '316 stainless steel plates are laser-engraved and built to withstand any weather for decades.',
+    title: 'Metalphoto® Technology',
+    description: 'Our anodised aluminium plates feature sub-surface printing with 20+ year UV resistance and an 8 micron protective layer.',
   },
   {
     icon: Cloud,
@@ -27,13 +27,13 @@ const features = [
   },
   {
     icon: Image,
-    title: 'Unlimited Photos',
-    description: 'Upload as many photos as you like. We automatically optimize them for fast loading.',
+    title: 'Curated Photo Gallery',
+    description: 'Upload 20, 40, or 60 photos depending on your plan. We optimize them for fast loading on any device.',
   },
   {
     icon: Video,
     title: 'Video Support',
-    description: 'Add up to 2 videos to bring memories to life. YouTube integration means unlimited streaming.',
+    description: 'Add 2-5 videos depending on your plan. YouTube integration means smooth streaming worldwide.',
   },
   {
     icon: Globe,

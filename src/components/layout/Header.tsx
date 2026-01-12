@@ -1,11 +1,12 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { useState } from 'react'
-import { Menu, X, Heart } from 'lucide-react'
+import { Menu, X } from 'lucide-react'
 
 const navigation = [
-  { name: 'How It Works', href: '/#how-it-works' },
+  { name: 'How It Works', href: '/how-it-works' },
   { name: 'Pricing', href: '/#pricing' },
   { name: 'FAQ', href: '/#faq' },
   { name: 'About', href: '/about' },
@@ -20,10 +21,11 @@ export function Header() {
       <nav className="container-wide flex items-center justify-between py-4">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2">
-          <Heart className="h-8 w-8 text-primary-600" />
-          <span className="text-xl font-serif font-semibold text-gray-900">
-            MemoriQR
-          </span>
+          <img 
+            src="/logo.png" 
+            alt="MemoriQR" 
+            className="h-16 md:h-20 w-auto"
+          />
         </Link>
 
         {/* Desktop Navigation */}

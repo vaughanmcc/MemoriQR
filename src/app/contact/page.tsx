@@ -1,7 +1,8 @@
 import { Metadata } from 'next'
 import { Header } from '@/components/layout/Header'
 import { Footer } from '@/components/layout/Footer'
-import { Mail, MapPin, Phone, Clock } from 'lucide-react'
+import { ContactForm } from '@/components/contact/ContactForm'
+import { Mail, MapPin, Clock } from 'lucide-react'
 
 export const metadata: Metadata = {
   title: 'Contact Us',
@@ -43,10 +44,10 @@ export default function ContactPage() {
                       <div>
                         <h3 className="font-medium text-gray-900">Email</h3>
                         <a 
-                          href="mailto:hello@memoriqr.co.nz"
+                          href="mailto:info@memoriqr.co.nz"
                           className="text-primary-600 hover:underline"
                         >
-                          hello@memoriqr.co.nz
+                          info@memoriqr.co.nz
                         </a>
                       </div>
                     </div>
@@ -98,59 +99,7 @@ export default function ContactPage() {
               </div>
 
               {/* Contact form */}
-              <div className="bg-white rounded-2xl p-8 shadow-sm">
-                <h2 className="text-xl font-serif text-gray-900 mb-6">
-                  Send us a Message
-                </h2>
-
-                <form className="space-y-6">
-                  <div>
-                    <label className="label">Name</label>
-                    <input
-                      type="text"
-                      className="input"
-                      placeholder="Your name"
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <label className="label">Email</label>
-                    <input
-                      type="email"
-                      className="input"
-                      placeholder="you@example.com"
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <label className="label">Subject</label>
-                    <select className="input">
-                      <option value="">Select a topic</option>
-                      <option value="order">Order Question</option>
-                      <option value="memorial">Memorial Help</option>
-                      <option value="renewal">Renewal / Billing</option>
-                      <option value="partner">Partnership Inquiry</option>
-                      <option value="other">Other</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="label">Message</label>
-                    <textarea
-                      className="textarea"
-                      placeholder="How can we help you?"
-                      rows={5}
-                      required
-                    />
-                  </div>
-
-                  <button type="submit" className="btn-primary w-full">
-                    Send Message
-                  </button>
-                </form>
-              </div>
+              <ContactForm />
             </div>
           </div>
         </div>

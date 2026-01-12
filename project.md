@@ -1,13 +1,58 @@
 # MemoriQR Business Overview - Updated January 2026
 
 ## Executive Summary
-MemoriQR creates lasting digital memorials for pets and people through NFC tags and QR-engraved stainless steel plates. Customers scan these physical items to access personalized memorial webpages with photos, videos, and stories - hosted for 5, 10, or 25 years prepaid.
+MemoriQR creates lasting digital memorials for pets and people through NFC tags and QR-engraved Metalphoto® plates. Customers scan these physical items to access personalized memorial webpages with photos, videos, and stories - hosted for 5, 10, or 25 years prepaid.
 
 **Business Model:** Direct-to-consumer e-commerce (online orders) + B2B2C (retail partners like vets/crematoriums selling pre-made tags)
 
 **Location:** Auckland, New Zealand - targeting NZ + Australia markets
 
-**Unique Value:** Premium 316 marine-grade stainless steel plates, local NZ service with fast shipping, optional NFC technology, prepaid hosting with clear guarantees
+**Unique Value:** Premium Metalphoto® anodised aluminium plates with 20+ year UV resistance, local NZ service with fast shipping, optional NFC technology, prepaid hosting with clear guarantees
+
+---
+
+## Development Environment Status (Next.js - January 2026)
+
+> **Note:** This section documents the DEV environment (Next.js + Supabase direct). Production will use WordPress + Pipedream as described in Technical Architecture below.
+
+### Completed Features ✅
+- **Full Next.js App:** Modern React-based frontend with server-side rendering
+- **Supabase Integration:** Database with customers, orders, memorials, retail codes, activity logs
+- **Stripe Payments:** Test mode working, checkout flow complete with webhooks
+- **Order Confirmation Emails:** Via Pipedream webhook integration
+- **Memorial Activation Flow:**
+  - Supports both online orders (order number-based) and retail activation codes
+  - Pre-populates form with existing data (name, species, type) when available
+  - 3-step wizard: Details → Photos → Story/Videos
+  - Passing date constrained to today or earlier (no future dates)
+- **Photo Upload:** Drag-and-drop with previews, max 50 photos, 10MB each
+  - Rejection messages for video files and oversized images
+- **Video Upload:** Multiple videos per plan limit (2/3/5):
+  - Direct upload via drag-and-drop or file picker (max 50MB per file)
+  - YouTube URL link (unlimited size, free)
+  - Dynamic + button to add videos up to plan limit
+- **Contact Form:** Integrated with Pipedream for email notifications
+- **Pricing Page:** Dynamic display with video footnotes
+- **FAQ Section:** Comprehensive questions including video hosting details
+
+### In Progress 🚧
+- Photo storage: Using placeholder SVG (Cloudinary integration pending)
+- Video storage: Supabase Storage upload endpoint (placeholder in place)
+- Memorial page display: Basic structure exists, using placeholder images
+- Renewal flow: Database schema ready, payment flow not yet implemented
+
+### Pending 📋
+- Admin dashboard for order management
+- Partner portal for retail activation code management
+- Analytics dashboard for memorial views
+- Email templates for renewal reminders
+- Production deployment (Vercel)
+- Cloudinary integration for actual photo storage
+
+### Recent Updates
+- Updated all references from stainless steel to Metalphoto® anodised aluminium
+- Added FAQ about Metalphoto® technology (20+ year UV, 8 micron protection, 300°C+ rated)
+- Added placeholder SVG for photos in DEV environment
 
 ---
 
@@ -16,27 +61,28 @@ MemoriQR creates lasting digital memorials for pets and people through NFC tags 
 All packages include prepaid hosting, Cloudinary image optimization, and YouTube video embedding.
 
 ### 5-YEAR MEMORIAL
-- **20 photos, 2 videos (5 min each)**
+- **20 photos, 2 videos***
 - NFC Tag only: $99 NZD
 - QR Plate only: $149 NZD
 - Both (NFC + Plate): $199 NZD
 
 ### 10-YEAR MEMORIAL
-- **40 photos, 3 videos (10 min each)**
+- **40 photos, 3 videos***
 - NFC Tag only: $149 NZD
 - QR Plate only: $199 NZD
 - Both (NFC + Plate): $249 NZD
 
 ### 25-YEAR MEMORIAL
-- **60 photos, 5 videos (15 min each)**
+- **60 photos, 5 videos***
 - NFC Tag only: $199 NZD
 - QR Plate only: $279 NZD
 - Both (NFC + Plate): $349 NZD
 
+***Videos:** YouTube links (unlisted for privacy). Direct upload option available in DEV environment (50MB max per file).
+
 **Renewal:** $24/year after prepaid hosting period ends  
 **Bulk Renewal:** Additional 10 years anytime: $99  
-**Add-ons:** Extra 20 photos $10 | Extra video $15 (available after initial purchase)  
-**Video options:** Upload directly or provide YouTube links (unlisted for privacy)
+**Add-ons:** Extra 20 photos $10 | Extra video $15 (available after initial purchase)
 
 ### Pricing Positioning
 
@@ -62,11 +108,14 @@ All packages include prepaid hosting, Cloudinary image optimization, and YouTube
 - Use case: Quick delivery, lower price point, modern "tap to view"
 
 **QR Plates:**
-- 316 marine-grade stainless steel laser-engraved plates
-- Supplier: Metal Image NZ
+- Metalphoto® anodised aluminium plates with sub-surface printed QR codes
+- Technology: Sub-surface imaging sealed under 8 micron protective anodic layer
+- UV resistance: 20+ years outdoor durability
+- Temperature resistance: Withstands 300°C+
+- Meets or exceeds military specifications
 - Cost: $40-50 per unit
 - Production: 5-7 day turnaround
-- Use case: Premium physical memorial, weather-resistant, permanent
+- Use case: Premium physical memorial, weather-resistant, permanent outdoor display
 
 **Product Combinations:**
 - **NFC only:** Fast delivery (2-3 days), lower price point
@@ -77,7 +126,7 @@ All packages include prepaid hosting, Cloudinary image optimization, and YouTube
 
 **Hosting:** Digital memorial webpage with prepaid hosting (5/10/25 year options)
 - Photo storage with limits (20/40/60 photos by tier)
-- Video hosting (2/3/5 videos via YouTube unlisted embeds or direct upload)
+- Video hosting (2/3/5 videos per tier) via YouTube (unlisted for privacy)
 - All photos compressed to WebP via Cloudinary for fast loading
 - Custom memorial URL: memoriqr.co.nz/memorial/[unique-slug]
 - Mobile-responsive gallery design
@@ -110,7 +159,7 @@ All packages include prepaid hosting, Cloudinary image optimization, and YouTube
 
 ## Technical Architecture
 
-### Recommended Stack
+### Recommended Stack (Production)
 
 **Frontend/Public Site:**
 - WordPress on Hostinger Business Plan
@@ -480,6 +529,57 @@ created_at TIMESTAMP DEFAULT NOW()
 
 ---
 
+## Development Scripts (DEV Environment Only)
+
+> **Note:** These scripts are for the Next.js development environment. Production uses Pipedream workflows.
+
+Utility scripts for local development and debugging are located in `/scripts/`:
+
+### Available Scripts
+
+**check-code.js** - Check if an activation code exists in the database
+```bash
+node scripts/check-code.js ABC123
+# Searches both retail_activation_codes and orders tables
+```
+
+**insert-test-code.js** - Insert a test activation code for development
+```bash
+node scripts/insert-test-code.js
+# Creates retail activation code with predefined values for testing
+```
+
+**list-orders.js** - List recent orders from the database
+```bash
+node scripts/list-orders.js
+# Shows last 10 orders with customer details
+```
+
+**check-order-status.js** - Check specific order details
+```bash
+node scripts/check-order-status.js MQ-12345678
+# Returns full order record for debugging
+```
+
+**run-migration.ts** - Run database migrations
+```bash
+npx ts-node scripts/run-migration.ts
+# Applies pending Supabase migrations
+```
+
+### Running Scripts
+
+All scripts require `.env.local` with Supabase credentials:
+```bash
+# Load environment variables
+node --require dotenv/config scripts/check-code.js ABC123
+
+# Or with explicit path
+node scripts/check-code.js ABC123  # (scripts load dotenv internally)
+```
+
+---
+
 ## Cost Analysis
 
 ### Assumptions
@@ -646,7 +746,7 @@ created_at TIMESTAMP DEFAULT NOW()
 - **Impact:** Price-sensitive customers choose them
 - **Mitigation:**
   - Emphasize local NZ service, faster delivery
-  - Superior materials (316 stainless vs unknown)
+  - Superior materials (Metalphoto® 20+ year UV vs unknown)
   - NFC option (competitors don't offer)
   - Better support and understanding of NZ/Māori culture
 
@@ -1009,7 +1109,7 @@ created_at TIMESTAMP DEFAULT NOW()
 ## Next Steps (Immediate Actions)
 
 1. **Finalize product decisions:**
-   - Confirm Metal Image NZ pricing for stainless steel plates
+   - Confirm Metalphoto® plate pricing
    - Order sample NFC tags from Seritag to test
 
 2. **Set up accounts:**
@@ -1083,7 +1183,7 @@ created_at TIMESTAMP DEFAULT NOW()
 
 **Competitive Advantage:**
 - Local NZ service (faster delivery, timezone support)
-- Premium materials (316 marine-grade stainless steel)
+- Premium materials (Metalphoto® anodised aluminium, 20+ year UV resistance)
 - Optional NFC technology (unique differentiator)
 - Prepaid hosting model (more sustainable than "lifetime")
 - Understanding of NZ/Māori cultural context

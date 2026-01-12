@@ -83,8 +83,10 @@ export default function TermsPage() {
 
             <h2>6. Physical Products</h2>
             <p>
-              <strong>Quality:</strong> Our stainless steel plates are made from 316 marine-grade 
-              steel and are designed for long-term outdoor use. NFC tags are rated for indoor use.
+              <strong>Quality:</strong> Our QR plates are made from Metalphoto® anodised aluminium 
+              with sub-surface printing, providing 20+ years of UV resistance and an 8 micron 
+              protective anodic layer. They are designed for permanent outdoor use. 
+              NFC tags are rated for indoor use.
             </p>
             <p>
               <strong>Shipping:</strong> We ship within New Zealand and Australia. Delivery times 

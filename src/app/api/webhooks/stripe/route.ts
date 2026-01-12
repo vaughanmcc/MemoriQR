@@ -111,8 +111,49 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      // TODO: Send confirmation email via SendGrid
-      // This would be implemented with SendGrid API
+      // Send order confirmation email via Pipedream
+      const webhookUrl = process.env.PIPEDREAM_WEBHOOK_URL
+      if (webhookUrl) {
+        // Get customer details
+        const { data: customer } = await supabase
+          .from('customers')
+          .select('email, full_name')
+          .eq('id', customerId)
+          .single()
+
+        // Get memorial details
+        const { data: memorial } = await supabase
+          .from('memorial_records')
+          .select('deceased_name, memorial_slug')
+          .eq('id', memorialId)
+          .single()
+
+        if (customer && memorial) {
+          // Extract the code from order number (remove MQR- prefix)
+          const activationCode = orderNumber.replace('MQR-', '')
+          try {
+            await fetch(webhookUrl, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                type: 'order_confirmation',
+                order_number: orderNumber,
+                customer_email: customer.email,
+                customer_name: customer.full_name,
+                deceased_name: memorial.deceased_name,
+                memorial_slug: memorial.memorial_slug,
+                product_type: order?.product_type,
+                hosting_duration: order?.hosting_duration,
+                amount_paid: session.amount_total ? session.amount_total / 100 : 0,
+                currency: session.currency?.toUpperCase() || 'NZD',
+                activation_url: `${process.env.NEXT_PUBLIC_APP_URL}/activate/${activationCode}`,
+              }),
+            })
+          } catch (emailError) {
+            console.error('Failed to send order confirmation:', emailError)
+          }
+        }
+      }
 
       console.log(`Order ${orderNumber} payment completed`)
       break

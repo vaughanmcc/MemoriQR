@@ -81,7 +81,7 @@ export const DURATION_LABELS: Record<HostingDuration, string> = {
 
 export const PRODUCT_DESCRIPTIONS: Record<ProductType, string> = {
   nfc_only: 'Tap-to-view NFC sticker. Ships in 2-3 days.',
-  qr_only: 'Weather-proof laser-engraved stainless steel plate. Ships in 7-10 days.',
+  qr_only: 'Weather-proof Metalphoto® anodised aluminium plate. Ships in 7-10 days.',
   both: 'Complete set with both NFC tag and QR plate. Ships in 7-10 days.',
 }
 

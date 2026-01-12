@@ -1,20 +1,39 @@
 import { Check, Sparkles } from 'lucide-react'
 import Link from 'next/link'
-import { DEFAULT_PRICING, formatPriceNZD, getPricePerYear } from '@/lib/pricing'
+import { DEFAULT_PRICING, formatPriceNZD, TIER_LIMITS } from '@/lib/pricing'
 import { PRICING_LABELS, DURATION_LABELS, PRODUCT_DESCRIPTIONS } from '@/types'
 import type { HostingDuration, ProductType } from '@/types/database'
 
 const durations: HostingDuration[] = [5, 10, 25]
 const productTypes: ProductType[] = ['nfc_only', 'qr_only', 'both']
 
-const features = [
-  'Unlimited photos',
-  'YouTube video hosting',
-  'Custom memorial URL',
-  'Mobile-responsive design',
-  'No advertisements',
-  'Email support',
-]
+// Features that vary by tier
+const tierFeatures: Record<HostingDuration, string[]> = {
+  5: [
+    '20 curated photos',
+    '2 videos*',
+    'Custom memorial URL',
+    'Mobile-responsive design',
+    'No advertisements',
+    'Email support',
+  ],
+  10: [
+    '40 curated photos',
+    '3 videos*',
+    'Custom memorial URL',
+    'Mobile-responsive design',
+    'No advertisements',
+    'Email support',
+  ],
+  25: [
+    '60 curated photos',
+    '5 videos*',
+    'Custom memorial URL',
+    'Mobile-responsive design',
+    'No advertisements',
+    'Priority email support',
+  ],
+}
 
 interface PricingCardProps {
   duration: HostingDuration
@@ -69,7 +88,7 @@ function PricingCard({ duration, isPopular }: PricingCardProps) {
 
         {/* Features */}
         <ul className="space-y-3 mb-8">
-          {features.map((feature) => (
+          {tierFeatures[duration].map((feature) => (
             <li key={feature} className="flex items-center gap-3 text-gray-600">
               <Check className="h-5 w-5 text-memorial-sage flex-shrink-0" />
               <span>{feature}</span>
@@ -103,8 +122,8 @@ export function PricingSection() {
             Simple, Transparent Pricing
           </h2>
           <p className="text-lg text-gray-600">
-            Choose the hosting duration that's right for you. All plans include 
-            unlimited photos and videos with no hidden fees.
+            Choose the hosting duration that's right for you. Curated galleries 
+            for fast-loading pages. Need more space? Upgrade anytime.
           </p>
         </div>
 
@@ -116,10 +135,16 @@ export function PricingSection() {
         </div>
 
         {/* Renewal info */}
-        <div className="text-center mt-12 text-gray-600">
+        <div className="text-center mt-12 text-gray-600 space-y-2">
           <p>
             After your prepaid period, renew for just <strong>$24/year</strong> 
             {' '}or add 10 more years for <strong>$99</strong>.
+          </p>
+          <p className="text-sm">
+            Need more space? Add <strong>+20 photos for $10</strong> or <strong>+1 video for $15</strong> anytime.
+          </p>
+          <p className="text-xs text-gray-500 mt-4">
+            *Videos: Upload files up to 50MB each, or link YouTube videos (unlimited size, no extra cost).
           </p>
         </div>
       </div>
