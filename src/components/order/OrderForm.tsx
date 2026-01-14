@@ -41,6 +41,13 @@ export function OrderForm() {
   const [email, setEmail] = useState('')
   const [fullName, setFullName] = useState('')
   const [phone, setPhone] = useState('')
+  // Shipping address
+  const [addressLine1, setAddressLine1] = useState('')
+  const [addressLine2, setAddressLine2] = useState('')
+  const [city, setCity] = useState('')
+  const [region, setRegion] = useState('')
+  const [postalCode, setPostalCode] = useState('')
+  const [country, setCountry] = useState<'NZ' | 'AU'>('NZ')
 
   const price = DEFAULT_PRICING[duration][productType]
   const needsEngraving = productType === 'qr_only' || productType === 'both'
@@ -62,6 +69,14 @@ export function OrderForm() {
           email,
           fullName,
           phone,
+          shippingAddress: {
+            line1: addressLine1,
+            line2: addressLine2 || undefined,
+            city,
+            state: region,
+            postal_code: postalCode,
+            country,
+          },
         }),
       })
 
@@ -342,6 +357,89 @@ export function OrderForm() {
               </div>
             </div>
 
+            {/* Shipping Address */}
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                Shipping Address
+              </h3>
+              <p className="text-sm text-gray-500 mb-4">
+                Where should we send your memorial tag?
+              </p>
+
+              <div className="mb-4">
+                <label className="label">Street Address</label>
+                <input
+                  type="text"
+                  value={addressLine1}
+                  onChange={(e) => setAddressLine1(e.target.value)}
+                  placeholder="123 Main Street"
+                  className="input"
+                  required
+                />
+              </div>
+
+              <div className="mb-4">
+                <label className="label">Apartment, suite, etc. (optional)</label>
+                <input
+                  type="text"
+                  value={addressLine2}
+                  onChange={(e) => setAddressLine2(e.target.value)}
+                  placeholder="Apt 4B"
+                  className="input"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4 mb-4">
+                <div>
+                  <label className="label">City</label>
+                  <input
+                    type="text"
+                    value={city}
+                    onChange={(e) => setCity(e.target.value)}
+                    placeholder="Auckland"
+                    className="input"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="label">Region / State</label>
+                  <input
+                    type="text"
+                    value={region}
+                    onChange={(e) => setRegion(e.target.value)}
+                    placeholder="Auckland"
+                    className="input"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4 mb-4">
+                <div>
+                  <label className="label">Postal Code</label>
+                  <input
+                    type="text"
+                    value={postalCode}
+                    onChange={(e) => setPostalCode(e.target.value)}
+                    placeholder="1010"
+                    className="input"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="label">Country</label>
+                  <select
+                    value={country}
+                    onChange={(e) => setCountry(e.target.value as 'NZ' | 'AU')}
+                    className="input"
+                  >
+                    <option value="NZ">New Zealand</option>
+                    <option value="AU">Australia</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
             {/* Order summary */}
             <div className="bg-memorial-cream rounded-lg p-6">
               <h3 className="font-semibold text-gray-900 mb-4">Order Summary</h3>
@@ -371,7 +469,7 @@ export function OrderForm() {
               </button>
               <button
                 onClick={handleSubmit}
-                disabled={!email || !fullName || loading}
+                disabled={!email || !fullName || !addressLine1 || !city || !region || !postalCode || loading}
                 className="btn-primary flex-1 flex items-center justify-center gap-2"
               >
                 {loading ? (

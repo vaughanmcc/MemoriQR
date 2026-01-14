@@ -3,11 +3,20 @@ import { stripe, SHIPPING_RATES, CURRENCY, getPriceInCents } from '@/lib/stripe'
 import { createAdminClient } from '@/lib/supabase/server'
 import { DEFAULT_PRICING, calculateExpiryDate } from '@/lib/pricing'
 import { generateSlug } from '@/lib/utils'
-import type { HostingDuration, ProductType, Database } from '@/types/database'
+import type { HostingDuration, ProductType, Database, Json } from '@/types/database'
 
 type CustomerInsert = Database['public']['Tables']['customers']['Insert']
 type MemorialInsert = Database['public']['Tables']['memorial_records']['Insert']
 type OrderInsert = Database['public']['Tables']['orders']['Insert']
+
+interface ShippingAddress {
+  line1: string
+  line2?: string
+  city: string
+  state: string
+  postal_code: string
+  country: 'NZ' | 'AU'
+}
 
 interface CheckoutRequest {
   hostingDuration: HostingDuration
@@ -19,6 +28,7 @@ interface CheckoutRequest {
   email: string
   fullName: string
   phone?: string
+  shippingAddress: ShippingAddress
 }
 
 export async function POST(request: NextRequest) {
@@ -35,10 +45,11 @@ export async function POST(request: NextRequest) {
       email,
       fullName,
       phone,
+      shippingAddress,
     } = body
 
     // Validate required fields
-    if (!hostingDuration || !productType || !deceasedName || !email || !fullName) {
+    if (!hostingDuration || !productType || !deceasedName || !email || !fullName || !shippingAddress?.line1) {
       return NextResponse.json(
         { error: 'Missing required fields' },
         { status: 400 }
@@ -58,21 +69,30 @@ export async function POST(request: NextRequest) {
 
     // Create or get customer
     let customerId: string
+    let stripeCustomerId: string | undefined
 
     const { data: existingCustomer } = await supabase
       .from('customers')
-      .select('id')
+      .select('id, stripe_customer_id')
       .eq('email', email)
       .single()
 
     if (existingCustomer) {
       customerId = existingCustomer.id
+      stripeCustomerId = existingCustomer.stripe_customer_id || undefined
+      
+      // Update shipping address for existing customer
+      await supabase
+        .from('customers')
+        .update({ shipping_address: shippingAddress as unknown as Json })
+        .eq('id', customerId)
     } else {
       const customerData: CustomerInsert = {
         email,
         full_name: fullName,
         phone: phone || null,
         customer_type: 'direct',
+        shipping_address: shippingAddress as unknown as Json,
       }
       
       const { data: newCustomer, error: customerError } = await supabase
@@ -156,10 +176,54 @@ export async function POST(request: NextRequest) {
       both: 'NFC Tag + QR Plate',
     }
 
+    // Create or retrieve Stripe customer with shipping address
+    if (!stripeCustomerId) {
+      const stripeCustomer = await stripe.customers.create({
+        email,
+        name: fullName,
+        phone: phone || undefined,
+        shipping: {
+          name: fullName,
+          phone: phone || undefined,
+          address: {
+            line1: shippingAddress.line1,
+            line2: shippingAddress.line2 || undefined,
+            city: shippingAddress.city,
+            state: shippingAddress.state,
+            postal_code: shippingAddress.postal_code,
+            country: shippingAddress.country,
+          },
+        },
+      })
+      stripeCustomerId = stripeCustomer.id
+
+      // Store Stripe customer ID in our database
+      await supabase
+        .from('customers')
+        .update({ stripe_customer_id: stripeCustomerId })
+        .eq('id', customerId)
+    } else {
+      // Update existing Stripe customer's shipping address
+      await stripe.customers.update(stripeCustomerId, {
+        shipping: {
+          name: fullName,
+          phone: phone || undefined,
+          address: {
+            line1: shippingAddress.line1,
+            line2: shippingAddress.line2 || undefined,
+            city: shippingAddress.city,
+            state: shippingAddress.state,
+            postal_code: shippingAddress.postal_code,
+            country: shippingAddress.country,
+          },
+        },
+      })
+    }
+
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       mode: 'payment',
-      customer_email: email,
+      customer: stripeCustomerId,
       line_items: [
         {
           price_data: {
