@@ -18,7 +18,7 @@ const faqs = [
   },
   {
     question: 'What is Metalphoto® technology?',
-    answer: 'Metalphoto® is a premium imaging process where the QR code is photographically sealed beneath an 8 micron protective anodic layer on anodised aluminium. This creates permanent, sub-surface images with 20+ year UV resistance. The plates withstand temperatures over 300°C and meet military-grade specifications – making them ideal for permanent outdoor memorial installations.',
+    answer: 'Metalphoto® is a premium photosensitive anodised aluminium where images are photographically developed within the aluminium surface, then sealed beneath an 8 micron sapphire-hard anodic layer. Key specs: 20+ year outdoor UV resistance, withstands temperatures over 300°C (572°F), chemical and abrasion resistant, meets military specs (MIL-STD-130N for asset marking). The sub-surface printing means the QR code cannot be scratched off – it\'s literally part of the metal. Perfect for permanent cemetery installations, outdoor memorials, and harsh environments.',
   },
   {
     question: 'How long does hosting last?',

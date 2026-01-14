@@ -11,9 +11,81 @@ MemoriQR creates lasting digital memorials for pets and people through NFC tags 
 
 ---
 
-## Development Environment Status (Next.js - January 2026)
+## Development Environment - Hybrid Architecture (January 2026)
 
-> **Note:** This section documents the DEV environment (Next.js + Supabase direct). Production will use WordPress + Pipedream as described in Technical Architecture below.
+### Architecture Overview
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│           WORDPRESS (Marketing Layer)                       │
+│           PROD: Hostinger | DEV: LocalWP                    │
+│  ┌─────────────────────────────────────────────────────┐   │
+│  │  Elementor Pro Pages                                 │   │
+│  │  • Home, About, How It Works, Contact, FAQ          │   │
+│  │  • Pricing, Terms, Privacy, Testimonials            │   │
+│  └─────────────────────────────────────────────────────┘   │
+│                           │                                 │
+│              ┌────────────┴────────────┐                   │
+│              │  iframe / embed links   │                   │
+│              └────────────┬────────────┘                   │
+└───────────────────────────│─────────────────────────────────┘
+                            │
+                            ▼
+┌─────────────────────────────────────────────────────────────┐
+│           NEXT.JS (Application Engine)                      │
+│           PROD: Vercel Free | DEV: localhost:3000           │
+│  ┌─────────────────────────────────────────────────────┐   │
+│  │  Complex Application Features                        │   │
+│  │  • /memorial/[slug] - Memorial Viewer               │   │
+│  │  • /activate/[code] - Activation Wizard             │   │
+│  │  • /order - Checkout Flow                           │   │
+│  │  • /api/* - All API Routes                          │   │
+│  └─────────────────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────────┘
+                            │
+           ┌────────────────┼────────────────┐
+           ▼                ▼                ▼
+    ┌────────────┐   ┌────────────┐   ┌────────────┐
+    │  SUPABASE  │   │  PIPEDREAM │   │   STRIPE   │
+    │  Database  │   │  Webhooks  │   │  Payments  │
+    │  Storage   │   │  Emails    │   │            │
+    └────────────┘   └────────────┘   └────────────┘
+```
+
+### Why Hybrid Architecture?
+
+| Concern | WordPress Handles | Next.js Handles |
+|---------|------------------|-----------------|
+| Marketing pages | ✅ Elementor drag-and-drop | |
+| SEO | ✅ RankMath/Yoast | |
+| Content updates | ✅ No code needed | |
+| Complex forms | | ✅ Multi-step wizard |
+| File uploads | | ✅ Supabase Storage |
+| Theme/frame selection | | ✅ 25 themes, 25 frames |
+| Payment processing | | ✅ Stripe integration |
+| Memorial display | | ✅ Dynamic React components |
+
+### DEV Environment Components
+
+| Component | Technology | URL/Port |
+|-----------|-----------|----------|
+| WordPress | LocalWP | `localhost:10003` (varies) |
+| Next.js | npm run dev | `localhost:3000` |
+| Supabase | Cloud (free tier) | Shared instance |
+| Stripe | Test mode + CLI | Webhook forwarding |
+
+### PROD Environment Components
+
+| Component | Technology | URL |
+|-----------|-----------|-----|
+| WordPress | Hostinger Managed | `memoriqr.com` or `memoriqr.co.nz` |
+| Next.js | Vercel Free | `app.memoriqr.com` |
+| Supabase | Cloud (same or separate project) | API |
+| Stripe | Live mode | Webhooks |
+
+---
+
+## Next.js Application Status (January 2026)
 
 ### Completed Features ✅
 - **Full Next.js App:** Modern React-based frontend with server-side rendering
@@ -31,14 +103,20 @@ MemoriQR creates lasting digital memorials for pets and people through NFC tags 
   - Direct upload via drag-and-drop or file picker (max 50MB per file)
   - YouTube URL link (unlimited size, free)
   - Dynamic + button to add videos up to plan limit
+- **Photo & Video Storage:** Real uploads to Supabase Storage buckets
+  - `memorial-photos` bucket (10MB limit per file, public)
+  - `memorial-videos` bucket (50MB limit per file, public)
+- **Profile Photo Selection:** Click any uploaded photo to set as main profile image
+- **Theme Selection:** 25 memorial themes with color schemes
+  - 5-year plan: 5 themes (Classic, Garden, Ocean, Sunset, Starlight)
+  - 10-year plan: 10 themes (above + Rose Garden, Meadow, Autumn, Lavender, Blue Sky)
+  - 25-year plan: All 25 themes (including Forest, Dawn, Cherry Blossom, Eternal, etc.)
 - **Contact Form:** Integrated with Pipedream for email notifications
 - **Pricing Page:** Dynamic display with video footnotes
 - **FAQ Section:** Comprehensive questions including video hosting details
 
 ### In Progress 🚧
-- Photo storage: Using placeholder SVG (Cloudinary integration pending)
-- Video storage: Supabase Storage upload endpoint (placeholder in place)
-- Memorial page display: Basic structure exists, using placeholder images
+- Memorial page display: Basic structure with theme support (using Supabase Storage URLs)
 - Renewal flow: Database schema ready, payment flow not yet implemented
 
 ### Pending 📋
@@ -50,9 +128,13 @@ MemoriQR creates lasting digital memorials for pets and people through NFC tags 
 - Cloudinary integration for actual photo storage
 
 ### Recent Updates
+- **Theme System:** Added 25 memorial themes with color schemes, tied to plan duration (5/10/25 themes)
+- **Profile Photo Selection:** Click-to-select any photo as the main profile image
+- **Real Storage:** Photos and videos now upload to Supabase Storage (memorial-photos, memorial-videos buckets)
+- **Video Player:** Supports both uploaded videos and YouTube embeds
+- **Memorial Page Styling:** Theme-aware design with "Beloved [species]" badge, decorative quotes, gradient accents
 - Updated all references from stainless steel to Metalphoto® anodised aluminium
 - Added FAQ about Metalphoto® technology (20+ year UV, 8 micron protection, 300°C+ rated)
-- Added placeholder SVG for photos in DEV environment
 
 ---
 

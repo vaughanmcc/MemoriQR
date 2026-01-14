@@ -7,9 +7,11 @@ import { MemorialPhoto } from '@/types'
 
 interface PhotoGalleryProps {
   photos: MemorialPhoto[]
+  frame?: { border: string; shadow: string }
+  theme?: { bg: string; accent: string; text: string; secondary: string }
 }
 
-export function PhotoGallery({ photos }: PhotoGalleryProps) {
+export function PhotoGallery({ photos, frame, theme }: PhotoGalleryProps) {
   const [lightboxOpen, setLightboxOpen] = useState(false)
   const [currentIndex, setCurrentIndex] = useState(0)
 
@@ -37,13 +39,14 @@ export function PhotoGallery({ photos }: PhotoGalleryProps) {
 
   return (
     <>
-      {/* Grid */}
+      {/* Grid with simple recessed frames */}
       <div className="photo-grid">
         {photos.slice(1).map((photo, index) => (
           <button
             key={photo.id}
             onClick={() => openLightbox(index + 1)}
-            className="relative aspect-square overflow-hidden rounded-lg group cursor-pointer"
+            className="memorial-gallery-item aspect-square group cursor-pointer"
+            aria-label={`View ${photo.caption || 'photo'} in fullscreen`}
           >
             <Image
               src={photo.url}
@@ -52,7 +55,7 @@ export function PhotoGallery({ photos }: PhotoGalleryProps) {
               className="object-cover transition-transform group-hover:scale-105"
               sizes="(max-width: 768px) 50vw, 25vw"
             />
-            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
+            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
           </button>
         ))}
       </div>

@@ -12,6 +12,8 @@ const tierFeatures: Record<HostingDuration, string[]> = {
   5: [
     '20 curated photos',
     '2 videos*',
+    '5 memorial themes',
+    '5 photo frames',
     'Custom memorial URL',
     'Mobile-responsive design',
     'No advertisements',
@@ -20,6 +22,8 @@ const tierFeatures: Record<HostingDuration, string[]> = {
   10: [
     '40 curated photos',
     '3 videos*',
+    '10 memorial themes',
+    '10 photo frames',
     'Custom memorial URL',
     'Mobile-responsive design',
     'No advertisements',
@@ -28,6 +32,8 @@ const tierFeatures: Record<HostingDuration, string[]> = {
   25: [
     '60 curated photos',
     '5 videos*',
+    '25 memorial themes',
+    '25 photo frames',
     'Custom memorial URL',
     'Mobile-responsive design',
     'No advertisements',

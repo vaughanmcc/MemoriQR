@@ -1,6 +1,5 @@
 import { Metadata } from 'next'
-import { Header } from '@/components/layout/Header'
-import { Footer } from '@/components/layout/Footer'
+import { EmbedWrapper } from '@/components/layout/EmbedWrapper'
 import { ActivateForm } from '@/components/activate/ActivateForm'
 
 export const metadata: Metadata = {
@@ -10,8 +9,7 @@ export const metadata: Metadata = {
 
 export default function ActivatePage() {
   return (
-    <>
-      <Header />
+    <EmbedWrapper>
       <main className="min-h-screen bg-memorial-cream">
         <div className="container-narrow py-12 md:py-20">
           <div className="text-center mb-12">
@@ -26,7 +24,6 @@ export default function ActivatePage() {
           <ActivateForm />
         </div>
       </main>
-      <Footer />
-    </>
+    </EmbedWrapper>
   )
 }

@@ -38,11 +38,14 @@ export interface MemorialPhoto {
   height: number
   caption?: string
   order: number
+  isProfile?: boolean
 }
 
 export interface MemorialVideo {
   id: string
-  youtubeId: string
+  youtubeId?: string | null
+  url?: string | null
+  type?: 'youtube' | 'upload'
   title?: string
   order: number
 }
