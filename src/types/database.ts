@@ -16,6 +16,7 @@ export interface Database {
           full_name: string
           phone: string | null
           shipping_address: Json | null
+          stripe_customer_id: string | null
           created_at: string
           customer_type: 'direct' | 'retail'
         }
@@ -24,7 +25,8 @@ export interface Database {
           email: string
           full_name: string
           phone?: string | null
-          shipping_address?: Json | null
+          shipping_address?: Json
+          stripe_customer_id?: string | null
           created_at?: string
           customer_type?: 'direct' | 'retail'
         }
@@ -33,7 +35,8 @@ export interface Database {
           email?: string
           full_name?: string
           phone?: string | null
-          shipping_address?: Json | null
+          shipping_address?: Json
+          stripe_customer_id?: string | null
           created_at?: string
           customer_type?: 'direct' | 'retail'
         }

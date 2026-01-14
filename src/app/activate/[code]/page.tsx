@@ -8,6 +8,7 @@ import { Database } from '@/types/database'
 type RetailActivationCode = Database['public']['Tables']['retail_activation_codes']['Row']
 type Order = Database['public']['Tables']['orders']['Row']
 type Memorial = Database['public']['Tables']['memorial_records']['Row']
+type Customer = Database['public']['Tables']['customers']['Row']
 
 interface Props {
   params: { code: string }
@@ -97,6 +98,17 @@ export default async function ActivateCodePage({ params }: Props) {
       .select('*')
       .eq('id', order.memorial_id)
       .single() as { data: Memorial | null }
+    
+    // Fetch customer email for online orders
+    let customerEmail: string | undefined
+    if (memorial?.customer_id) {
+      const { data: customer } = await supabase
+        .from('customers')
+        .select('email')
+        .eq('id', memorial.customer_id)
+        .single() as { data: Pick<Customer, 'email'> | null }
+      customerEmail = customer?.email
+    }
 
     if (memorial) {
       if (memorial.is_published) {
@@ -135,6 +147,7 @@ export default async function ActivateCodePage({ params }: Props) {
                 species={memorial.species ?? undefined}
                 productType={memorial.product_type}
                 hostingDuration={memorial.hosting_duration}
+                customerEmail={customerEmail}
               />
             </div>
           </main>

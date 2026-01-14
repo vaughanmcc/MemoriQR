@@ -297,6 +297,7 @@ interface MemorialUploadFormProps {
   productType: ProductType
   hostingDuration: HostingDuration
   partnerId?: string
+  customerEmail?: string
 }
 
 export function MemorialUploadForm({
@@ -310,6 +311,7 @@ export function MemorialUploadForm({
   productType,
   hostingDuration,
   partnerId,
+  customerEmail: initialEmail,
 }: MemorialUploadFormProps) {
   const router = useRouter()
   const formRef = useRef<HTMLDivElement>(null)
@@ -332,7 +334,7 @@ export function MemorialUploadForm({
   const [birthDate, setBirthDate] = useState('')
   const [deathDate, setDeathDate] = useState('')
   const [memorialText, setMemorialText] = useState('')
-  const [contactEmail, setContactEmail] = useState('')
+  const [contactEmail, setContactEmail] = useState(initialEmail || '')
   const [photos, setPhotos] = useState<File[]>([])
   const [photosPreviews, setPhotosPreviews] = useState<string[]>([])
   const [profilePhotoIndex, setProfilePhotoIndex] = useState(0)
@@ -761,24 +763,27 @@ export function MemorialUploadForm({
               </div>
             </div>
 
-            <div>
-              <label className="label">Your Email Address</label>
-              <input
-                type="email"
-                value={contactEmail}
-                onChange={(e) => setContactEmail(e.target.value)}
-                className="input"
-                placeholder="email@example.com"
-                required
-              />
-              <p className="text-xs text-gray-500 mt-1">
-                We'll send you a confirmation and edit link for this memorial.
-              </p>
-            </div>
+            {/* Only show email field for retail activations without pre-existing email */}
+            {activationType === 'retail' && !initialEmail && (
+              <div>
+                <label className="label">Your Email Address</label>
+                <input
+                  type="email"
+                  value={contactEmail}
+                  onChange={(e) => setContactEmail(e.target.value)}
+                  className="input"
+                  placeholder="email@example.com"
+                  required
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  We'll send you a confirmation and edit link for this memorial.
+                </p>
+              </div>
+            )}
 
             <button
               onClick={() => setStep(2)}
-              disabled={!deceasedName || !contactEmail}
+              disabled={!deceasedName || (activationType === 'retail' && !initialEmail && !contactEmail)}
               className="btn-primary w-full"
             >
               Continue
