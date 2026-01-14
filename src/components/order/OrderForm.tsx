@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Check, ChevronRight, Loader2 } from 'lucide-react'
 import { DEFAULT_PRICING, formatPriceNZD } from '@/lib/pricing'
@@ -16,6 +16,18 @@ export function OrderForm() {
   
   const [step, setStep] = useState(1)
   const [loading, setLoading] = useState(false)
+
+  // Change step and scroll to form section
+  const goToStep = (newStep: number) => {
+    setStep(newStep)
+    // Scroll to form container so user sees the step heading, not the page header
+    setTimeout(() => {
+      formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }, 0)
+  }
+
+  // Ref to form container for scrolling
+  const formRef = useRef<HTMLDivElement>(null)
   
   // Form state
   const [duration, setDuration] = useState<HostingDuration>(
@@ -56,7 +68,16 @@ export function OrderForm() {
       const data = await response.json()
       
       if (data.url) {
-        window.location.href = data.url
+        // If in iframe (embed mode), open Stripe in new tab
+        // Stripe doesn't allow being loaded inside iframes
+        // Cross-origin iframes can't access parent window.location
+        if (window.self !== window.top) {
+          // We're in an iframe - open Stripe checkout in new tab
+          window.open(data.url, '_blank')
+        } else {
+          // Normal navigation
+          window.location.href = data.url
+        }
       } else {
         throw new Error(data.error || 'Failed to create checkout session')
       }
@@ -69,7 +90,7 @@ export function OrderForm() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto">
+    <div ref={formRef} className="max-w-3xl mx-auto">
       {/* Progress steps */}
       <div className="flex items-center justify-center mb-12">
         {[1, 2, 3].map((s) => (
@@ -160,7 +181,7 @@ export function OrderForm() {
             </div>
 
             <button
-              onClick={() => setStep(2)}
+              onClick={() => goToStep(2)}
               className="btn-primary w-full flex items-center justify-center gap-2"
             >
               Continue
@@ -257,13 +278,13 @@ export function OrderForm() {
 
             <div className="flex gap-4">
               <button
-                onClick={() => setStep(1)}
+                onClick={() => goToStep(1)}
                 className="btn-outline flex-1"
               >
                 Back
               </button>
               <button
-                onClick={() => setStep(3)}
+                onClick={() => goToStep(3)}
                 disabled={!deceasedName}
                 className="btn-primary flex-1 flex items-center justify-center gap-2"
               >
@@ -343,7 +364,7 @@ export function OrderForm() {
 
             <div className="flex gap-4">
               <button
-                onClick={() => setStep(2)}
+                onClick={() => goToStep(2)}
                 className="btn-outline flex-1"
               >
                 Back

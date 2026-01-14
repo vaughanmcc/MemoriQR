@@ -1,6 +1,5 @@
 import { Metadata } from 'next'
-import { Header } from '@/components/layout/Header'
-import { Footer } from '@/components/layout/Footer'
+import { EmbedWrapper } from '@/components/layout/EmbedWrapper'
 import { OrderForm } from '@/components/order/OrderForm'
 
 export const metadata: Metadata = {
@@ -10,8 +9,7 @@ export const metadata: Metadata = {
 
 export default function OrderPage() {
   return (
-    <>
-      <Header />
+    <EmbedWrapper>
       <main className="min-h-screen bg-memorial-cream">
         <div className="container-wide py-12 md:py-20">
           <div className="text-center mb-12">
@@ -27,7 +25,6 @@ export default function OrderPage() {
           <OrderForm />
         </div>
       </main>
-      <Footer />
-    </>
+    </EmbedWrapper>
   )
 }

@@ -21,6 +21,10 @@ export async function POST(request: NextRequest) {
     const memorialText = sanitizeText(formData.get('memorialText') as string || '')
     const hostingDuration = parseInt(formData.get('hostingDuration') as string) as HostingDuration
     const productType = formData.get('productType') as ProductType
+    const profilePhotoIndex = parseInt(formData.get('profilePhotoIndex') as string || '0')
+    const theme = formData.get('theme') as string || 'classic'
+    const frame = formData.get('frame') as string || 'classic-gold'
+    const contactEmail = formData.get('contactEmail') as string | null
     
     const photoFiles = formData.getAll('photos') as File[]
 
@@ -34,17 +38,66 @@ export async function POST(request: NextRequest) {
 
     const supabase = createAdminClient()
 
-    // Process photos - in production, upload to Cloudinary
-    // For now, we'll use placeholder image
-    const photos = photoFiles.map((file, index) => ({
-      id: `photo-${Date.now()}-${index}`,
-      url: '/placeholder-photo.svg', // In production: Cloudinary URL
-      publicId: `memorial/${Date.now()}-${index}`,
-      width: 800,
-      height: 600,
-      caption: file.name.replace(/\.[^/.]+$/, ''), // Use filename as caption
-      order: index,
-    }))
+    // Generate a unique memorial prefix for file organization
+    const memorialPrefix = `memorial-${Date.now()}`
+
+    // Upload photos to Supabase Storage
+    const photos = []
+    for (let index = 0; index < photoFiles.length; index++) {
+      const file = photoFiles[index]
+      const fileExt = file.name.split('.').pop() || 'jpg'
+      const fileName = `${memorialPrefix}/photo-${index}.${fileExt}`
+      
+      // Convert File to ArrayBuffer then to Buffer for upload
+      const arrayBuffer = await file.arrayBuffer()
+      const buffer = Buffer.from(arrayBuffer)
+      
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('memorial-photos')
+        .upload(fileName, buffer, {
+          contentType: file.type,
+          upsert: true,
+        })
+
+      if (uploadError) {
+        console.error(`Failed to upload photo ${index}:`, uploadError)
+        // Fall back to placeholder if upload fails
+        photos.push({
+          id: `photo-${Date.now()}-${index}`,
+          url: '/placeholder-photo.svg',
+          publicId: fileName,
+          width: 800,
+          height: 600,
+          caption: file.name.replace(/\.[^/.]+$/, ''),
+          order: index,
+          isProfile: index === profilePhotoIndex,
+        })
+        continue
+      }
+
+      // Get the public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('memorial-photos')
+        .getPublicUrl(fileName)
+
+      photos.push({
+        id: `photo-${Date.now()}-${index}`,
+        url: publicUrl,
+        publicId: fileName,
+        width: 800,
+        height: 600,
+        caption: file.name.replace(/\.[^/.]+$/, ''),
+        order: index,
+        isProfile: index === profilePhotoIndex,
+      })
+    }
+
+    // Reorder photos so profile photo is first
+    const sortedPhotos = [...photos].sort((a, b) => {
+      if (a.isProfile) return -1
+      if (b.isProfile) return 1
+      return a.order - b.order
+    })
 
     // Process video
     const videos = []
@@ -77,14 +130,37 @@ export async function POST(request: NextRequest) {
     // Handle uploaded video files
     const videoFiles = formData.getAll('videoFiles') as File[]
     for (const videoFile of videoFiles) {
-      // TODO: Upload to Supabase Storage in production
-      // For now, create placeholder
+      const fileExt = videoFile.name.split('.').pop() || 'mp4'
+      const fileName = `${memorialPrefix}/video-${videoOrder}.${fileExt}`
+      
+      // Convert File to Buffer for upload
+      const arrayBuffer = await videoFile.arrayBuffer()
+      const buffer = Buffer.from(arrayBuffer)
+      
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('memorial-videos')
+        .upload(fileName, buffer, {
+          contentType: videoFile.type,
+          upsert: true,
+        })
+
+      if (uploadError) {
+        console.error(`Failed to upload video ${videoOrder}:`, uploadError)
+        // Skip this video if upload fails
+        continue
+      }
+
+      // Get the public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('memorial-videos')
+        .getPublicUrl(fileName)
+
       const videoId = `video-${Date.now()}-${videoOrder}`
       videos.push({
         id: videoId,
         type: 'upload',
         youtubeId: null,
-        url: null, // In production: Supabase Storage URL
+        url: publicUrl,
         title: videoFile.name,
         order: videoOrder,
       })
@@ -105,8 +181,10 @@ export async function POST(request: NextRequest) {
           birth_date: birthDate || null,
           death_date: deathDate || null,
           memorial_text: memorialText,
-          photos_json: photos,
+          photos_json: sortedPhotos,
           videos_json: videos,
+          theme: theme,
+          frame: frame,
           is_published: true,
           updated_at: new Date().toISOString(),
         })
@@ -126,7 +204,7 @@ export async function POST(request: NextRequest) {
       await supabase.from('activity_log').insert({
         memorial_id: memorialId,
         activity_type: 'published',
-        details: { photoCount: photos.length, hasVideo: videos.length > 0 },
+        details: { photoCount: sortedPhotos.length, hasVideo: videos.length > 0, theme },
       })
     } else if (activationType === 'retail' && activationCode) {
       // Create new memorial from retail code
@@ -145,13 +223,16 @@ export async function POST(request: NextRequest) {
           birth_date: birthDate || null,
           death_date: deathDate || null,
           memorial_text: memorialText,
-          photos_json: photos,
+          photos_json: sortedPhotos,
           videos_json: videos,
+          theme: theme,
+          frame: frame,
           is_published: true,
           hosting_duration: hostingDuration,
           product_type: productType,
           base_price: price,
           hosting_expires_at: expiryDate.toISOString(),
+          contact_email: contactEmail,
         })
         .select('id')
         .single()
@@ -188,10 +269,65 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid activation type' }, { status: 400 })
     }
 
+    // Get the edit token for the memorial (either from existing or newly created)
+    const { data: memorialWithToken } = await supabase
+      .from('memorial_records')
+      .select('edit_token')
+      .eq('id', memorialId)
+      .single()
+
+    const editToken = memorialWithToken?.edit_token
+
+    // Get customer email for sending confirmation
+    // For retail: use contactEmail from form
+    // For online: try contactEmail first, then fall back to order customer email
+    let customerEmail: string | null = contactEmail
+    
+    if (!customerEmail && activationType === 'online' && existingMemorialId) {
+      // Fall back to getting email from order
+      const { data: order } = await supabase
+        .from('orders')
+        .select('customers(email)')
+        .eq('memorial_id', existingMemorialId)
+        .single()
+      customerEmail = (order?.customers as any)?.email
+    }
+
+    // Trigger email with edit link and QR code (via Pipedream webhook)
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://memoriqr.co.nz'
+    if (customerEmail && editToken) {
+      try {
+        const webhookUrl = process.env.PIPEDREAM_WEBHOOK_URL
+        if (webhookUrl) {
+          await fetch(webhookUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              type: 'memorial_created',
+              email: customerEmail,
+              memorialName: deceasedName,
+              memorialUrl: `${baseUrl}/memorial/${memorialSlug}`,
+              editUrl: `${baseUrl}/memorial/edit?token=${editToken}`,
+              qrCodeUrl: `${baseUrl}/api/qr/${memorialSlug}`,
+            }),
+          })
+          console.log('Memorial creation email sent to:', customerEmail)
+        } else {
+          console.warn('PIPEDREAM_WEBHOOK_URL not configured - email not sent')
+        }
+      } catch (e) {
+        console.error('Failed to send memorial creation email:', e)
+        // Don't fail the request if email fails
+      }
+    } else {
+      console.log('No email to send: customerEmail=', customerEmail, 'editToken=', !!editToken)
+    }
+
     return NextResponse.json({
       success: true,
       slug: memorialSlug,
       memorialId,
+      editToken,
     })
   } catch (error) {
     console.error('Create memorial error:', error)

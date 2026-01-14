@@ -1,8 +1,7 @@
 import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { createAdminClient } from '@/lib/supabase/server'
-import { Header } from '@/components/layout/Header'
-import { Footer } from '@/components/layout/Footer'
+import { EmbedWrapper } from '@/components/layout/EmbedWrapper'
 import { MemorialUploadForm } from '@/components/activate/MemorialUploadForm'
 import { Database } from '@/types/database'
 
@@ -44,8 +43,7 @@ export default async function ActivateCodePage({ params }: Props) {
         .single() as { data: Memorial | null }
 
       return (
-        <>
-          <Header />
+        <EmbedWrapper>
           <main className="min-h-screen bg-memorial-cream py-12 md:py-20">
             <div className="container-wide">
               <MemorialUploadForm
@@ -57,20 +55,18 @@ export default async function ActivateCodePage({ params }: Props) {
                 memorialId={memorial?.id}
                 deceasedName={memorial?.deceased_name}
                 deceasedType={memorial?.deceased_type}
-                species={memorial?.species}
+                species={memorial?.species ?? undefined}
                 // ...add other fields as needed
               />
             </div>
           </main>
-          <Footer />
-        </>
+        </EmbedWrapper>
       )
     }
 
     // If not used or not linked, show blank form
     return (
-      <>
-        <Header />
+      <EmbedWrapper>
         <main className="min-h-screen bg-memorial-cream py-12 md:py-20">
           <div className="container-wide">
             <MemorialUploadForm
@@ -82,8 +78,7 @@ export default async function ActivateCodePage({ params }: Props) {
             />
           </div>
         </main>
-        <Footer />
-      </>
+      </EmbedWrapper>
     )
   }
 
@@ -106,8 +101,7 @@ export default async function ActivateCodePage({ params }: Props) {
     if (memorial) {
       if (memorial.is_published) {
         return (
-          <>
-            <Header />
+          <EmbedWrapper>
             <main className="min-h-screen bg-memorial-cream flex items-center justify-center">
               <div className="text-center max-w-md px-4">
                 <h1 className="text-2xl font-serif text-gray-900 mb-4">
@@ -124,14 +118,12 @@ export default async function ActivateCodePage({ params }: Props) {
                 </a>
               </div>
             </main>
-            <Footer />
-          </>
+          </EmbedWrapper>
         )
       }
 
       return (
-        <>
-          <Header />
+        <EmbedWrapper>
           <main className="min-h-screen bg-memorial-cream py-12 md:py-20">
             <div className="container-wide">
               <MemorialUploadForm
@@ -140,14 +132,13 @@ export default async function ActivateCodePage({ params }: Props) {
                 memorialSlug={memorial.memorial_slug}
                 deceasedName={memorial.deceased_name}
                 deceasedType={memorial.deceased_type}
-                species={memorial.species}
+                species={memorial.species ?? undefined}
                 productType={memorial.product_type}
                 hostingDuration={memorial.hosting_duration}
               />
             </div>
           </main>
-          <Footer />
-        </>
+        </EmbedWrapper>
       )
     }
   }
