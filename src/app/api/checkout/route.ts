@@ -275,8 +275,9 @@ export async function POST(request: NextRequest) {
         memorial_id: memorial.id,
         customer_id: customerId,
       },
-      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/order/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/order?cancelled=true`,
+      // Use request origin for Vercel Preview, fallback to env var
+      success_url: `${request.headers.get('origin') || process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_SITE_URL}/order/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${request.headers.get('origin') || process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_SITE_URL}/order?cancelled=true`,
     })
 
     // Update order with session ID
