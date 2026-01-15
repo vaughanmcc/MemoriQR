@@ -477,18 +477,6 @@ export function OrderForm() {
               </div>
             </div>
 
-            {/* Debug: show which fields are missing */}
-            <div className="text-xs text-red-500 mb-4 p-2 bg-red-50 rounded">
-              Missing: {[
-                !email && 'email',
-                !fullName && 'fullName',
-                !addressLine1 && 'address',
-                !city && 'city',
-                !region && 'region',
-                !postalCode && 'postalCode'
-              ].filter(Boolean).join(', ') || 'none'}
-            </div>
-
             {/* Order summary */}
             <div className="bg-memorial-cream rounded-lg p-6">
               <h3 className="font-semibold text-gray-900 mb-4">Order Summary</h3>
