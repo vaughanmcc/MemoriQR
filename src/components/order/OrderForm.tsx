@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Check, ChevronRight, Loader2 } from 'lucide-react'
 import { DEFAULT_PRICING, formatPriceNZD } from '@/lib/pricing'
@@ -51,6 +51,31 @@ export function OrderForm() {
 
   const price = DEFAULT_PRICING[duration][productType]
   const needsEngraving = productType === 'qr_only' || productType === 'both'
+
+  // Refs for autofill detection
+  const emailRef = useRef<HTMLInputElement>(null)
+  const fullNameRef = useRef<HTMLInputElement>(null)
+  const addressRef = useRef<HTMLInputElement>(null)
+  const cityRef = useRef<HTMLInputElement>(null)
+  const regionRef = useRef<HTMLInputElement>(null)
+  const postalCodeRef = useRef<HTMLInputElement>(null)
+
+  // Sync autofilled values on step 3
+  useEffect(() => {
+    if (step === 3) {
+      const syncAutofill = () => {
+        if (emailRef.current?.value && !email) setEmail(emailRef.current.value)
+        if (fullNameRef.current?.value && !fullName) setFullName(fullNameRef.current.value)
+        if (addressRef.current?.value && !addressLine1) setAddressLine1(addressRef.current.value)
+        if (cityRef.current?.value && !city) setCity(cityRef.current.value)
+        if (regionRef.current?.value && !region) setRegion(regionRef.current.value)
+        if (postalCodeRef.current?.value && !postalCode) setPostalCode(postalCodeRef.current.value)
+      }
+      // Check after a short delay for autofill
+      const timer = setTimeout(syncAutofill, 200)
+      return () => clearTimeout(timer)
+    }
+  }, [step, email, fullName, addressLine1, city, region, postalCode])
 
   const handleSubmit = async () => {
     setLoading(true)
@@ -321,9 +346,11 @@ export function OrderForm() {
               <div className="mb-6">
                 <label className="label">Email Address</label>
                 <input
+                  ref={emailRef}
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  onBlur={(e) => setEmail(e.target.value)}
                   placeholder="you@example.com"
                   className="input"
                   required
@@ -336,9 +363,11 @@ export function OrderForm() {
               <div className="mb-6">
                 <label className="label">Full Name</label>
                 <input
+                  ref={fullNameRef}
                   type="text"
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
+                  onBlur={(e) => setFullName(e.target.value)}
                   placeholder="Your name"
                   className="input"
                   required
@@ -369,9 +398,11 @@ export function OrderForm() {
               <div className="mb-4">
                 <label className="label">Street Address</label>
                 <input
+                  ref={addressRef}
                   type="text"
                   value={addressLine1}
                   onChange={(e) => setAddressLine1(e.target.value)}
+                  onBlur={(e) => setAddressLine1(e.target.value)}
                   placeholder="123 Main Street"
                   className="input"
                   required
@@ -393,9 +424,11 @@ export function OrderForm() {
                 <div>
                   <label className="label">City</label>
                   <input
+                    ref={cityRef}
                     type="text"
                     value={city}
                     onChange={(e) => setCity(e.target.value)}
+                    onBlur={(e) => setCity(e.target.value)}
                     placeholder="Auckland"
                     className="input"
                     required
@@ -404,9 +437,11 @@ export function OrderForm() {
                 <div>
                   <label className="label">Region / State</label>
                   <input
+                    ref={regionRef}
                     type="text"
                     value={region}
                     onChange={(e) => setRegion(e.target.value)}
+                    onBlur={(e) => setRegion(e.target.value)}
                     placeholder="Auckland"
                     className="input"
                     required
@@ -418,9 +453,11 @@ export function OrderForm() {
                 <div>
                   <label className="label">Postal Code</label>
                   <input
+                    ref={postalCodeRef}
                     type="text"
                     value={postalCode}
                     onChange={(e) => setPostalCode(e.target.value)}
+                    onBlur={(e) => setPostalCode(e.target.value)}
                     placeholder="1010"
                     className="input"
                     required
