@@ -442,7 +442,7 @@ export function OrderForm() {
                     value={region}
                     onChange={(e) => setRegion(e.target.value)}
                     onBlur={(e) => setRegion(e.target.value)}
-                    placeholder="Auckland"
+                    placeholder="e.g. Auckland"
                     className="input"
                     required
                   />
