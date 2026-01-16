@@ -52,13 +52,50 @@ export function OrderForm() {
   const price = DEFAULT_PRICING[duration][productType]
   const needsEngraving = productType === 'qr_only' || productType === 'both'
 
-  // Refs for autofill detection
+  // Refs for autofill detection and validation
   const emailRef = useRef<HTMLInputElement>(null)
   const fullNameRef = useRef<HTMLInputElement>(null)
   const addressRef = useRef<HTMLInputElement>(null)
   const cityRef = useRef<HTMLInputElement>(null)
   const regionRef = useRef<HTMLInputElement>(null)
   const postalCodeRef = useRef<HTMLInputElement>(null)
+
+  // Validation errors
+  const [errors, setErrors] = useState<Record<string, string>>({})
+
+  // Validate form and scroll to first error
+  const validateAndSubmit = () => {
+    const newErrors: Record<string, string> = {}
+    
+    if (!email) newErrors.email = 'Email is required'
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) newErrors.email = 'Please enter a valid email'
+    if (!fullName) newErrors.fullName = 'Name is required'
+    if (!addressLine1) newErrors.addressLine1 = 'Street address is required'
+    if (!city) newErrors.city = 'City is required'
+    if (!postalCode) newErrors.postalCode = 'Postal code is required'
+    
+    setErrors(newErrors)
+    
+    if (Object.keys(newErrors).length > 0) {
+      // Scroll to first error field
+      const fieldRefs: Record<string, React.RefObject<HTMLInputElement>> = {
+        email: emailRef,
+        fullName: fullNameRef,
+        addressLine1: addressRef,
+        city: cityRef,
+        postalCode: postalCodeRef,
+      }
+      const firstErrorField = Object.keys(newErrors)[0]
+      const ref = fieldRefs[firstErrorField]
+      if (ref?.current) {
+        ref.current.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        ref.current.focus()
+      }
+      return
+    }
+    
+    handleSubmit()
+  }
 
   // Sync autofilled values on step 3
   useEffect(() => {
@@ -344,34 +381,39 @@ export function OrderForm() {
               </h2>
 
               <div className="mb-6">
-                <label className="label">Email Address</label>
+                <label className="label">Email Address <span className="text-red-500">*</span></label>
                 <input
                   ref={emailRef}
                   type="email"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(e) => { setEmail(e.target.value); setErrors(prev => ({ ...prev, email: '' })) }}
                   onBlur={(e) => setEmail(e.target.value)}
                   placeholder="you@example.com"
-                  className="input"
+                  className={`input ${errors.email ? 'border-red-500 ring-2 ring-red-200' : ''}`}
                   required
                 />
-                <p className="text-sm text-gray-500 mt-1">
-                  We'll send your activation link and order updates here.
-                </p>
+                {errors.email ? (
+                  <p className="text-sm text-red-500 mt-1">{errors.email}</p>
+                ) : (
+                  <p className="text-sm text-gray-500 mt-1">
+                    We'll send your activation link and order updates here.
+                  </p>
+                )}
               </div>
 
               <div className="mb-6">
-                <label className="label">Full Name</label>
+                <label className="label">Full Name <span className="text-red-500">*</span></label>
                 <input
                   ref={fullNameRef}
                   type="text"
                   value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
+                  onChange={(e) => { setFullName(e.target.value); setErrors(prev => ({ ...prev, fullName: '' })) }}
                   onBlur={(e) => setFullName(e.target.value)}
                   placeholder="Your name"
-                  className="input"
+                  className={`input ${errors.fullName ? 'border-red-500 ring-2 ring-red-200' : ''}`}
                   required
                 />
+                {errors.fullName && <p className="text-sm text-red-500 mt-1">{errors.fullName}</p>}
               </div>
 
               <div className="mb-6">
@@ -396,17 +438,18 @@ export function OrderForm() {
               </p>
 
               <div className="mb-4">
-                <label className="label">Street Address</label>
+                <label className="label">Street Address <span className="text-red-500">*</span></label>
                 <input
                   ref={addressRef}
                   type="text"
                   value={addressLine1}
-                  onChange={(e) => setAddressLine1(e.target.value)}
+                  onChange={(e) => { setAddressLine1(e.target.value); setErrors(prev => ({ ...prev, addressLine1: '' })) }}
                   onBlur={(e) => setAddressLine1(e.target.value)}
                   placeholder="123 Main Street"
-                  className="input"
+                  className={`input ${errors.addressLine1 ? 'border-red-500 ring-2 ring-red-200' : ''}`}
                   required
                 />
+                {errors.addressLine1 && <p className="text-sm text-red-500 mt-1">{errors.addressLine1}</p>}
               </div>
 
               <div className="mb-4">
@@ -422,20 +465,21 @@ export function OrderForm() {
 
               <div className="grid grid-cols-2 gap-4 mb-4">
                 <div>
-                  <label className="label">City</label>
+                  <label className="label">City <span className="text-red-500">*</span></label>
                   <input
                     ref={cityRef}
                     type="text"
                     value={city}
-                    onChange={(e) => setCity(e.target.value)}
+                    onChange={(e) => { setCity(e.target.value); setErrors(prev => ({ ...prev, city: '' })) }}
                     onBlur={(e) => setCity(e.target.value)}
                     placeholder="Auckland"
-                    className="input"
+                    className={`input ${errors.city ? 'border-red-500 ring-2 ring-red-200' : ''}`}
                     required
                   />
+                  {errors.city && <p className="text-sm text-red-500 mt-1">{errors.city}</p>}
                 </div>
                 <div>
-                  <label className="label">Region / State</label>
+                  <label className="label">Region / State <span className="text-gray-400 text-sm font-normal">(optional)</span></label>
                   <input
                     ref={regionRef}
                     type="text"
@@ -444,24 +488,24 @@ export function OrderForm() {
                     onBlur={(e) => setRegion(e.target.value)}
                     placeholder="e.g. Auckland"
                     className="input"
-                    required
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4 mb-4">
                 <div>
-                  <label className="label">Postal Code</label>
+                  <label className="label">Postal Code <span className="text-red-500">*</span></label>
                   <input
                     ref={postalCodeRef}
                     type="text"
                     value={postalCode}
-                    onChange={(e) => setPostalCode(e.target.value)}
+                    onChange={(e) => { setPostalCode(e.target.value); setErrors(prev => ({ ...prev, postalCode: '' })) }}
                     onBlur={(e) => setPostalCode(e.target.value)}
                     placeholder="1010"
-                    className="input"
+                    className={`input ${errors.postalCode ? 'border-red-500 ring-2 ring-red-200' : ''}`}
                     required
                   />
+                  {errors.postalCode && <p className="text-sm text-red-500 mt-1">{errors.postalCode}</p>}
                 </div>
                 <div>
                   <label className="label">Country</label>
@@ -505,8 +549,8 @@ export function OrderForm() {
                 Back
               </button>
               <button
-                onClick={handleSubmit}
-                disabled={!email || !fullName || !addressLine1 || !city || !region || !postalCode || loading}
+                onClick={validateAndSubmit}
+                disabled={loading}
                 className="btn-primary flex-1 flex items-center justify-center gap-2"
               >
                 {loading ? (
