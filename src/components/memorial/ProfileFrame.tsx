@@ -17,17 +17,56 @@ export function ProfileFrame({ imageUrl, alt, shape, frameColor }: ProfileFrameP
   const isOval = shape === 'oval'
   const isNone = shape === 'none'
   
-  // Sizing
-  const outerWidth = isOval ? 260 : 240
-  const outerHeight = isOval ? 347 : 240
+  // For oval: use clip-path ellipse for perfect shape
+  if (isOval) {
+    return (
+      <div 
+        style={{
+          position: 'relative',
+          width: 260,
+          height: 347,
+          background: `linear-gradient(135deg, ${frameColor.dark} 0%, ${frameColor.main} 25%, ${frameColor.light} 50%, ${frameColor.main} 75%, ${frameColor.dark} 100%)`,
+          clipPath: 'ellipse(50% 50% at 50% 50%)',
+          boxShadow: `0 8px 32px ${frameColor.dark}66`,
+        }}
+      >
+        {/* Inner image with smaller ellipse */}
+        <div
+          style={{
+            position: 'absolute',
+            top: 14,
+            left: 14,
+            right: 14,
+            bottom: 14,
+            clipPath: 'ellipse(50% 50% at 50% 50%)',
+            overflow: 'hidden',
+          }}
+        >
+          <Image
+            src={imageUrl}
+            alt={alt}
+            fill
+            style={{ 
+              objectFit: 'cover',
+              objectPosition: 'center center',
+            }}
+            priority
+            sizes="260px"
+          />
+        </div>
+      </div>
+    )
+  }
+
+  // Non-oval shapes
+  const outerWidth = 240
+  const outerHeight = 240
   const padding = isNone ? 0 : 14
   const innerWidth = outerWidth - (padding * 2)
   const innerHeight = outerHeight - (padding * 2)
 
-  // Border radius based on shape
   const getBorderRadius = () => {
     switch (shape) {
-      case 'oval': return '50%'
       case 'rounded': return '24px'
       case 'square': return '8px'
       default: return '12px'
@@ -70,7 +109,7 @@ export function ProfileFrame({ imageUrl, alt, shape, frameColor }: ProfileFrameP
             objectPosition: 'center center',
           }}
           priority
-          sizes="(max-width: 768px) 260px, 320px"
+          sizes="240px"
         />
       </div>
     </div>

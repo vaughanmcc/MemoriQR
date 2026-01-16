@@ -748,6 +748,7 @@ export function MemorialUploadForm({
                   type="date"
                   value={birthDate}
                   onChange={(e) => setBirthDate(e.target.value)}
+                  max={new Date().toLocaleDateString('en-CA')}
                   className="input"
                 />
               </div>
@@ -757,7 +758,7 @@ export function MemorialUploadForm({
                   type="date"
                   value={deathDate}
                   onChange={(e) => setDeathDate(e.target.value)}
-                  max={new Date().toISOString().split('T')[0]}
+                  max={new Date().toLocaleDateString('en-CA')}
                   className="input"
                 />
               </div>
