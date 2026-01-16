@@ -33,7 +33,8 @@ MemoriQR creates lasting digital memorials for pets and people through NFC tags 
                             ▼
 ┌─────────────────────────────────────────────────────────────┐
 │           NEXT.JS (Application Engine)                      │
-│           PROD: Vercel Free | DEV: localhost:3000           │
+│  PROD: Vercel (app.memoriqr.com) | DEV: localhost:3000 /     │
+│                   Vercel Preview (*.vercel.app)             │
 │  ┌─────────────────────────────────────────────────────┐   │
 │  │  Complex Application Features                        │   │
 │  │  • /memorial/[slug] - Memorial Viewer               │   │
@@ -70,8 +71,9 @@ MemoriQR creates lasting digital memorials for pets and people through NFC tags 
 | Component | Technology | URL/Port |
 |-----------|-----------|----------|
 | WordPress | LocalWP | `localhost:10003` (varies) |
-| Next.js | npm run dev | `localhost:3000` |
-| Supabase | Cloud (free tier) | Shared instance |
+| Next.js (local) | npm run dev | `localhost:3000` |
+| Next.js (preview) | Vercel Preview | `*.vercel.app` |
+| Supabase | Cloud (dev project) | Shared instance |
 | Stripe | Test mode + CLI | Webhook forwarding |
 
 ### PROD Environment Components
@@ -79,8 +81,8 @@ MemoriQR creates lasting digital memorials for pets and people through NFC tags 
 | Component | Technology | URL |
 |-----------|-----------|-----|
 | WordPress | Hostinger Managed | `memoriqr.com` or `memoriqr.co.nz` |
-| Next.js | Vercel Free | `app.memoriqr.com` |
-| Supabase | Cloud (same or separate project) | API |
+| Next.js | Vercel (Production) | `app.memoriqr.com` |
+| Supabase | Cloud (prod project) | API |
 | Stripe | Live mode | Webhooks |
 
 ---
@@ -241,13 +243,16 @@ All packages include prepaid hosting, Cloudinary image optimization, and YouTube
 
 ## Technical Architecture
 
-### Recommended Stack (Production)
+### Current Tech Stack (Application)
 
-**Frontend/Public Site:**
-- WordPress on Hostinger Business Plan
-- Elementor Pro for page building
-- WooCommerce for e-commerce
-- Custom memorial page templates
+**Frontend/App:**
+- Next.js 14 (App Router)
+- Tailwind CSS
+
+**Hosting:**
+- Vercel (production: app.memoriqr.com)
+- Vercel Preview for staging/test builds
+- Local dev via `npm run dev` on `localhost:3000`
 
 **Backend/Database:**
 - Supabase (PostgreSQL database)
@@ -272,7 +277,14 @@ All packages include prepaid hosting, Cloudinary image optimization, and YouTube
 **Email:**
 - SendGrid for transactional emails
 - Order confirmations, upload links, renewal reminders
-- High deliverability, tracking
+
+### Marketing Site Stack (Production)
+
+**Frontend/Public Site:**
+- WordPress on Hostinger Business Plan
+- Elementor Pro for page building
+- WooCommerce for e-commerce
+- Custom memorial page templates
 
 ### Why This Stack?
 

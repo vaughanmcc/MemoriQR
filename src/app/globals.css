@@ -1201,10 +1201,25 @@
   height: 200px;
 }
 
+/* Oval frames should be portrait and the image should fill the full frame */
+.memorial-profile-frame.frame-themed[class*="frame-pattern-oval-"] .frame-outer {
+  width: 220px;
+  aspect-ratio: 3 / 4;
+}
+
+.memorial-profile-frame.frame-themed[class*="frame-pattern-oval-"] .frame-inner {
+  width: 100%;
+  height: 100%;
+}
+
 @media (min-width: 768px) {
   .memorial-profile-frame .frame-inner {
     width: 240px;
     height: 240px;
+  }
+
+  .memorial-profile-frame.frame-themed[class*="frame-pattern-oval-"] .frame-outer {
+    width: 260px;
   }
 }
 
