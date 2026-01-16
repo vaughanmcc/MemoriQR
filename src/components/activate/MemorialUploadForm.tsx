@@ -1282,7 +1282,7 @@ export function MemorialUploadForm({
                   {photosPreviews.length > 0 && (
                     <div className={`memorial-profile-frame frame-themed frame-pattern-${availableFrames.find(f => f.id === selectedFrame)?.style || 'none'}`}>
                       <div className="frame-outer">
-                        <div className="frame-inner w-40 h-40 md:w-48 md:h-48">
+                        <div className="frame-inner">
                           <img
                             src={photosPreviews[profilePhotoIndex]}
                             alt={deceasedName}

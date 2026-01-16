@@ -207,9 +207,9 @@ export function MemorialPage({ memorial }: MemorialPageProps) {
                   <Image
                     src={photos[0].url}
                     alt={memorial.deceased_name}
-                    width={280}
-                    height={280}
-                    className="object-cover w-full h-full rounded"
+                    width={240}
+                    height={320}
+                    className="object-cover w-full h-full"
                     priority
                   />
                 </div>
