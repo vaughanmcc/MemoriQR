@@ -344,6 +344,11 @@ export function MemorialUploadForm({
   const [isDragging, setIsDragging] = useState(false)
   const [isDraggingVideo, setIsDraggingVideo] = useState<number | null>(null)
   const [isDraggingVideoZone, setIsDraggingVideoZone] = useState(false)
+
+  const todayLocal = new Date()
+  const todayLocalISO = new Date(todayLocal.getTime() - todayLocal.getTimezoneOffset() * 60000)
+    .toISOString()
+    .split('T')[0]
   
   // Get video limit, available themes and frames for this plan
   const videoLimit = TIER_LIMITS[hostingDuration]?.videos || 2
@@ -748,7 +753,7 @@ export function MemorialUploadForm({
                   type="date"
                   value={birthDate}
                   onChange={(e) => setBirthDate(e.target.value)}
-                  max={new Date().toLocaleDateString('en-CA')}
+                  max={todayLocalISO}
                   className="input"
                 />
               </div>
@@ -758,7 +763,7 @@ export function MemorialUploadForm({
                   type="date"
                   value={deathDate}
                   onChange={(e) => setDeathDate(e.target.value)}
-                  max={new Date().toLocaleDateString('en-CA')}
+                  max={todayLocalISO}
                   className="input"
                 />
               </div>
