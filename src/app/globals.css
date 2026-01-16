@@ -1610,6 +1610,9 @@
   border-radius: 50%;
   width: 220px;
   height: 290px;
+  display: flex;
+  align-items: stretch;
+  justify-content: stretch;
   box-shadow: 
     0 8px 32px color-mix(in srgb, var(--frame-dark) 50%, transparent),
     inset 0 3px 6px color-mix(in srgb, var(--frame-light) 70%, white),
@@ -1627,13 +1630,9 @@
   border-radius: 50%;
   box-shadow: inset 0 0 25px rgba(0, 0, 0, 0.3);
   overflow: hidden;
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  width: auto;
-  height: auto;
+  flex: 1;
+  width: 100% !important;
+  height: 100% !important;
 }
 
 .memorial-profile-frame.frame-themed.frame-pattern-oval-classic .frame-inner img {
@@ -1654,6 +1653,9 @@
   border-radius: 50%;
   width: 220px;
   height: 290px;
+  display: flex;
+  align-items: stretch;
+  justify-content: stretch;
   box-shadow: 
     0 10px 40px color-mix(in srgb, var(--frame-dark) 60%, transparent),
     inset 0 4px 8px color-mix(in srgb, var(--frame-light) 70%, white),
@@ -1693,13 +1695,9 @@
   border-radius: 50%;
   box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.35);
   overflow: hidden;
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  width: auto;
-  height: auto;
+  flex: 1;
+  width: 100% !important;
+  height: 100% !important;
 }
 
 .memorial-profile-frame.frame-themed.frame-pattern-oval-ornate .frame-inner img {
@@ -1724,6 +1722,9 @@
   border-radius: 50%;
   width: 220px;
   height: 290px;
+  display: flex;
+  align-items: stretch;
+  justify-content: stretch;
   box-shadow: 
     0 8px 32px color-mix(in srgb, var(--frame-dark) 50%, transparent),
     inset 0 3px 6px color-mix(in srgb, var(--frame-light) 70%, white),
@@ -1753,13 +1754,9 @@
   border-radius: 50%;
   box-shadow: inset 0 0 25px rgba(0, 0, 0, 0.3);
   overflow: hidden;
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  width: auto;
-  height: auto;
+  flex: 1;
+  width: 100% !important;
+  height: 100% !important;
 }
 
 .memorial-profile-frame.frame-themed.frame-pattern-oval-victorian .frame-inner img {
@@ -1782,6 +1779,9 @@
   border-radius: 50%;
   width: 220px;
   height: 290px;
+  display: flex;
+  align-items: stretch;
+  justify-content: stretch;
   box-shadow: 
     0 8px 32px color-mix(in srgb, var(--frame-dark) 40%, transparent),
     inset 0 0 0 5px var(--frame-main),
@@ -1800,13 +1800,9 @@
   border-radius: 50%;
   box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.2);
   overflow: hidden;
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  width: auto;
-  height: auto;
+  flex: 1;
+  width: 100% !important;
+  height: 100% !important;
 }
 
 .memorial-profile-frame.frame-themed.frame-pattern-oval-cameo .frame-inner img {
@@ -1824,6 +1820,9 @@
   border-radius: 50%;
   width: 220px;
   height: 290px;
+  display: flex;
+  align-items: stretch;
+  justify-content: stretch;
   box-shadow: 
     0 8px 32px color-mix(in srgb, var(--frame-dark) 50%, transparent),
     inset 0 3px 6px color-mix(in srgb, var(--frame-light) 60%, white),
@@ -1854,13 +1853,9 @@
   border-radius: 50%;
   box-shadow: inset 0 0 25px rgba(0, 0, 0, 0.3);
   overflow: hidden;
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  width: auto;
-  height: auto;
+  flex: 1;
+  width: 100% !important;
+  height: 100% !important;
 }
 
 .memorial-profile-frame.frame-themed.frame-pattern-oval-floral .frame-inner img {
@@ -1881,11 +1876,22 @@
     var(--frame-dark) 100%);
   padding: 20px;
   border-radius: 50%;
-  aspect-ratio: 3/4;
+  width: 220px;
+  height: 290px;
+  display: flex;
+  align-items: stretch;
+  justify-content: stretch;
   box-shadow: 
     0 10px 40px color-mix(in srgb, var(--frame-dark) 60%, transparent),
     inset 0 4px 8px color-mix(in srgb, var(--frame-light) 40%, white),
     inset 0 -4px 8px rgba(0,0,0,0.4);
+}
+
+@media (min-width: 768px) {
+  .memorial-profile-frame.frame-themed.frame-pattern-oval-memorial .frame-outer {
+    width: 260px;
+    height: 340px;
+  }
 }
 
 .memorial-profile-frame.frame-themed.frame-pattern-oval-memorial .frame-outer::before {
@@ -1904,13 +1910,9 @@
   border-radius: 50%;
   box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.4);
   overflow: hidden;
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  width: auto;
-  height: auto;
+  flex: 1;
+  width: 100% !important;
+  height: 100% !important;
 }
 
 .memorial-profile-frame.frame-themed.frame-pattern-oval-memorial .frame-inner img {
