@@ -140,6 +140,8 @@ export async function POST(request: NextRequest) {
                 order_number: orderNumber,
                 customer_email: customer.email,
                 customer_name: customer.full_name,
+                sender_name: 'MemoriQR',
+                reply_to: 'memoriqr.global@gmail.com',
                 deceased_name: memorial.deceased_name,
                 memorial_slug: memorial.memorial_slug,
                 product_type: order?.product_type,

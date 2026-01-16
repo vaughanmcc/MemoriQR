@@ -305,6 +305,8 @@ export async function POST(request: NextRequest) {
             body: JSON.stringify({
               type: 'memorial_created',
               email: customerEmail,
+              sender_name: 'MemoriQR',
+              reply_to: 'memoriqr.global@gmail.com',
               memorialName: deceasedName,
               memorialUrl: `${baseUrl}/memorial/${memorialSlug}`,
               editUrl: `${baseUrl}/memorial/edit?token=${editToken}`,
