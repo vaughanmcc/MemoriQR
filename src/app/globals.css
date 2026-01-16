@@ -1622,10 +1622,13 @@
 /* Oval Classic - Traditional vertical oval portrait frame */
 .memorial-profile-frame.frame-themed.frame-pattern-oval-classic .frame-outer {
   background: linear-gradient(135deg, var(--frame-dark) 0%, var(--frame-main) 25%, var(--frame-light) 50%, var(--frame-main) 75%, var(--frame-dark) 100%);
-  padding: 16px;
-  border-radius: 50% / 50%;
-  width: 200px;
-  height: 280px;
+  padding: 12px;
+  border-radius: 50%;
+  width: 220px;
+  height: 293px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   box-shadow: 
     0 8px 32px color-mix(in srgb, var(--frame-dark) 50%, transparent),
     inset 0 3px 6px color-mix(in srgb, var(--frame-light) 70%, white),
@@ -1633,30 +1636,25 @@
 }
 
 .memorial-profile-frame.frame-themed.frame-pattern-oval-classic .frame-inner {
-  border-radius: 50% / 50%;
+  border-radius: 50%;
   box-shadow: inset 0 0 25px rgba(0, 0, 0, 0.3);
   overflow: hidden;
-  width: 168px !important;
-  height: 248px !important;
+  width: 100%;
+  height: 100%;
 }
 
 .memorial-profile-frame.frame-themed.frame-pattern-oval-classic .frame-inner img {
-  border-radius: 50% / 50%;
+  border-radius: 50%;
   object-fit: cover;
-  object-position: center 20%;
-  width: 100% !important;
-  height: 100% !important;
-  transform: scale(1.1);
+  object-position: center center;
+  width: 100%;
+  height: 100%;
 }
 
 @media (min-width: 768px) {
   .memorial-profile-frame.frame-themed.frame-pattern-oval-classic .frame-outer {
-    width: 240px;
-    height: 336px;
-  }
-  .memorial-profile-frame.frame-themed.frame-pattern-oval-classic .frame-inner {
-    width: 208px !important;
-    height: 304px !important;
+    width: 280px;
+    height: 373px;
   }
 }
 
