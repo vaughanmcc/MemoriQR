@@ -9,6 +9,7 @@ import { formatDate, formatDateRange } from '@/lib/utils'
 import { PhotoGallery } from './PhotoGallery'
 import { VideoPlayer } from './VideoPlayer'
 import { ShareButton } from './ShareButton'
+import { ProfileFrame, getFrameShape } from './ProfileFrame'
 
 // Theme definitions matching the upload form - includes frame colors for themed frames
 const THEMES: Record<string, { bg: string; accent: string; text: string; secondary: string; frame: { light: string; main: string; dark: string } }> = {
@@ -194,26 +195,13 @@ export function MemorialPage({ memorial }: MemorialPageProps) {
         <div className="text-center mb-12">
           {/* Main profile photo with ornamental frame - themed colors */}
           {photos.length > 0 && (
-            <div 
-              className={`memorial-profile-frame frame-themed frame-pattern-${getOrnamentalFrameStyle(memorial)} mb-6`}
-              style={{
-                '--frame-light': theme.frame.light,
-                '--frame-main': theme.frame.main,
-                '--frame-dark': theme.frame.dark,
-              } as React.CSSProperties}
-            >
-              <div className="frame-outer">
-                <div className="frame-inner">
-                  <Image
-                    src={photos[0].url}
-                    alt={memorial.deceased_name}
-                    width={240}
-                    height={320}
-                    className="object-cover w-full h-full"
-                    priority
-                  />
-                </div>
-              </div>
+            <div className="flex justify-center mb-6">
+              <ProfileFrame
+                imageUrl={photos[0].url}
+                alt={memorial.deceased_name}
+                shape={getFrameShape((memorial as any).frame || 'oval-classic')}
+                frameColor={theme.frame}
+              />
             </div>
           )}
 
