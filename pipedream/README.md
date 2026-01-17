@@ -248,7 +248,7 @@ export default defineComponent({
               <p style="color: #777; font-size: 13px; margin: 0 0 15px; line-height: 1.5;">
                 Scan this QR code with any smartphone camera<br>to visit the memorial page instantly.
               </p>
-              <a href="${qrCodeUrl}" style="color: #8B7355; font-size: 14px; text-decoration: underline;">Download QR Code Image</a>
+              <a href="${qrCodeUrl}" style="color: #8B7355; font-size: 14px; text-decoration: underline;">View QR Code</a>
             </td>
           </tr>
         </table>

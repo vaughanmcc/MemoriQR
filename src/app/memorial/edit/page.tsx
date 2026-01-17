@@ -6,33 +6,7 @@ import { Heart, Loader2, AlertCircle, Check, Palette, Image as ImageIcon, Save }
 import Image from 'next/image'
 import type { HostingDuration, ProductType } from '@/types/database'
 import { MemorialPhoto, MemorialVideo } from '@/types'
-
-// Theme and frame definitions (same as upload form)
-const MEMORIAL_THEMES = [
-  { id: 'classic', name: 'Classic', colors: { bg: '#FDF8F3', accent: '#8B7355', text: '#4A4A4A' } },
-  { id: 'garden', name: 'Garden', colors: { bg: '#F5F9F5', accent: '#5A7F5A', text: '#3D3D3D' } },
-  { id: 'ocean', name: 'Ocean', colors: { bg: '#F5F8FA', accent: '#4A7C8C', text: '#3D4852' } },
-  { id: 'sunset', name: 'Sunset', colors: { bg: '#FFF9F5', accent: '#C17F59', text: '#4A3F35' } },
-  { id: 'night', name: 'Starlight', colors: { bg: '#F8F7FA', accent: '#6B5B7A', text: '#3D3852' } },
-  { id: 'rose', name: 'Rose Garden', colors: { bg: '#FDF8F9', accent: '#B5838D', text: '#4A4045' } },
-  { id: 'meadow', name: 'Meadow', colors: { bg: '#F7FAF5', accent: '#7A9E7A', text: '#3D4A3D' } },
-  { id: 'autumn', name: 'Autumn', colors: { bg: '#FAF7F2', accent: '#A67C52', text: '#4A4035' } },
-  { id: 'lavender', name: 'Lavender', colors: { bg: '#F9F7FC', accent: '#8E7CC3', text: '#3D3852' } },
-  { id: 'sky', name: 'Blue Sky', colors: { bg: '#F5FAFC', accent: '#5B9BD5', text: '#3D4852' } },
-]
-
-const MEMORIAL_FRAMES = [
-  { id: 'none', name: 'No Frame', border: 'none' },
-  { id: 'classic-gold', name: 'Classic Gold', border: '4px solid #D4AF37' },
-  { id: 'silver', name: 'Silver', border: '4px solid #C0C0C0' },
-  { id: 'bronze', name: 'Bronze', border: '4px solid #CD7F32' },
-  { id: 'wood', name: 'Wood', border: '6px solid #8B4513' },
-  { id: 'ornate-gold', name: 'Ornate Gold', border: '8px double #D4AF37' },
-  { id: 'ornate-silver', name: 'Ornate Silver', border: '8px double #A8A8A8' },
-  { id: 'vintage', name: 'Vintage', border: '6px solid #8B7355' },
-  { id: 'rose-gold', name: 'Rose Gold', border: '4px solid #B76E79' },
-  { id: 'pearl', name: 'Pearl', border: '5px solid #F5F5F5' },
-]
+import { MEMORIAL_THEMES, MEMORIAL_FRAMES, getAvailableThemes, getAvailableFrames } from '@/lib/memorial-options'
 
 interface MemorialData {
   id: string
@@ -65,11 +39,11 @@ function EditPageContent() {
   // Editable fields
   const [memorialText, setMemorialText] = useState('')
   const [selectedTheme, setSelectedTheme] = useState('classic')
-  const [selectedFrame, setSelectedFrame] = useState('classic-gold')
+  const [selectedFrame, setSelectedFrame] = useState('classic-ornate')
 
   // Get available themes/frames based on plan
-  const availableThemes = memorial?.hostingDuration === 5 ? 5 : memorial?.hostingDuration === 10 ? 10 : 25
-  const availableFrames = memorial?.hostingDuration === 5 ? 5 : memorial?.hostingDuration === 10 ? 10 : 25
+  const availableThemes = memorial ? getAvailableThemes(memorial.hostingDuration) : []
+  const availableFramesList = memorial ? getAvailableFrames(memorial.hostingDuration) : []
 
   useEffect(() => {
     if (!token) {
@@ -88,7 +62,7 @@ function EditPageContent() {
           setMemorial(data.memorial)
           setMemorialText(data.memorial.memorialText || '')
           setSelectedTheme(data.memorial.theme || 'classic')
-          setSelectedFrame(data.memorial.frame || 'classic-gold')
+          setSelectedFrame(data.memorial.frame || 'classic-ornate')
         }
         setLoading(false)
       })
@@ -244,11 +218,11 @@ function EditPageContent() {
                 <label className="label mb-0">Theme</label>
               </div>
               <div className="grid grid-cols-5 gap-3">
-                {MEMORIAL_THEMES.slice(0, availableThemes).map((theme) => (
+                {availableThemes.map((theme) => (
                   <button
                     key={theme.id}
                     onClick={() => setSelectedTheme(theme.id)}
-                    className={`p-3 rounded-lg border-2 transition-all ${
+                    className={`p-3 rounded-lg border-2 transition-all relative ${
                       selectedTheme === theme.id
                         ? 'border-primary-500 ring-2 ring-primary-200'
                         : 'border-gray-200 hover:border-primary-300'
@@ -277,23 +251,23 @@ function EditPageContent() {
                 <label className="label mb-0">Photo Frame</label>
               </div>
               <div className="grid grid-cols-5 gap-3">
-                {MEMORIAL_FRAMES.slice(0, availableFrames).map((frame) => (
+                {availableFramesList.map((frame) => (
                   <button
                     key={frame.id}
                     onClick={() => setSelectedFrame(frame.id)}
-                    className={`p-3 rounded-lg border-2 transition-all bg-white ${
+                    className={`p-3 rounded-lg border-2 transition-all bg-white relative ${
                       selectedFrame === frame.id
                         ? 'border-primary-500 ring-2 ring-primary-200'
                         : 'border-gray-200 hover:border-primary-300'
                     }`}
                   >
-                    <div
-                      className="h-12 w-full rounded bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center"
-                      style={{ border: frame.border }}
-                    >
-                      🖼️
+                    <div className="h-12 w-full rounded bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center text-2xl">
+                      {frame.preview}
                     </div>
                     <p className="text-xs font-medium text-gray-800 mt-2">{frame.name}</p>
+                    {selectedFrame === frame.id && (
+                      <Check className="absolute top-2 right-2 h-4 w-4 text-primary-500" />
+                    )}
                   </button>
                 ))}
               </div>
