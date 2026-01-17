@@ -319,12 +319,13 @@ export function MemorialUploadForm({
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
-  const normalizedInitialSpecies = initialSpecies && SPECIES_OPTIONS.includes(initialSpecies as (typeof SPECIES_OPTIONS)[number])
-    ? initialSpecies
-    : initialSpecies
-      ? 'Other'
-      : ''
-  const normalizedInitialSpeciesOther = initialSpecies && !SPECIES_OPTIONS.includes(initialSpecies as (typeof SPECIES_OPTIONS)[number])
+  // Check if initialSpecies is a known option (use array spread for proper includes check)
+  const speciesOptionsArray = [...SPECIES_OPTIONS] as string[]
+  const isKnownSpecies = initialSpecies ? speciesOptionsArray.includes(initialSpecies) : false
+  const normalizedInitialSpecies = initialSpecies
+    ? (isKnownSpecies ? initialSpecies : 'Other')
+    : ''
+  const normalizedInitialSpeciesOther = initialSpecies && !isKnownSpecies
     ? initialSpecies
     : ''
 
