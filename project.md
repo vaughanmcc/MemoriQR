@@ -283,6 +283,7 @@ All packages include prepaid hosting, Cloudinary image optimization, and YouTube
 **Frontend/Public Site:**
 - WordPress on Hostinger Business Plan
 - Elementor Pro for page building
+
 - WooCommerce for e-commerce
 - Custom memorial page templates
 

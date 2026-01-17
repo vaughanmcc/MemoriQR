@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { 
   Upload, 
@@ -320,7 +320,7 @@ export function MemorialUploadForm({
   const [error, setError] = useState('')
 
   // Check if initialSpecies is a known option (use array spread for proper includes check)
-  const speciesOptionsArray = [...SPECIES_OPTIONS] as string[]
+  const speciesOptionsArray = SPECIES_OPTIONS as readonly string[]
   const isKnownSpecies = initialSpecies ? speciesOptionsArray.includes(initialSpecies) : false
   const normalizedInitialSpecies = initialSpecies
     ? (isKnownSpecies ? initialSpecies : 'Other')
@@ -355,6 +355,13 @@ export function MemorialUploadForm({
   const [isDragging, setIsDragging] = useState(false)
   const [isDraggingVideo, setIsDraggingVideo] = useState<number | null>(null)
   const [isDraggingVideoZone, setIsDraggingVideoZone] = useState(false)
+
+  useEffect(() => {
+    if (!initialSpecies) return
+    const known = (SPECIES_OPTIONS as readonly string[]).includes(initialSpecies)
+    setSpecies(known ? initialSpecies : 'Other')
+    setSpeciesOther(known ? '' : initialSpecies)
+  }, [initialSpecies])
 
   const todayLocal = new Date()
   const todayLocalISO = new Date(todayLocal.getTime() - todayLocal.getTimezoneOffset() * 60000)
