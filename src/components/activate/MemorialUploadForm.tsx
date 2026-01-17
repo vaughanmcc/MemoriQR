@@ -319,15 +319,30 @@ export function MemorialUploadForm({
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
-  // Check if initialSpecies is a known option (use array spread for proper includes check)
+  // Check if initialSpecies is a known option and normalize custom values
   const speciesOptionsArray = SPECIES_OPTIONS as readonly string[]
-  const isKnownSpecies = initialSpecies ? speciesOptionsArray.includes(initialSpecies) : false
-  const normalizedInitialSpecies = initialSpecies
-    ? (isKnownSpecies ? initialSpecies : 'Other')
-    : ''
-  const normalizedInitialSpeciesOther = initialSpecies && !isKnownSpecies
-    ? initialSpecies
-    : ''
+  const normalizeInitialSpecies = (value?: string) => {
+    const trimmed = value?.trim()
+    if (!trimmed) {
+      return { species: '', speciesOther: '' }
+    }
+
+    const otherMatch = trimmed.match(/^other\s*[:\-]\s*(.+)$/i)
+      || trimmed.match(/^other\s*\((.+)\)$/i)
+
+    if (otherMatch?.[1]) {
+      return { species: 'Other', speciesOther: otherMatch[1].trim() }
+    }
+
+    const isKnownSpecies = speciesOptionsArray.includes(trimmed)
+    return {
+      species: isKnownSpecies ? trimmed : 'Other',
+      speciesOther: isKnownSpecies ? '' : trimmed,
+    }
+  }
+
+  const { species: normalizedInitialSpecies, speciesOther: normalizedInitialSpeciesOther } =
+    normalizeInitialSpecies(initialSpecies)
 
   // Change step and scroll to form section for better UX
   const goToStep = (newStep: number) => {
@@ -358,9 +373,9 @@ export function MemorialUploadForm({
 
   useEffect(() => {
     if (!initialSpecies) return
-    const known = (SPECIES_OPTIONS as readonly string[]).includes(initialSpecies)
-    setSpecies(known ? initialSpecies : 'Other')
-    setSpeciesOther(known ? '' : initialSpecies)
+    const normalized = normalizeInitialSpecies(initialSpecies)
+    setSpecies(normalized.species)
+    setSpeciesOther(normalized.speciesOther)
   }, [initialSpecies])
 
   const todayLocal = new Date()
