@@ -37,6 +37,7 @@ export function OrderForm() {
   const [deceasedType, setDeceasedType] = useState<'pet' | 'human'>('pet')
   const [deceasedName, setDeceasedName] = useState('')
   const [species, setSpecies] = useState('')
+  const [speciesOther, setSpeciesOther] = useState('')
   const [engravingText, setEngravingText] = useState('')
   const [email, setEmail] = useState('')
   const [fullName, setFullName] = useState('')
@@ -114,6 +115,11 @@ export function OrderForm() {
     }
   }, [step, email, fullName, addressLine1, city, region, postalCode])
 
+  const resolvedSpecies = deceasedType === 'pet'
+    ? (species === 'Other' ? speciesOther.trim() : species)
+    : ''
+  const isSpeciesMissing = deceasedType === 'pet' && (!species || (species === 'Other' && !speciesOther.trim()))
+
   const handleSubmit = async () => {
     setLoading(true)
     
@@ -126,7 +132,7 @@ export function OrderForm() {
           productType,
           deceasedType,
           deceasedName,
-          species: deceasedType === 'pet' ? species : null,
+          species: deceasedType === 'pet' ? resolvedSpecies || null : null,
           engravingText: needsEngraving ? engravingText : null,
           email,
           fullName,
@@ -323,7 +329,13 @@ export function OrderForm() {
                   <label className="label">Species</label>
                   <select
                     value={species}
-                    onChange={(e) => setSpecies(e.target.value)}
+                    onChange={(e) => {
+                      const nextValue = e.target.value
+                      setSpecies(nextValue)
+                      if (nextValue !== 'Other') {
+                        setSpeciesOther('')
+                      }
+                    }}
                     className="input"
                   >
                     <option value="">Select species</option>
@@ -331,6 +343,19 @@ export function OrderForm() {
                       <option key={s} value={s}>{s}</option>
                     ))}
                   </select>
+                  {species === 'Other' && (
+                    <div className="mt-3">
+                      <label className="label">Please specify</label>
+                      <input
+                        type="text"
+                        value={speciesOther}
+                        onChange={(e) => setSpeciesOther(e.target.value)}
+                        placeholder="e.g., Ferret"
+                        className="input"
+                        required
+                      />
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -362,7 +387,7 @@ export function OrderForm() {
               </button>
               <button
                 onClick={() => goToStep(3)}
-                disabled={!deceasedName}
+                disabled={!deceasedName || isSpeciesMissing}
                 className="btn-primary flex-1 flex items-center justify-center gap-2"
               >
                 Continue

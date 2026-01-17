@@ -319,6 +319,15 @@ export function MemorialUploadForm({
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
+  const normalizedInitialSpecies = initialSpecies && SPECIES_OPTIONS.includes(initialSpecies as (typeof SPECIES_OPTIONS)[number])
+    ? initialSpecies
+    : initialSpecies
+      ? 'Other'
+      : ''
+  const normalizedInitialSpeciesOther = initialSpecies && !SPECIES_OPTIONS.includes(initialSpecies as (typeof SPECIES_OPTIONS)[number])
+    ? initialSpecies
+    : ''
+
   // Change step and scroll to form section for better UX
   const goToStep = (newStep: number) => {
     setStep(newStep)
@@ -330,7 +339,8 @@ export function MemorialUploadForm({
   // Form state
   const [deceasedName, setDeceasedName] = useState(initialName || '')
   const [deceasedType, setDeceasedType] = useState<'pet' | 'human'>(initialType || 'pet')
-  const [species, setSpecies] = useState(initialSpecies || '')
+  const [species, setSpecies] = useState(normalizedInitialSpecies || '')
+  const [speciesOther, setSpeciesOther] = useState(normalizedInitialSpeciesOther || '')
   const [birthDate, setBirthDate] = useState('')
   const [deathDate, setDeathDate] = useState('')
   const [memorialText, setMemorialText] = useState('')
@@ -587,9 +597,13 @@ export function MemorialUploadForm({
       if (memorialId) formData.append('memorialId', memorialId)
       if (partnerId) formData.append('partnerId', partnerId)
       
+      const resolvedSpecies = deceasedType === 'pet'
+        ? (species === 'Other' ? speciesOther.trim() : species)
+        : ''
+
       formData.append('deceasedName', deceasedName)
       formData.append('deceasedType', deceasedType)
-      if (species) formData.append('species', species)
+      if (resolvedSpecies) formData.append('species', resolvedSpecies)
       if (birthDate) formData.append('birthDate', birthDate)
       if (deathDate) formData.append('deathDate', deathDate)
       if (memorialText) formData.append('memorialText', memorialText)
@@ -735,7 +749,13 @@ export function MemorialUploadForm({
                 <label className="label">Species</label>
                 <select
                   value={species}
-                  onChange={(e) => setSpecies(e.target.value)}
+                  onChange={(e) => {
+                    const nextValue = e.target.value
+                    setSpecies(nextValue)
+                    if (nextValue !== 'Other') {
+                      setSpeciesOther('')
+                    }
+                  }}
                   className="input"
                 >
                   <option value="">Select species</option>
@@ -743,6 +763,19 @@ export function MemorialUploadForm({
                     <option key={s} value={s}>{s}</option>
                   ))}
                 </select>
+                {species === 'Other' && (
+                  <div className="mt-3">
+                    <label className="label">Please specify</label>
+                    <input
+                      type="text"
+                      value={speciesOther}
+                      onChange={(e) => setSpeciesOther(e.target.value)}
+                      placeholder="e.g., Ferret"
+                      className="input"
+                      required
+                    />
+                  </div>
+                )}
               </div>
             )}
 
@@ -789,7 +822,11 @@ export function MemorialUploadForm({
 
             <button
               onClick={() => setStep(2)}
-              disabled={!deceasedName || (activationType === 'retail' && !initialEmail && !contactEmail)}
+              disabled={
+                !deceasedName
+                || (activationType === 'retail' && !initialEmail && !contactEmail)
+                || (deceasedType === 'pet' && (!species || (species === 'Other' && !speciesOther.trim())))
+              }
               className="btn-primary w-full"
             >
               Continue
@@ -1321,7 +1358,7 @@ export function MemorialUploadForm({
                 )}
 
                 {/* Species badge for pets */}
-                {deceasedType === 'pet' && species && (
+                {deceasedType === 'pet' && (species === 'Other' ? speciesOther.trim() : species) && (
                   <div className="flex justify-center mb-4">
                     <span 
                       className="px-4 py-1 rounded-full text-sm"
@@ -1330,7 +1367,7 @@ export function MemorialUploadForm({
                         color: availableThemes.find(t => t.id === selectedTheme)?.colors.bg
                       }}
                     >
-                      Beloved {species}
+                      Beloved {species === 'Other' ? speciesOther.trim() : species}
                     </span>
                   </div>
                 )}
