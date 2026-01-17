@@ -294,7 +294,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Trigger email with edit link and QR code (via Pipedream webhook)
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://memoriqr.co.nz'
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://app.memoriqr.com'
     if (customerEmail && editToken) {
       try {
         const webhookUrl = process.env.PIPEDREAM_WEBHOOK_URL
