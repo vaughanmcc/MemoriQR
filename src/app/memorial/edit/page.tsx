@@ -344,7 +344,7 @@ function EditPageContent() {
     setDeletingId(null)
   }
 
-  const handleSave = async () => {
+  const handleSave = async (exitAfter: boolean = false) => {
     if (!memorial || !token) return
 
     setSaving(true)
@@ -369,7 +369,46 @@ function EditPageContent() {
         setError(data.error)
       } else {
         setSuccess(true)
-        setTimeout(() => setSuccess(false), 3000)
+        if (exitAfter) {
+          // Redirect to the memorial page
+          router.push(`/memorial/${memorial.slug}`)
+        } else {
+          setTimeout(() => setSuccess(false), 3000)
+        }
+      }
+    } catch {
+      setError('Failed to save changes')
+    }
+
+    setSaving(false)
+  }
+
+  // Save and then view memorial in new tab
+  const handleSaveAndView = async () => {
+    if (!memorial || !token) return
+
+    setSaving(true)
+    setError('')
+
+    try {
+      const response = await fetch('/api/memorial/update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          token,
+          memorialText,
+          theme: selectedTheme,
+          frame: selectedFrame,
+        }),
+      })
+
+      const data = await response.json()
+
+      if (data.error) {
+        setError(data.error)
+      } else {
+        // Open memorial in new tab
+        window.open(`/memorial/${memorial.slug}`, '_blank')
       }
     } catch {
       setError('Failed to save changes')
@@ -780,17 +819,16 @@ function EditPageContent() {
               >
                 Cancel
               </a>
-              <a
-                href={`/memorial/${memorial.slug}`}
-                target="_blank"
-                rel="noopener noreferrer"
+              <button
+                onClick={handleSaveAndView}
+                disabled={saving}
                 className="btn-outline flex-1 flex items-center justify-center gap-2"
               >
                 <Eye className="h-5 w-5" />
-                View Memorial
-              </a>
+                Save & View
+              </button>
               <button
-                onClick={handleSave}
+                onClick={() => handleSave(true)}
                 disabled={saving}
                 className="btn-primary flex-1 flex items-center justify-center gap-2"
               >
@@ -802,7 +840,7 @@ function EditPageContent() {
                 ) : (
                   <>
                     <Save className="h-5 w-5" />
-                    Save Changes
+                    Save & Exit
                   </>
                 )}
               </button>
