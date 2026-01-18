@@ -1,6 +1,6 @@
 import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { MemorialPage } from '@/components/memorial/MemorialPage'
 
 interface Props {
@@ -96,8 +96,9 @@ export default async function MemorialPageRoute({ params }: Props) {
     )
   }
 
-  // Increment view count (fire and forget)
-  supabase.rpc('increment_memorial_views', { slug: params.slug })
+  // Increment view count (fire and forget) - use admin client for permissions
+  const adminSupabase = createAdminClient()
+  adminSupabase.rpc('increment_memorial_views', { slug: params.slug })
 
   return <MemorialPage memorial={memorial} />
 }
