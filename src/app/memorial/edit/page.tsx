@@ -469,13 +469,24 @@ function EditPageContent() {
                   </>
                 )}
               </button>
+              
+              <button
+                onClick={() => setVerificationStep('verify')}
+                className="text-sm text-primary-600 hover:text-primary-700 w-full text-center"
+              >
+                I already have a code
+              </button>
             </div>
           ) : (
             <div className="space-y-4">
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                 <p className="text-sm text-blue-800">
-                  A verification code has been sent to <strong>{maskedEmail}</strong>. 
-                  The code expires in <strong>1 hour</strong>.
+                  {maskedEmail ? (
+                    <>A verification code has been sent to <strong>{maskedEmail}</strong>.</>
+                  ) : (
+                    <>Enter the verification code from your email.</>
+                  )}
+                  {' '}The code expires in <strong>1 hour</strong>.
                 </p>
               </div>
               
