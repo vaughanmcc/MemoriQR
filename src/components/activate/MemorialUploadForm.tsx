@@ -19,6 +19,31 @@ import type { HostingDuration, ProductType } from '@/types/database'
 import { SPECIES_OPTIONS } from '@/types'
 import { TIER_LIMITS } from '@/lib/pricing'
 
+// Normalize species value - moved outside component to avoid stale closures
+const speciesOptionsArray = SPECIES_OPTIONS as readonly string[]
+function normalizeSpeciesValue(value?: string): { species: string; speciesOther: string } {
+  const trimmed = value?.trim()
+  if (!trimmed) {
+    return { species: '', speciesOther: '' }
+  }
+
+  const otherMatch = trimmed.match(/^other\s*[:\-–—/]\s*(.+)$/i)
+    || trimmed.match(/^other\s*\((.+)\)$/i)
+
+  if (otherMatch?.[1]) {
+    return { species: 'Other', speciesOther: otherMatch[1].trim() }
+  }
+
+  const matchedSpecies = speciesOptionsArray.find(
+    (option) => option.toLowerCase() === trimmed.toLowerCase()
+  )
+
+  return {
+    species: matchedSpecies ?? 'Other',
+    speciesOther: matchedSpecies ? '' : trimmed,
+  }
+}
+
 // Video entry can be either a file upload or a YouTube URL
 interface VideoEntry {
   type: 'file' | 'youtube'
@@ -319,33 +344,9 @@ export function MemorialUploadForm({
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
-  // Check if initialSpecies is a known option and normalize custom values
-  const speciesOptionsArray = SPECIES_OPTIONS as readonly string[]
-  const normalizeInitialSpecies = (value?: string) => {
-    const trimmed = value?.trim()
-    if (!trimmed) {
-      return { species: '', speciesOther: '' }
-    }
-
-    const otherMatch = trimmed.match(/^other\s*[:\-–—/]\s*(.+)$/i)
-      || trimmed.match(/^other\s*\((.+)\)$/i)
-
-    if (otherMatch?.[1]) {
-      return { species: 'Other', speciesOther: otherMatch[1].trim() }
-    }
-
-    const matchedSpecies = speciesOptionsArray.find(
-      (option) => option.toLowerCase() === trimmed.toLowerCase()
-    )
-
-    return {
-      species: matchedSpecies ?? 'Other',
-      speciesOther: matchedSpecies ? '' : trimmed,
-    }
-  }
-
+  // Normalize initial species using the module-level function
   const { species: normalizedInitialSpecies, speciesOther: normalizedInitialSpeciesOther } =
-    normalizeInitialSpecies(initialSpecies)
+    normalizeSpeciesValue(initialSpecies)
 
   // Change step and scroll to form section for better UX
   const goToStep = (newStep: number) => {
@@ -376,7 +377,7 @@ export function MemorialUploadForm({
 
   useEffect(() => {
     if (!initialSpecies) return
-    const normalized = normalizeInitialSpecies(initialSpecies)
+    const normalized = normalizeSpeciesValue(initialSpecies)
     setSpecies(normalized.species)
     setSpeciesOther(normalized.speciesOther)
   }, [initialSpecies])
