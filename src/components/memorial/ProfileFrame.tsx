@@ -134,13 +134,14 @@ export function ProfileFrame({ imageUrl, alt, shape, frameColor, frameStyle = 'o
               src={imageUrl}
               alt={alt}
               fill
-            style={{ 
-              objectFit: 'cover',
-              objectPosition: 'center center',
-            }}
-            priority
-            sizes="260px"
-          />
+              style={{ 
+                objectFit: 'cover',
+                objectPosition: 'center center',
+              }}
+              priority
+              sizes="260px"
+            />
+          </div>
         </div>
       </div>
     )
