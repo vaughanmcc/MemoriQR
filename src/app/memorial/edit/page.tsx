@@ -1,12 +1,14 @@
 'use client'
 
-import { useState, useEffect, Suspense } from 'react'
+import { useState, useEffect, Suspense, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { Heart, Loader2, AlertCircle, Check, Palette, Image as ImageIcon, Save } from 'lucide-react'
+import { Heart, Loader2, AlertCircle, Check, Palette, Image as ImageIcon, Save, Upload, X, Star, Plus, Video, Trash2 } from 'lucide-react'
 import Image from 'next/image'
 import type { HostingDuration, ProductType } from '@/types/database'
 import { MemorialPhoto, MemorialVideo } from '@/types'
 import { MEMORIAL_THEMES, MEMORIAL_FRAMES, getAvailableThemes, getAvailableFrames } from '@/lib/memorial-options'
+import { TIER_LIMITS } from '@/lib/pricing'
+import { getYouTubeId } from '@/lib/utils'
 
 interface MemorialData {
   id: string
@@ -29,9 +31,14 @@ function EditPageContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const token = searchParams.get('token')
+  const photoInputRef = useRef<HTMLInputElement>(null)
+  const videoInputRef = useRef<HTMLInputElement>(null)
 
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [uploadingPhotos, setUploadingPhotos] = useState(false)
+  const [uploadingVideo, setUploadingVideo] = useState(false)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
   const [memorial, setMemorial] = useState<MemorialData | null>(null)
@@ -40,6 +47,13 @@ function EditPageContent() {
   const [memorialText, setMemorialText] = useState('')
   const [selectedTheme, setSelectedTheme] = useState('classic')
   const [selectedFrame, setSelectedFrame] = useState('classic-ornate')
+  const [photos, setPhotos] = useState<MemorialPhoto[]>([])
+  const [videos, setVideos] = useState<MemorialVideo[]>([])
+  const [youtubeUrl, setYoutubeUrl] = useState('')
+
+  // Get limits based on plan
+  const photoLimit = memorial ? TIER_LIMITS[memorial.hostingDuration]?.photos || 20 : 20
+  const videoLimit = memorial ? TIER_LIMITS[memorial.hostingDuration]?.videos || 2 : 2
 
   // Get available themes/frames based on plan
   const availableThemes = memorial ? getAvailableThemes(memorial.hostingDuration) : []
@@ -63,6 +77,8 @@ function EditPageContent() {
           setMemorialText(data.memorial.memorialText || '')
           setSelectedTheme(data.memorial.theme || 'classic')
           setSelectedFrame(data.memorial.frame || 'classic-ornate')
+          setPhotos(data.memorial.photos || [])
+          setVideos(data.memorial.videos || [])
         }
         setLoading(false)
       })
@@ -71,6 +87,186 @@ function EditPageContent() {
         setLoading(false)
       })
   }, [token])
+
+  // Photo upload handler
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || [])
+    if (files.length === 0 || !token) return
+
+    setUploadingPhotos(true)
+    setError('')
+
+    const formData = new FormData()
+    formData.append('token', token)
+    files.forEach(file => formData.append('photos', file))
+
+    try {
+      const response = await fetch('/api/memorial/photos', {
+        method: 'POST',
+        body: formData,
+      })
+      const data = await response.json()
+
+      if (data.error) {
+        setError(data.error)
+      } else {
+        setPhotos(data.photos)
+        setSuccess(true)
+        setTimeout(() => setSuccess(false), 3000)
+      }
+    } catch {
+      setError('Failed to upload photos')
+    }
+
+    setUploadingPhotos(false)
+    if (photoInputRef.current) photoInputRef.current.value = ''
+  }
+
+  // Photo delete handler
+  const handleDeletePhoto = async (photoId: string) => {
+    if (!token) return
+
+    setDeletingId(photoId)
+    setError('')
+
+    try {
+      const response = await fetch('/api/memorial/photos', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token, photoId }),
+      })
+      const data = await response.json()
+
+      if (data.error) {
+        setError(data.error)
+      } else {
+        setPhotos(data.photos)
+      }
+    } catch {
+      setError('Failed to delete photo')
+    }
+
+    setDeletingId(null)
+  }
+
+  // Set profile photo handler
+  const handleSetProfilePhoto = async (photoId: string) => {
+    if (!token) return
+
+    try {
+      const response = await fetch('/api/memorial/photos', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token, photoId }),
+      })
+      const data = await response.json()
+
+      if (data.error) {
+        setError(data.error)
+      } else {
+        setPhotos(data.photos)
+      }
+    } catch {
+      setError('Failed to set profile photo')
+    }
+  }
+
+  // Add YouTube video handler
+  const handleAddYoutubeVideo = async () => {
+    if (!token || !youtubeUrl) return
+
+    const ytId = getYouTubeId(youtubeUrl)
+    if (!ytId) {
+      setError('Invalid YouTube URL')
+      return
+    }
+
+    setUploadingVideo(true)
+    setError('')
+
+    try {
+      const response = await fetch('/api/memorial/videos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token, url: youtubeUrl }),
+      })
+      const data = await response.json()
+
+      if (data.error) {
+        setError(data.error)
+      } else {
+        setVideos(data.videos)
+        setYoutubeUrl('')
+        setSuccess(true)
+        setTimeout(() => setSuccess(false), 3000)
+      }
+    } catch {
+      setError('Failed to add video')
+    }
+
+    setUploadingVideo(false)
+  }
+
+  // Upload video file handler
+  const handleVideoFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file || !token) return
+
+    setUploadingVideo(true)
+    setError('')
+
+    const formData = new FormData()
+    formData.append('token', token)
+    formData.append('video', file)
+
+    try {
+      const response = await fetch('/api/memorial/videos', {
+        method: 'POST',
+        body: formData,
+      })
+      const data = await response.json()
+
+      if (data.error) {
+        setError(data.error)
+      } else {
+        setVideos(data.videos)
+        setSuccess(true)
+        setTimeout(() => setSuccess(false), 3000)
+      }
+    } catch {
+      setError('Failed to upload video')
+    }
+
+    setUploadingVideo(false)
+    if (videoInputRef.current) videoInputRef.current.value = ''
+  }
+
+  // Delete video handler
+  const handleDeleteVideo = async (videoId: string) => {
+    if (!token) return
+
+    setDeletingId(videoId)
+    setError('')
+
+    try {
+      const response = await fetch('/api/memorial/videos', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token, videoId }),
+      })
+      const data = await response.json()
+
+      if (data.error) {
+        setError(data.error)
+      } else {
+        setVideos(data.videos)
+      }
+    } catch {
+      setError('Failed to delete video')
+    }
+
+    setDeletingId(null)
+  }
 
   const handleSave = async () => {
     if (!memorial || !token) return
@@ -170,14 +366,35 @@ function EditPageContent() {
           )}
 
           <div className="space-y-8">
-            {/* Current Photos Preview */}
+            {/* Photos Section */}
             <div>
-              <label className="label">Current Photos ({memorial.photos.length})</label>
-              <div className="grid grid-cols-4 gap-3 mt-2">
-                {memorial.photos.slice(0, 8).map((photo) => (
+              <div className="flex items-center justify-between mb-2">
+                <label className="label mb-0">Photos ({photos.length}/{photoLimit})</label>
+                {photos.length < photoLimit && (
+                  <label className="btn-outline text-sm cursor-pointer flex items-center gap-2">
+                    {uploadingPhotos ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Plus className="h-4 w-4" />
+                    )}
+                    Add Photos
+                    <input
+                      ref={photoInputRef}
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      onChange={handlePhotoUpload}
+                      className="hidden"
+                      disabled={uploadingPhotos}
+                    />
+                  </label>
+                )}
+              </div>
+              <div className="grid grid-cols-4 sm:grid-cols-6 gap-3 mt-2">
+                {photos.map((photo) => (
                   <div
                     key={photo.id}
-                    className="aspect-square rounded-lg overflow-hidden bg-gray-100 relative"
+                    className="aspect-square rounded-lg overflow-hidden bg-gray-100 relative group"
                   >
                     <Image
                       src={photo.url}
@@ -186,17 +403,121 @@ function EditPageContent() {
                       className="object-cover"
                       sizes="100px"
                     />
+                    {/* Profile badge */}
+                    {photo.isProfile && (
+                      <div className="absolute top-1 left-1 bg-primary-500 text-white rounded-full p-1">
+                        <Star className="h-3 w-3" />
+                      </div>
+                    )}
+                    {/* Hover actions */}
+                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                      {!photo.isProfile && (
+                        <button
+                          onClick={() => handleSetProfilePhoto(photo.id)}
+                          className="p-2 bg-white rounded-full text-primary-600 hover:bg-primary-50"
+                          title="Set as profile photo"
+                        >
+                          <Star className="h-4 w-4" />
+                        </button>
+                      )}
+                      {photos.length > 1 && (
+                        <button
+                          onClick={() => handleDeletePhoto(photo.id)}
+                          disabled={deletingId === photo.id}
+                          className="p-2 bg-white rounded-full text-red-600 hover:bg-red-50"
+                          title="Delete photo"
+                        >
+                          {deletingId === photo.id ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Trash2 className="h-4 w-4" />
+                          )}
+                        </button>
+                      )}
+                    </div>
                   </div>
                 ))}
-                {memorial.photos.length > 8 && (
-                  <div className="aspect-square rounded-lg bg-gray-100 flex items-center justify-center text-gray-500">
-                    +{memorial.photos.length - 8} more
-                  </div>
-                )}
               </div>
               <p className="text-xs text-gray-500 mt-2">
-                To add or remove photos, please contact support.
+                Click a photo to set as profile or delete. Profile photo shows in the memorial header.
               </p>
+            </div>
+
+            {/* Videos Section */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label className="label mb-0">Videos ({videos.length}/{videoLimit})</label>
+              </div>
+              
+              {/* Current videos */}
+              {videos.length > 0 && (
+                <div className="space-y-3 mb-4">
+                  {videos.map((video) => (
+                    <div key={video.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                      <Video className="h-5 w-5 text-gray-400" />
+                      <span className="flex-1 text-sm truncate">
+                        {video.type === 'youtube' || video.youtubeId
+                          ? `YouTube: ${video.youtubeId}`
+                          : video.title || 'Uploaded video'}
+                      </span>
+                      <button
+                        onClick={() => handleDeleteVideo(video.id)}
+                        disabled={deletingId === video.id}
+                        className="p-1 text-red-500 hover:text-red-700"
+                      >
+                        {deletingId === video.id ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <X className="h-4 w-4" />
+                        )}
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Add video */}
+              {videos.length < videoLimit && (
+                <div className="space-y-3">
+                  <div className="flex gap-2">
+                    <input
+                      type="url"
+                      value={youtubeUrl}
+                      onChange={(e) => setYoutubeUrl(e.target.value)}
+                      placeholder="Paste YouTube URL..."
+                      className="input flex-1"
+                    />
+                    <button
+                      onClick={handleAddYoutubeVideo}
+                      disabled={!youtubeUrl || uploadingVideo}
+                      className="btn-primary"
+                    >
+                      {uploadingVideo ? (
+                        <Loader2 className="h-5 w-5 animate-spin" />
+                      ) : (
+                        'Add'
+                      )}
+                    </button>
+                  </div>
+                  <div className="text-center text-sm text-gray-500">or</div>
+                  <label className="btn-outline w-full cursor-pointer flex items-center justify-center gap-2">
+                    {uploadingVideo ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Upload className="h-4 w-4" />
+                    )}
+                    Upload Video File (max 50MB)
+                    <input
+                      ref={videoInputRef}
+                      type="file"
+                      accept="video/*"
+                      onChange={handleVideoFileUpload}
+                      className="hidden"
+                      disabled={uploadingVideo}
+                    />
+                  </label>
+                </div>
+              )}
             </div>
 
             {/* Memorial Text */}
