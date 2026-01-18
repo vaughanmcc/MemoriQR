@@ -364,6 +364,12 @@ export function MemorialUploadForm({
   const [birthDate, setBirthDate] = useState('')
   const [deathDate, setDeathDate] = useState('')
   const [memorialText, setMemorialText] = useState('')
+  
+  // Calculate max date on client side to use user's timezone
+  const [todayLocalISO, setTodayLocalISO] = useState('')
+  useEffect(() => {
+    setTodayLocalISO(new Date().toLocaleDateString('en-CA'))
+  }, [])
   const [contactEmail, setContactEmail] = useState(initialEmail || '')
   const [photos, setPhotos] = useState<File[]>([])
   const [photosPreviews, setPhotosPreviews] = useState<string[]>([])
@@ -394,9 +400,6 @@ export function MemorialUploadForm({
       setSpeciesOther(normalized.speciesOther)
     }
   }, [initialSpecies])
-
-  // Get today's date in YYYY-MM-DD format for the max date constraint
-  const todayLocalISO = new Date().toLocaleDateString('en-CA') // en-CA gives YYYY-MM-DD format
   
   // Get video limit, available themes and frames for this plan
   const videoLimit = TIER_LIMITS[hostingDuration]?.videos || 2
