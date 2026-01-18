@@ -221,11 +221,14 @@ export async function POST(request: NextRequest) {
     }
 
     const isPreview = process.env.VERCEL_ENV === 'preview'
-    const baseUrl = isPreview
+    const rawBaseUrl = isPreview
       ? (process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_SITE_URL || 'https://dev.memoriqr.co.nz')
       : (request.headers.get('origin') || process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_SITE_URL || 'https://memoriqr.co.nz')
+    
+    // Trim any whitespace/newlines from env vars
+    const baseUrl = rawBaseUrl.trim()
 
-    console.log('[Checkout] isPreview:', isPreview, 'baseUrl:', baseUrl)
+    console.log('[Checkout] isPreview:', isPreview, 'baseUrl:', baseUrl, 'length:', baseUrl.length)
 
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
