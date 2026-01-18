@@ -1303,3 +1303,36 @@ node scripts/check-code.js ABC123  # (scripts load dotenv internally)
 4. Content marketing (SEO for long-term low-CAC growth)
 
 Start small (50-100 orders Year 1), validate product-market fit, then scale marketing spend based on proven unit economics.
+---
+
+## Session Progress Log (Auto-saved)
+
+### January 18, 2026 - Latest Session
+
+**Completed:**
+- ✅ Vercel deployment with GitHub integration (main → Production, preview-smoke → Preview)
+- ✅ Separate DEV Supabase project (pmabwrnhbkmtiusiqmjt)
+- ✅ PROD Supabase wiped clean
+- ✅ Stripe webhooks configured for Preview (disabled Vercel Auth protection)
+- ✅ Pipedream webhook URL added to Preview env
+- ✅ NEXT_PUBLIC_BASE_URL=https://dev.memoriqr.co.nz for Preview
+- ✅ Custom domains configured:
+  - memoriqr.co.nz → Production (main)
+  - dev.memoriqr.co.nz → Preview (preview-smoke)
+- ✅ Order form autofill detection fixes
+- ✅ Stripe redirect URL fix (uses request origin)
+- ✅ Species "Other" custom input + recall on activation/edit
+- ✅ Edit page theme/frame options aligned with activation form
+- ✅ Memorial created email template with QR code, links, edit URL
+- ✅ Photos/videos API routes updated
+
+**Environment Summary:**
+- PROD Supabase: gzrgrjtjgmrhdgbcsrlf (memoriqr.co.nz)
+- DEV Supabase: pmabwrnhbkmtiusiqmjt (dev.memoriqr.co.nz)
+- Stripe: Test mode, webhook → dev.memoriqr.co.nz/api/webhooks/stripe
+- Pipedream: https://eo7epxu5aypc0vj.m.pipedream.net
+
+**Pending:**
+- [ ] Stripe LIVE keys (waiting on business verification)
+- [ ] Merge preview-smoke → main after full smoke test
+- [ ] Re-enable Vercel Authentication for Preview (after testing)
