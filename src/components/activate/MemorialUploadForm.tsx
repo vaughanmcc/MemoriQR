@@ -327,17 +327,20 @@ export function MemorialUploadForm({
       return { species: '', speciesOther: '' }
     }
 
-    const otherMatch = trimmed.match(/^other\s*[:\-]\s*(.+)$/i)
+    const otherMatch = trimmed.match(/^other\s*[:\-–—/]\s*(.+)$/i)
       || trimmed.match(/^other\s*\((.+)\)$/i)
 
     if (otherMatch?.[1]) {
       return { species: 'Other', speciesOther: otherMatch[1].trim() }
     }
 
-    const isKnownSpecies = speciesOptionsArray.includes(trimmed)
+    const matchedSpecies = speciesOptionsArray.find(
+      (option) => option.toLowerCase() === trimmed.toLowerCase()
+    )
+
     return {
-      species: isKnownSpecies ? trimmed : 'Other',
-      speciesOther: isKnownSpecies ? '' : trimmed,
+      species: matchedSpecies ?? 'Other',
+      speciesOther: matchedSpecies ? '' : trimmed,
     }
   }
 
