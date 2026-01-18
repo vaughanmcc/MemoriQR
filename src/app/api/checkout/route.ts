@@ -294,8 +294,9 @@ export async function POST(request: NextRequest) {
       .eq('order_number', orderNumber)
 
     return NextResponse.json({ url: session.url })
-  } catch (error) {
-    console.error('Checkout error:', error)
+  } catch (error: any) {
+    console.error('Checkout error:', error?.message || error)
+    console.error('Checkout error details:', JSON.stringify(error, null, 2))
     return NextResponse.json(
       { error: 'Failed to create checkout session' },
       { status: 500 }
