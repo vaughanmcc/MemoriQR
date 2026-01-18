@@ -220,6 +220,11 @@ export async function POST(request: NextRequest) {
       })
     }
 
+    const isPreview = process.env.VERCEL_ENV === 'preview'
+    const baseUrl = isPreview
+      ? (process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_SITE_URL)
+      : (request.headers.get('origin') || process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_SITE_URL)
+
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       mode: 'payment',
@@ -276,8 +281,8 @@ export async function POST(request: NextRequest) {
         customer_id: customerId,
       },
       // Use request origin for Vercel Preview, fallback to env var
-      success_url: `${request.headers.get('origin') || process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_SITE_URL}/order/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${request.headers.get('origin') || process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_SITE_URL}/order?cancelled=true`,
+      success_url: `${baseUrl}/order/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${baseUrl}/order?cancelled=true`,
     })
 
     // Update order with session ID
