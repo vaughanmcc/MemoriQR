@@ -228,7 +228,14 @@ export async function POST(request: NextRequest) {
     // Trim any whitespace/newlines from env vars
     const baseUrl = rawBaseUrl.trim()
 
-    console.log('[Checkout] isPreview:', isPreview, 'baseUrl:', baseUrl, 'length:', baseUrl.length)
+    const successUrl = `${baseUrl}/order/success?session_id={CHECKOUT_SESSION_ID}`
+    const cancelUrl = `${baseUrl}/order?cancelled=true`
+
+    console.log('[Checkout] isPreview:', isPreview)
+    console.log('[Checkout] baseUrl:', baseUrl)
+    console.log('[Checkout] successUrl:', successUrl)
+    console.log('[Checkout] cancelUrl:', cancelUrl)
+    console.log('[Checkout] stripeCustomerId:', stripeCustomerId)
 
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
@@ -285,10 +292,11 @@ export async function POST(request: NextRequest) {
         memorial_id: memorial.id,
         customer_id: customerId,
       },
-      // Use request origin for Vercel Preview, fallback to env var
-      success_url: `${baseUrl}/order/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${baseUrl}/order?cancelled=true`,
+      success_url: successUrl,
+      cancel_url: cancelUrl,
     })
+
+    console.log('[Checkout] Session created:', session.id, 'url:', session.url)
 
     // Update order with session ID
     await supabase
@@ -299,7 +307,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ url: session.url })
   } catch (error: any) {
     console.error('Checkout error:', error?.message || error)
-    console.error('Checkout error details:', JSON.stringify(error, null, 2))
+    console.error('Checkout error type:', error?.type)
+    console.error('Checkout error code:', error?.code)
+    console.error('Checkout error param:', error?.param)
     return NextResponse.json(
       { error: 'Failed to create checkout session' },
       { status: 500 }
