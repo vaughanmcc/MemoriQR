@@ -85,7 +85,7 @@ const FRAMES: Record<string, { border: string; shadow: string; gradient?: string
 
 // Helper function to get the ornamental frame style class for memorial display
 function getOrnamentalFrameStyle(memorial: Memorial): string {
-  const frameId = (memorial as any).frame || 'classic-ornate'
+  const frameId = memorial.frame || 'classic-ornate'
   
   // Map frame IDs to CSS class suffixes
   const styleMap: Record<string, string> = {
@@ -143,7 +143,7 @@ export function MemorialPage({ memorial }: MemorialPageProps) {
   const videos = (memorial.videos_json as unknown as MemorialVideo[]) || []
   const dateRange = formatDateRange(memorial.birth_date, memorial.death_date)
   const theme = THEMES[memorial.theme || 'classic'] || THEMES.classic
-  const frame = FRAMES[(memorial as any).frame || 'classic-gold'] || FRAMES['classic-gold']
+  const frame = FRAMES[memorial.frame || 'classic-gold'] || FRAMES['classic-gold']
   const isPet = memorial.deceased_type === 'pet'
 
   return (
@@ -199,9 +199,9 @@ export function MemorialPage({ memorial }: MemorialPageProps) {
               <ProfileFrame
                 imageUrl={photos[0].url}
                 alt={memorial.deceased_name}
-                shape={getFrameShape((memorial as any).frame || 'oval-classic')}
+                shape={getFrameShape(memorial.frame || 'oval-classic')}
                 frameColor={theme.frame}
-                frameStyle={getFrameStyle((memorial as any).frame || 'oval-classic')}
+                frameStyle={getFrameStyle(memorial.frame || 'oval-classic')}
               />
             </div>
           )}

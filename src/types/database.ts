@@ -66,6 +66,8 @@ export interface Database {
           views_count: number
           last_viewed: string | null
           theme: string
+          frame: string
+          edit_token: string
           created_at: string
           updated_at: string
         }
@@ -91,6 +93,8 @@ export interface Database {
           views_count?: number
           last_viewed?: string | null
           theme?: string
+          frame?: string
+          edit_token?: string
           created_at?: string
           updated_at?: string
         }
@@ -116,6 +120,8 @@ export interface Database {
           views_count?: number
           last_viewed?: string | null
           theme?: string
+          frame?: string
+          edit_token?: string
           created_at?: string
           updated_at?: string
         }
