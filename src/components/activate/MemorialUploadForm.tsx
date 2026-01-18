@@ -356,11 +356,11 @@ export function MemorialUploadForm({
     }, 0)
   }
 
-  // Form state
-  const [deceasedName, setDeceasedName] = useState(initialName || '')
-  const [deceasedType, setDeceasedType] = useState<'pet' | 'human'>(initialType || 'pet')
-  const [species, setSpecies] = useState(normalizedInitialSpecies || '')
-  const [speciesOther, setSpeciesOther] = useState(normalizedInitialSpeciesOther || '')
+  // Form state - use lazy initializers to ensure hydration matches
+  const [deceasedName, setDeceasedName] = useState(() => initialName || '')
+  const [deceasedType, setDeceasedType] = useState<'pet' | 'human'>(() => initialType || 'pet')
+  const [species, setSpecies] = useState(() => normalizeSpeciesValue(initialSpecies).species)
+  const [speciesOther, setSpeciesOther] = useState(() => normalizeSpeciesValue(initialSpecies).speciesOther)
   const [birthDate, setBirthDate] = useState('')
   const [deathDate, setDeathDate] = useState('')
   const [memorialText, setMemorialText] = useState('')
@@ -375,24 +375,13 @@ export function MemorialUploadForm({
   const [isDraggingVideo, setIsDraggingVideo] = useState<number | null>(null)
   const [isDraggingVideoZone, setIsDraggingVideoZone] = useState(false)
 
-  // Debug: Log props on mount
+  // Sync species from props when they change (e.g., after hydration or prop updates)
   useEffect(() => {
-    console.log('[MemorialUploadForm] Props received:', {
-      initialName,
-      initialType,
-      initialSpecies,
-      normalizedInitialSpecies,
-      normalizedInitialSpeciesOther,
-    })
-  }, [])
-
-  useEffect(() => {
-    console.log('[MemorialUploadForm] initialSpecies changed:', initialSpecies)
-    if (!initialSpecies) return
-    const normalized = normalizeSpeciesValue(initialSpecies)
-    console.log('[MemorialUploadForm] Normalized:', normalized)
-    setSpecies(normalized.species)
-    setSpeciesOther(normalized.speciesOther)
+    if (initialSpecies) {
+      const normalized = normalizeSpeciesValue(initialSpecies)
+      setSpecies(normalized.species)
+      setSpeciesOther(normalized.speciesOther)
+    }
   }, [initialSpecies])
 
   const todayLocal = new Date()
