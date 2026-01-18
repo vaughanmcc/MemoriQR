@@ -787,7 +787,7 @@ function EditPageContent() {
                 className="btn-outline flex-1 flex items-center justify-center gap-2"
               >
                 <Eye className="h-5 w-5" />
-                Preview Memorial
+                View Memorial
               </a>
               <button
                 onClick={handleSave}
