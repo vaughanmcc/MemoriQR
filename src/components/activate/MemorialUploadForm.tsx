@@ -375,8 +375,19 @@ export function MemorialUploadForm({
   const [isDraggingVideo, setIsDraggingVideo] = useState<number | null>(null)
   const [isDraggingVideoZone, setIsDraggingVideoZone] = useState(false)
 
+  // Debug logging for species prop
+  useEffect(() => {
+    console.log('[MemorialUploadForm] Props received:', {
+      initialSpecies,
+      normalizedSpecies: normalizedInitialSpecies,
+      normalizedSpeciesOther: normalizedInitialSpeciesOther,
+      currentSpeciesState: species,
+    })
+  }, [])
+
   // Sync species from props when they change (e.g., after hydration or prop updates)
   useEffect(() => {
+    console.log('[MemorialUploadForm] Syncing species from initialSpecies:', initialSpecies)
     if (initialSpecies) {
       const normalized = normalizeSpeciesValue(initialSpecies)
       setSpecies(normalized.species)
