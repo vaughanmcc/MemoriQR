@@ -222,8 +222,10 @@ export async function POST(request: NextRequest) {
 
     const isPreview = process.env.VERCEL_ENV === 'preview'
     const baseUrl = isPreview
-      ? (process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_SITE_URL)
-      : (request.headers.get('origin') || process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_SITE_URL)
+      ? (process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_SITE_URL || 'https://dev.memoriqr.co.nz')
+      : (request.headers.get('origin') || process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_SITE_URL || 'https://memoriqr.co.nz')
+
+    console.log('[Checkout] isPreview:', isPreview, 'baseUrl:', baseUrl)
 
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
