@@ -9,6 +9,35 @@ export type Json =
 export interface Database {
   public: {
     Tables: {
+      edit_verification_codes: {
+        Row: {
+          id: string
+          memorial_id: string
+          code: string
+          email: string
+          expires_at: string
+          used_at: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          memorial_id: string
+          code: string
+          email: string
+          expires_at: string
+          used_at?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          memorial_id?: string
+          code?: string
+          email?: string
+          expires_at?: string
+          used_at?: string | null
+          created_at?: string
+        }
+      }
       customers: {
         Row: {
           id: string

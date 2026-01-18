@@ -2,7 +2,7 @@
 
 import { useState, useEffect, Suspense, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { Heart, Loader2, AlertCircle, Check, Palette, Image as ImageIcon, Save, Upload, X, Star, Plus, Video, Trash2, Eye } from 'lucide-react'
+import { Heart, Loader2, AlertCircle, Check, Palette, Image as ImageIcon, Save, Upload, X, Star, Plus, Video, Trash2, Eye, Mail, ShieldCheck } from 'lucide-react'
 import Image from 'next/image'
 import type { HostingDuration, ProductType } from '@/types/database'
 import { MemorialPhoto, MemorialVideo } from '@/types'
@@ -31,8 +31,16 @@ function EditPageContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const token = searchParams.get('token')
+  const sessionToken = searchParams.get('session')
   const photoInputRef = useRef<HTMLInputElement>(null)
   const videoInputRef = useRef<HTMLInputElement>(null)
+
+  // MFA verification state
+  const [verificationStep, setVerificationStep] = useState<'checking' | 'send' | 'verify' | 'verified'>('checking')
+  const [verificationCode, setVerificationCode] = useState('')
+  const [maskedEmail, setMaskedEmail] = useState('')
+  const [sendingCode, setSendingCode] = useState(false)
+  const [verifyingCode, setVerifyingCode] = useState(false)
 
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -59,34 +67,102 @@ function EditPageContent() {
   const availableThemes = memorial ? getAvailableThemes(memorial.hostingDuration) : []
   const availableFramesList = memorial ? getAvailableFrames(memorial.hostingDuration) : []
 
+  // Handle MFA verification flow
   useEffect(() => {
     if (!token) {
       setError('Invalid edit link. Please use the link from your confirmation email.')
+      setVerificationStep('send')
       setLoading(false)
       return
     }
 
-    // Fetch memorial data
-    fetch(`/api/memorial/edit?token=${token}`)
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.error) {
-          setError(data.error)
-        } else {
-          setMemorial(data.memorial)
-          setMemorialText(data.memorial.memorialText || '')
-          setSelectedTheme(data.memorial.theme || 'classic')
-          setSelectedFrame(data.memorial.frame || 'classic-ornate')
-          setPhotos(data.memorial.photos || [])
-          setVideos(data.memorial.videos || [])
-        }
-        setLoading(false)
+    // If we have a session token, verify it and load memorial data
+    if (sessionToken) {
+      setVerificationStep('verified')
+      fetch(`/api/memorial/edit?token=${token}&session=${sessionToken}`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.error) {
+            // Session invalid, need to re-verify
+            setError(data.error)
+            setVerificationStep('send')
+          } else {
+            setMemorial(data.memorial)
+            setMemorialText(data.memorial.memorialText || '')
+            setSelectedTheme(data.memorial.theme || 'classic')
+            setSelectedFrame(data.memorial.frame || 'classic-ornate')
+            setPhotos(data.memorial.photos || [])
+            setVideos(data.memorial.videos || [])
+          }
+          setLoading(false)
+        })
+        .catch(() => {
+          setError('Failed to load memorial data')
+          setVerificationStep('send')
+          setLoading(false)
+        })
+    } else {
+      // No session token, need to verify via email
+      setVerificationStep('send')
+      setLoading(false)
+    }
+  }, [token, sessionToken])
+
+  // Send verification code to email
+  const handleSendCode = async () => {
+    if (!token) return
+    
+    setSendingCode(true)
+    setError('')
+    
+    try {
+      const response = await fetch('/api/memorial/edit/send-code', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token }),
       })
-      .catch(() => {
-        setError('Failed to load memorial data')
-        setLoading(false)
+      const data = await response.json()
+      
+      if (data.error) {
+        setError(data.error)
+      } else {
+        setMaskedEmail(data.email)
+        setVerificationStep('verify')
+      }
+    } catch {
+      setError('Failed to send verification code')
+    }
+    
+    setSendingCode(false)
+  }
+
+  // Verify the entered code
+  const handleVerifyCode = async () => {
+    if (!token || !verificationCode) return
+    
+    setVerifyingCode(true)
+    setError('')
+    
+    try {
+      const response = await fetch('/api/memorial/edit/verify-code', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token, code: verificationCode }),
       })
-  }, [token])
+      const data = await response.json()
+      
+      if (data.error) {
+        setError(data.error)
+      } else {
+        // Redirect to same page with session token
+        router.push(`/memorial/edit?token=${token}&session=${data.sessionToken}`)
+      }
+    } catch {
+      setError('Failed to verify code')
+    }
+    
+    setVerifyingCode(false)
+  }
 
   // Photo upload handler
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -306,6 +382,108 @@ function EditPageContent() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-memorial-cream">
         <Loader2 className="h-8 w-8 animate-spin text-primary-600" />
+      </div>
+    )
+  }
+
+  // Show MFA verification screen
+  if (verificationStep === 'send' || verificationStep === 'verify') {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-memorial-cream p-4">
+        <div className="bg-white rounded-2xl shadow-lg p-8 max-w-md w-full">
+          <div className="text-center mb-6">
+            <ShieldCheck className="h-12 w-12 text-primary-600 mx-auto mb-4" />
+            <h1 className="text-2xl font-serif mb-2">Verify Your Identity</h1>
+            <p className="text-gray-600">
+              For your security, we need to verify your email address before you can edit this memorial.
+            </p>
+          </div>
+
+          {error && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+              <div className="flex items-center gap-2 text-red-700">
+                <AlertCircle className="h-5 w-5 flex-shrink-0" />
+                <span>{error}</span>
+              </div>
+            </div>
+          )}
+
+          {verificationStep === 'send' ? (
+            <div className="space-y-4">
+              <p className="text-sm text-gray-600 text-center">
+                Click the button below to receive a verification code at your registered email address.
+              </p>
+              <button
+                onClick={handleSendCode}
+                disabled={sendingCode || !token}
+                className="btn-primary w-full flex items-center justify-center gap-2"
+              >
+                {sendingCode ? (
+                  <>
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                    Sending...
+                  </>
+                ) : (
+                  <>
+                    <Mail className="h-5 w-5" />
+                    Send Verification Code
+                  </>
+                )}
+              </button>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <p className="text-sm text-blue-800">
+                  A verification code has been sent to <strong>{maskedEmail}</strong>. 
+                  The code expires in <strong>1 hour</strong>.
+                </p>
+              </div>
+              
+              <div>
+                <label className="label">Enter 6-digit code</label>
+                <input
+                  type="text"
+                  value={verificationCode}
+                  onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                  placeholder="000000"
+                  className="input text-center text-2xl tracking-widest"
+                  maxLength={6}
+                  autoFocus
+                />
+              </div>
+
+              <button
+                onClick={handleVerifyCode}
+                disabled={verifyingCode || verificationCode.length !== 6}
+                className="btn-primary w-full flex items-center justify-center gap-2"
+              >
+                {verifyingCode ? (
+                  <>
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                    Verifying...
+                  </>
+                ) : (
+                  <>
+                    <ShieldCheck className="h-5 w-5" />
+                    Verify & Continue
+                  </>
+                )}
+              </button>
+
+              <button
+                onClick={() => {
+                  setVerificationStep('send')
+                  setVerificationCode('')
+                  setError('')
+                }}
+                className="text-sm text-gray-600 hover:text-primary-600 w-full text-center"
+              >
+                Didn't receive the code? Send again
+              </button>
+            </div>
+          )}
+        </div>
       </div>
     )
   }
