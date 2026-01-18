@@ -96,9 +96,9 @@ export default async function MemorialPageRoute({ params }: Props) {
     )
   }
 
-  // Increment view count (fire and forget) - use admin client for permissions
+  // Increment view count - use admin client for permissions
   const adminSupabase = createAdminClient()
-  adminSupabase.rpc('increment_memorial_views', { slug: params.slug })
+  await adminSupabase.rpc('increment_memorial_views', { slug: params.slug })
 
   return <MemorialPage memorial={memorial} />
 }
