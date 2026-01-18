@@ -125,7 +125,7 @@ https://memoriqr.co.nz
 **Trigger:** HTTP Webhook (same `PIPEDREAM_WEBHOOK_URL`)  
 
 ### Purpose
-Handles order confirmation + activation emails and memorial creation emails.
+Handles order confirmation + activation emails, memorial creation emails, and edit verification emails.
 
 ### Incoming Payload (Order Confirmation)
 ```json
@@ -160,12 +160,27 @@ Handles order confirmation + activation emails and memorial creation emails.
 }
 ```
 
+### Incoming Payload (Edit Verification - MFA)
+```json
+{
+  "type": "edit_verification",
+  "customer_email": "customer@example.com",
+  "customer_name": "Jane Doe",
+  "sender_name": "MemoriQR",
+  "reply_to": "memoriqr.global@gmail.com",
+  "deceased_name": "Buddy",
+  "verification_code": "847293",
+  "expires_in": "1 hour",
+  "expires_at": "19 Jan 2026, 9:30 am"
+}
+```
+
 ### Email Action Configuration
 Use these fields from the webhook payload:
 - **From Name:** `{{steps.trigger.event.body.sender_name}}`
 - **Reply-To:** `{{steps.trigger.event.body.reply_to}}`
 
-### Steps: Memorial Created Email
+### Steps: Route by Email Type
 
 #### Step 1: Route by Type
 ```javascript
@@ -177,7 +192,151 @@ export default defineComponent({
 });
 ```
 
-#### Step 2: Format Memorial Created Email (Node.js)
+---
+
+### Steps: Edit Verification Email (MFA)
+
+This email is sent when a customer wants to edit their memorial. It contains a 6-digit verification code that expires in 1 hour.
+
+#### Step 2a: Format Edit Verification Email (Node.js)
+Add this as a conditional step that runs when `type === 'edit_verification'`:
+
+```javascript
+export default defineComponent({
+  async run({ steps, $ }) {
+    const body = steps.trigger.event.body;
+    
+    if (body.type !== 'edit_verification') {
+      $.flow.exit('Not an edit_verification event');
+    }
+    
+    const { 
+      customer_email, 
+      customer_name, 
+      deceased_name, 
+      verification_code, 
+      expires_in, 
+      expires_at,
+      sender_name, 
+      reply_to 
+    } = body;
+    
+    const emailHtml = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Your Verification Code</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: 'Helvetica Neue', Arial, sans-serif; background-color: #f5f5f0;">
+  <table role="presentation" cellspacing="0" cellpadding="0" width="100%" style="max-width: 600px; margin: 0 auto; background-color: #ffffff;">
+    <!-- Header -->
+    <tr>
+      <td style="background: linear-gradient(135deg, #8B7355 0%, #A08060 100%); padding: 30px; text-align: center;">
+        <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 300;">MemoriQR</h1>
+        <p style="color: rgba(255,255,255,0.9); margin: 10px 0 0; font-size: 14px;">Preserving Memories Forever</p>
+      </td>
+    </tr>
+    
+    <!-- Main Content -->
+    <tr>
+      <td style="padding: 40px 30px;">
+        <h2 style="color: #333; margin: 0 0 20px; font-size: 24px; font-weight: 400;">
+          Your Verification Code 🔐
+        </h2>
+        
+        <p style="color: #555; line-height: 1.6; margin: 0 0 25px;">
+          Hi ${customer_name},
+        </p>
+        
+        <p style="color: #555; line-height: 1.6; margin: 0 0 25px;">
+          You requested to edit the memorial for <strong>${deceased_name}</strong>. 
+          Please use the verification code below to continue:
+        </p>
+        
+        <!-- Verification Code Box -->
+        <table role="presentation" cellspacing="0" cellpadding="0" width="100%" style="margin: 0 0 25px;">
+          <tr>
+            <td style="background-color: #f9f7f4; border: 2px dashed #8B7355; padding: 30px; border-radius: 8px; text-align: center;">
+              <p style="color: #666; margin: 0 0 10px; font-size: 14px; text-transform: uppercase; letter-spacing: 1px;">Your Code</p>
+              <p style="color: #333; font-size: 42px; font-weight: bold; letter-spacing: 8px; margin: 0; font-family: 'Courier New', monospace;">${verification_code}</p>
+            </td>
+          </tr>
+        </table>
+        
+        <!-- Expiry Warning -->
+        <table role="presentation" cellspacing="0" cellpadding="0" width="100%" style="margin: 0 0 30px;">
+          <tr>
+            <td style="background-color: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; border-radius: 4px;">
+              <p style="color: #856404; margin: 0; font-size: 14px;">
+                ⏰ This code expires in <strong>${expires_in}</strong> (at ${expires_at})
+              </p>
+            </td>
+          </tr>
+        </table>
+        
+        <p style="color: #777; line-height: 1.6; margin: 0 0 20px; font-size: 14px;">
+          If you didn't request this code, you can safely ignore this email. Someone may have entered your email address by mistake.
+        </p>
+      </td>
+    </tr>
+    
+    <!-- Footer -->
+    <tr>
+      <td style="background-color: #f9f7f4; padding: 25px 30px; text-align: center; border-top: 1px solid #e5e5e5;">
+        <p style="color: #888; font-size: 12px; margin: 0 0 10px;">
+          This is an automated security email from MemoriQR.
+        </p>
+        <p style="color: #888; font-size: 12px; margin: 0;">
+          © 2026 MemoriQR. All rights reserved.
+        </p>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+    `.trim();
+
+    const emailText = \`
+Hi \${customer_name},
+
+Your verification code to edit the memorial for \${deceased_name} is:
+
+    \${verification_code}
+
+This code expires in \${expires_in} (at \${expires_at}).
+
+If you didn't request this code, please ignore this email.
+
+— The MemoriQR Team
+    \`.trim();
+
+    return {
+      to: customer_email,
+      from_name: sender_name,
+      reply_to: reply_to,
+      subject: \`Your MemoriQR Verification Code: \${verification_code}\`,
+      html: emailHtml,
+      text: emailText
+    };
+  }
+});
+```
+
+#### Step 3a: Send Email (Gmail Action)
+Configure the Gmail/Email action with:
+- **To:** `{{steps.format_edit_verification.to}}`
+- **From Name:** `{{steps.format_edit_verification.from_name}}`
+- **Reply-To:** `{{steps.format_edit_verification.reply_to}}`
+- **Subject:** `{{steps.format_edit_verification.subject}}`
+- **HTML Body:** `{{steps.format_edit_verification.html}}`
+
+---
+
+### Steps: Memorial Created Email
+
+#### Step 2b: Format Memorial Created Email (Node.js)
 ```javascript
 export default defineComponent({
   async run({ steps, $ }) {
