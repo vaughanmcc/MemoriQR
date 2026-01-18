@@ -56,16 +56,21 @@ export async function POST(request: NextRequest) {
     const sessionToken = generateSessionToken()
     const sessionExpires = new Date(Date.now() + 2 * 60 * 60 * 1000) // 2 hours
 
-    // Store session token in a new row (reusing the verification table structure)
-    // We'll use a special prefix to distinguish session tokens from verification codes
-    await supabase
+    // Store session token in the verification table
+    // We store the full token (hashed first 32 chars) for validation
+    const { error: sessionInsertError } = await supabase
       .from('edit_verification_codes')
       .insert({
         memorial_id: memorial.id,
-        code: `SESSION:${sessionToken.substring(0, 6)}`, // Store first 6 chars as identifier
+        code: `SESSION:${sessionToken}`, // Store full session token
         email: verification.email,
         expires_at: sessionExpires.toISOString(),
       })
+
+    if (sessionInsertError) {
+      console.error('Failed to create session:', sessionInsertError)
+      return NextResponse.json({ error: 'Failed to create session' }, { status: 500 })
+    }
 
     return NextResponse.json({
       success: true,

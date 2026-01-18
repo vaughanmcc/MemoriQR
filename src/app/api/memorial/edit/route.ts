@@ -29,12 +29,11 @@ export async function GET(request: NextRequest) {
     }
 
     // Verify the session token is valid and not expired
-    // Session tokens are stored with code prefix "SESSION:"
     const { data: session, error: sessionError } = await supabase
       .from('edit_verification_codes')
       .select('*')
       .eq('memorial_id', memorial.id)
-      .like('code', 'SESSION:%')
+      .eq('code', `SESSION:${sessionToken}`)
       .is('used_at', null)
       .gt('expires_at', new Date().toISOString())
       .single()

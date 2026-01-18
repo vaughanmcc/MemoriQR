@@ -4,7 +4,7 @@
 CREATE TABLE IF NOT EXISTS edit_verification_codes (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     memorial_id UUID NOT NULL REFERENCES memorial_records(id) ON DELETE CASCADE,
-    code VARCHAR(6) NOT NULL,
+    code VARCHAR(100) NOT NULL,  -- 6 digits for verification codes, or SESSION:token for sessions
     email VARCHAR(255) NOT NULL,
     expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
     used_at TIMESTAMP WITH TIME ZONE,
