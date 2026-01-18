@@ -132,6 +132,7 @@ export async function POST(request: NextRequest) {
           // Extract the code from order number (remove MQR- prefix)
           const activationCode = orderNumber.replace('MQR-', '')
           try {
+            // Send customer order confirmation
             await fetch(webhookUrl, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
@@ -149,6 +150,27 @@ export async function POST(request: NextRequest) {
                 amount_paid: session.amount_total ? session.amount_total / 100 : 0,
                 currency: session.currency?.toUpperCase() || 'NZD',
                 activation_url: `${process.env.NEXT_PUBLIC_APP_URL}/activate/${activationCode}`,
+              }),
+            })
+
+            // Send admin notification for fulfillment
+            await fetch(webhookUrl, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                type: 'admin_order_notification',
+                order_number: orderNumber,
+                customer_email: customer.email,
+                customer_name: customer.full_name,
+                deceased_name: memorial.deceased_name,
+                product_type: order?.product_type,
+                hosting_duration: order?.hosting_duration,
+                engraving_text: order?.engraving_text || 'N/A',
+                amount_paid: session.amount_total ? session.amount_total / 100 : 0,
+                currency: session.currency?.toUpperCase() || 'NZD',
+                activation_code: activationCode,
+                shipping_address: session.shipping_details?.address ? JSON.stringify(session.shipping_details.address) : 'N/A',
+                shipping_name: session.shipping_details?.name || customer.full_name,
               }),
             })
           } catch (emailError) {

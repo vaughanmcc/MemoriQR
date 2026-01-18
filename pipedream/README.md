@@ -175,6 +175,25 @@ Handles order confirmation + activation emails, memorial creation emails, and ed
 }
 ```
 
+### Incoming Payload (Admin Order Notification - Fulfillment)
+```json
+{
+  "type": "admin_order_notification",
+  "order_number": "MQR-12345678",
+  "customer_email": "customer@example.com",
+  "customer_name": "Jane Doe",
+  "deceased_name": "Buddy",
+  "product_type": "both",
+  "hosting_duration": 10,
+  "engraving_text": "In Loving Memory of Buddy",
+  "amount_paid": 249,
+  "currency": "NZD",
+  "activation_code": "12345678",
+  "shipping_address": "{\"line1\":\"123 Main St\",\"city\":\"Auckland\",\"postal_code\":\"1010\",\"country\":\"NZ\"}",
+  "shipping_name": "Jane Doe"
+}
+```
+
 ### Email Action Configuration
 Use these fields from the webhook payload:
 - **From Name:** `{{steps.trigger.event.body.sender_name}}`
@@ -331,6 +350,237 @@ Configure the Gmail/Email action with:
 - **Reply-To:** `{{steps.format_edit_verification.reply_to}}`
 - **Subject:** `{{steps.format_edit_verification.subject}}`
 - **HTML Body:** `{{steps.format_edit_verification.html}}`
+
+---
+
+### Steps: Admin Order Notification Email (Fulfillment)
+
+#### Step 2c: Format Admin Order Notification (Node.js)
+```javascript
+export default defineComponent({
+  async run({ steps, $ }) {
+    const body = steps.trigger.event.body;
+    
+    if (body.type !== 'admin_order_notification') {
+      $.flow.exit('Not an admin_order_notification event');
+    }
+    
+    const { 
+      order_number, 
+      customer_email, 
+      customer_name, 
+      deceased_name,
+      product_type,
+      hosting_duration,
+      engraving_text,
+      amount_paid,
+      currency,
+      activation_code,
+      shipping_address,
+      shipping_name
+    } = body;
+    
+    // Parse shipping address
+    let shippingHtml = 'No shipping address provided';
+    try {
+      const addr = JSON.parse(shipping_address || '{}');
+      if (addr.line1) {
+        shippingHtml = [
+          shipping_name || customer_name,
+          addr.line1,
+          addr.line2,
+          `${addr.city} ${addr.postal_code || ''}`.trim(),
+          addr.country
+        ].filter(Boolean).join('<br>');
+      }
+    } catch (e) {
+      shippingHtml = shipping_address || 'No address provided';
+    }
+    
+    // Format product type for display
+    const productDisplay = {
+      'medallion': '🥇 Medallion Only',
+      'plaque': '🪧 Plaque Only',
+      'both': '🥇🪧 Medallion + Plaque'
+    }[product_type] || product_type;
+    
+    const emailHtml = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>New Order - ${order_number}</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: 'Helvetica Neue', Arial, sans-serif; background-color: #f5f5f0;">
+  <table role="presentation" cellspacing="0" cellpadding="0" width="100%" style="max-width: 600px; margin: 0 auto; background-color: #ffffff;">
+    <!-- Header -->
+    <tr>
+      <td style="background: linear-gradient(135deg, #2d5a27 0%, #3d7a35 100%); padding: 30px; text-align: center;">
+        <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 300;">📦 New Order Received</h1>
+        <p style="color: rgba(255,255,255,0.9); margin: 10px 0 0; font-size: 18px; font-weight: bold;">${order_number}</p>
+      </td>
+    </tr>
+    
+    <!-- Main Content -->
+    <tr>
+      <td style="padding: 30px;">
+        
+        <!-- Order Summary -->
+        <table role="presentation" cellspacing="0" cellpadding="0" width="100%" style="margin: 0 0 25px; border: 1px solid #ddd; border-radius: 8px;">
+          <tr>
+            <td colspan="2" style="background-color: #f9f7f4; padding: 15px; border-bottom: 1px solid #ddd; border-radius: 8px 8px 0 0;">
+              <strong style="color: #333; font-size: 16px;">Order Summary</strong>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 12px 15px; border-bottom: 1px solid #eee; color: #666; width: 40%;">Product</td>
+            <td style="padding: 12px 15px; border-bottom: 1px solid #eee; color: #333; font-weight: 500;">${productDisplay}</td>
+          </tr>
+          <tr>
+            <td style="padding: 12px 15px; border-bottom: 1px solid #eee; color: #666;">Hosting</td>
+            <td style="padding: 12px 15px; border-bottom: 1px solid #eee; color: #333;">${hosting_duration} years</td>
+          </tr>
+          <tr>
+            <td style="padding: 12px 15px; border-bottom: 1px solid #eee; color: #666;">Amount Paid</td>
+            <td style="padding: 12px 15px; border-bottom: 1px solid #eee; color: #2d5a27; font-weight: bold;">$${amount_paid} ${currency}</td>
+          </tr>
+          <tr>
+            <td style="padding: 12px 15px; color: #666;">Memorial For</td>
+            <td style="padding: 12px 15px; color: #333; font-weight: 500;">${deceased_name}</td>
+          </tr>
+        </table>
+        
+        <!-- Fulfillment Details -->
+        <table role="presentation" cellspacing="0" cellpadding="0" width="100%" style="margin: 0 0 25px; border: 2px solid #8B7355; border-radius: 8px;">
+          <tr>
+            <td colspan="2" style="background-color: #8B7355; padding: 15px; border-radius: 6px 6px 0 0;">
+              <strong style="color: #fff; font-size: 16px;">⚙️ Fulfillment Details</strong>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 15px; border-bottom: 1px solid #eee; color: #666; width: 40%; vertical-align: top;">Activation Code</td>
+            <td style="padding: 15px; border-bottom: 1px solid #eee;">
+              <code style="background-color: #f0f0f0; padding: 8px 15px; border-radius: 4px; font-size: 18px; font-weight: bold; letter-spacing: 2px;">${activation_code}</code>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 15px; color: #666; vertical-align: top;">Engraving Text</td>
+            <td style="padding: 15px;">
+              <div style="background-color: #fffbf0; border: 1px dashed #d4a853; padding: 15px; border-radius: 4px; font-style: italic; color: #333;">
+                ${engraving_text || '<em style="color: #999;">No engraving requested</em>'}
+              </div>
+            </td>
+          </tr>
+        </table>
+        
+        <!-- Customer & Shipping -->
+        <table role="presentation" cellspacing="0" cellpadding="0" width="100%" style="margin: 0 0 25px;">
+          <tr>
+            <td style="width: 48%; vertical-align: top;">
+              <table role="presentation" cellspacing="0" cellpadding="0" width="100%" style="border: 1px solid #ddd; border-radius: 8px;">
+                <tr>
+                  <td style="background-color: #f9f7f4; padding: 12px; border-bottom: 1px solid #ddd; border-radius: 8px 8px 0 0;">
+                    <strong style="color: #333; font-size: 14px;">👤 Customer</strong>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding: 15px; color: #333; line-height: 1.6;">
+                    ${customer_name}<br>
+                    <a href="mailto:${customer_email}" style="color: #8B7355;">${customer_email}</a>
+                  </td>
+                </tr>
+              </table>
+            </td>
+            <td style="width: 4%;"></td>
+            <td style="width: 48%; vertical-align: top;">
+              <table role="presentation" cellspacing="0" cellpadding="0" width="100%" style="border: 1px solid #ddd; border-radius: 8px;">
+                <tr>
+                  <td style="background-color: #f9f7f4; padding: 12px; border-bottom: 1px solid #ddd; border-radius: 8px 8px 0 0;">
+                    <strong style="color: #333; font-size: 14px;">📍 Ship To</strong>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding: 15px; color: #333; line-height: 1.6;">
+                    ${shippingHtml}
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+        
+        <!-- Action Checklist -->
+        <table role="presentation" cellspacing="0" cellpadding="0" width="100%" style="margin: 0 0 20px; background-color: #f0f8ff; border: 1px solid #b8d4f0; border-radius: 8px;">
+          <tr>
+            <td style="padding: 20px;">
+              <strong style="color: #333; font-size: 14px; display: block; margin-bottom: 12px;">📋 Action Checklist:</strong>
+              <p style="margin: 0 0 8px; color: #555; font-size: 14px;">☐ Code NFC tag with activation code: <strong>${activation_code}</strong></p>
+              ${engraving_text ? `<p style="margin: 0 0 8px; color: #555; font-size: 14px;">☐ Request engraving: <strong>"${engraving_text}"</strong></p>` : ''}
+              <p style="margin: 0; color: #555; font-size: 14px;">☐ Pack and ship to address above</p>
+            </td>
+          </tr>
+        </table>
+        
+      </td>
+    </tr>
+    
+    <!-- Footer -->
+    <tr>
+      <td style="background-color: #f9f7f4; padding: 20px; text-align: center; border-top: 1px solid #e5e5e5;">
+        <p style="color: #888; font-size: 12px; margin: 0;">
+          This is an internal order notification. Do not reply to this email.
+        </p>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+    `.trim();
+
+    const emailText = `
+NEW ORDER: ${order_number}
+
+PRODUCT: ${productDisplay}
+HOSTING: ${hosting_duration} years
+AMOUNT: $${amount_paid} ${currency}
+MEMORIAL FOR: ${deceased_name}
+
+ACTIVATION CODE: ${activation_code}
+ENGRAVING: ${engraving_text || 'None'}
+
+CUSTOMER:
+${customer_name}
+${customer_email}
+
+SHIP TO:
+${shippingHtml.replace(/<br>/g, '\\n')}
+
+ACTION CHECKLIST:
+- Code NFC tag with: ${activation_code}
+${engraving_text ? `- Request engraving: "${engraving_text}"` : ''}
+- Pack and ship
+    `.trim();
+
+    return {
+      to: 'memoriqr.global@gmail.com',
+      from_name: 'MemoriQR Orders',
+      reply_to: customer_email,
+      subject: `📦 New Order ${order_number} - ${productDisplay} for ${deceased_name}`,
+      html: emailHtml,
+      text: emailText
+    };
+  }
+});
+```
+
+#### Step 3c: Send Email (Gmail Action)
+Configure the Gmail/Email action with:
+- **To:** `{{steps.format_admin_order.to}}`
+- **From Name:** `{{steps.format_admin_order.from_name}}`
+- **Reply-To:** `{{steps.format_admin_order.reply_to}}`
+- **Subject:** `{{steps.format_admin_order.subject}}`
+- **HTML Body:** `{{steps.format_admin_order.html}}`
 
 ---
 
