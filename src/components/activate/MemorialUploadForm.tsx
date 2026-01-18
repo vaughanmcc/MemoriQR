@@ -1258,9 +1258,18 @@ export function MemorialUploadForm({
                       }`}
                     >
                       {/* Ornamental frame style preview with theme colors */}
-                      <div className={`frame-preview frame-preview-themed frame-pattern-${frame.style} h-20 w-full flex items-center justify-center mb-2 rounded-lg overflow-hidden`}>
-                        <div className="frame-preview-inner w-12 h-12 bg-gradient-to-br from-gray-100 to-gray-200 rounded flex items-center justify-center">
-                          <span className="text-2xl">{frame.preview}</span>
+                      <div className="h-20 w-full flex items-center justify-center mb-2">
+                        <div 
+                          className={`frame-preview frame-preview-themed frame-pattern-${frame.style} flex items-center justify-center ${
+                            frame.shape === 'oval' ? 'w-16 h-20' : 'w-full h-full rounded-lg'
+                          }`}
+                          style={frame.shape === 'oval' ? { borderRadius: '50%' } : undefined}
+                        >
+                          <div className={`frame-preview-inner bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center ${
+                            frame.shape === 'oval' ? 'w-10 h-14 rounded-full' : 'w-12 h-12 rounded'
+                          }`}>
+                            <span className="text-2xl">{frame.preview}</span>
+                          </div>
                         </div>
                       </div>
                       <p className="font-medium text-sm text-gray-800">
@@ -1279,9 +1288,18 @@ export function MemorialUploadForm({
                     <div className="absolute z-50 bottom-full left-1/2 -translate-x-1/2 mb-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 pointer-events-none">
                       <div className="w-56 p-4 rounded-xl shadow-2xl bg-white border border-gray-200">
                         {/* Large ornamental frame preview with theme colors */}
-                        <div className={`frame-preview frame-preview-themed frame-pattern-${frame.style} frame-preview-lg mx-auto mb-3`}>
-                          <div className="frame-preview-inner w-full h-full bg-gradient-to-br from-memorial-sage/30 to-memorial-cream rounded flex items-center justify-center">
-                            <span className="text-5xl">🐕</span>
+                        <div className="flex items-center justify-center mb-3">
+                          <div 
+                            className={`frame-preview frame-preview-themed frame-pattern-${frame.style} flex items-center justify-center ${
+                              frame.shape === 'oval' ? 'w-28 h-36' : 'w-36 h-36 rounded-lg'
+                            }`}
+                            style={frame.shape === 'oval' ? { borderRadius: '50%' } : undefined}
+                          >
+                            <div className={`frame-preview-inner bg-gradient-to-br from-memorial-sage/30 to-memorial-cream flex items-center justify-center ${
+                              frame.shape === 'oval' ? 'w-20 h-28 rounded-full' : 'w-full h-full rounded'
+                            }`}>
+                              <span className="text-5xl">🐕</span>
+                            </div>
                           </div>
                         </div>
                         <div className="text-center">
