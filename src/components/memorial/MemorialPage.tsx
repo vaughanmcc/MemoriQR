@@ -9,7 +9,7 @@ import { formatDate, formatDateRange } from '@/lib/utils'
 import { PhotoGallery } from './PhotoGallery'
 import { VideoPlayer } from './VideoPlayer'
 import { ShareButton } from './ShareButton'
-import { ProfileFrame, getFrameShape } from './ProfileFrame'
+import { ProfileFrame, getFrameShape, getFrameStyle } from './ProfileFrame'
 
 // Theme definitions matching the upload form - includes frame colors for themed frames
 const THEMES: Record<string, { bg: string; accent: string; text: string; secondary: string; frame: { light: string; main: string; dark: string } }> = {
@@ -201,6 +201,7 @@ export function MemorialPage({ memorial }: MemorialPageProps) {
                 alt={memorial.deceased_name}
                 shape={getFrameShape((memorial as any).frame || 'oval-classic')}
                 frameColor={theme.frame}
+                frameStyle={getFrameStyle((memorial as any).frame || 'oval-classic')}
               />
             </div>
           )}
