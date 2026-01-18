@@ -375,9 +375,22 @@ export function MemorialUploadForm({
   const [isDraggingVideo, setIsDraggingVideo] = useState<number | null>(null)
   const [isDraggingVideoZone, setIsDraggingVideoZone] = useState(false)
 
+  // Debug: Log props on mount
   useEffect(() => {
+    console.log('[MemorialUploadForm] Props received:', {
+      initialName,
+      initialType,
+      initialSpecies,
+      normalizedInitialSpecies,
+      normalizedInitialSpeciesOther,
+    })
+  }, [])
+
+  useEffect(() => {
+    console.log('[MemorialUploadForm] initialSpecies changed:', initialSpecies)
     if (!initialSpecies) return
     const normalized = normalizeSpeciesValue(initialSpecies)
+    console.log('[MemorialUploadForm] Normalized:', normalized)
     setSpecies(normalized.species)
     setSpeciesOther(normalized.speciesOther)
   }, [initialSpecies])
