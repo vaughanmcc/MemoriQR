@@ -2,7 +2,7 @@
 
 import { useState, useEffect, Suspense, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { Heart, Loader2, AlertCircle, Check, Palette, Image as ImageIcon, Save, Upload, X, Star, Plus, Video, Trash2 } from 'lucide-react'
+import { Heart, Loader2, AlertCircle, Check, Palette, Image as ImageIcon, Save, Upload, X, Star, Plus, Video, Trash2, Eye } from 'lucide-react'
 import Image from 'next/image'
 import type { HostingDuration, ProductType } from '@/types/database'
 import { MemorialPhoto, MemorialVideo } from '@/types'
@@ -594,13 +594,22 @@ function EditPageContent() {
               </div>
             </div>
 
-            {/* Save Button */}
-            <div className="flex gap-4 pt-4 border-t">
+            {/* Action Buttons */}
+            <div className="flex flex-col sm:flex-row gap-4 pt-4 border-t">
               <a
                 href={`/memorial/${memorial.slug}`}
                 className="btn-outline flex-1 text-center"
               >
                 Cancel
+              </a>
+              <a
+                href={`/memorial/${memorial.slug}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn-outline flex-1 flex items-center justify-center gap-2"
+              >
+                <Eye className="h-5 w-5" />
+                Preview Memorial
               </a>
               <button
                 onClick={handleSave}
