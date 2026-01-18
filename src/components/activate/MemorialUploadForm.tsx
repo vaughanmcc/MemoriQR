@@ -395,10 +395,8 @@ export function MemorialUploadForm({
     }
   }, [initialSpecies])
 
-  const todayLocal = new Date()
-  const todayLocalISO = new Date(todayLocal.getTime() - todayLocal.getTimezoneOffset() * 60000)
-    .toISOString()
-    .split('T')[0]
+  // Get today's date in YYYY-MM-DD format for the max date constraint
+  const todayLocalISO = new Date().toLocaleDateString('en-CA') // en-CA gives YYYY-MM-DD format
   
   // Get video limit, available themes and frames for this plan
   const videoLimit = TIER_LIMITS[hostingDuration]?.videos || 2
