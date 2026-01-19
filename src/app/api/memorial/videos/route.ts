@@ -17,6 +17,7 @@ export async function POST(request: NextRequest) {
     
     const supabase = createAdminClient()
     let token: string
+    let sessionToken: string | null = null
     let videoUrl: string | null = null
     let videoFile: File | null = null
 
@@ -24,6 +25,7 @@ export async function POST(request: NextRequest) {
       // File upload
       const formData = await request.formData()
       token = formData.get('token') as string
+      sessionToken = formData.get('session') as string
       videoFile = formData.get('video') as File | null
       
       // Validate file size (max 4MB - Vercel serverless limit)
@@ -48,11 +50,16 @@ export async function POST(request: NextRequest) {
       // JSON (YouTube URL)
       const body = await request.json()
       token = body.token
+      sessionToken = body.session
       videoUrl = body.url
     }
 
     if (!token) {
       return NextResponse.json({ error: 'Edit token is required' }, { status: 400 })
+    }
+
+    if (!sessionToken) {
+      return NextResponse.json({ error: 'Session expired. Please refresh the page and verify your email again.' }, { status: 401 })
     }
 
     if (!videoUrl && !videoFile) {
@@ -69,7 +76,21 @@ export async function POST(request: NextRequest) {
     const memorial = data as MemorialRecord | null
 
     if (lookupError || !memorial) {
-      return NextResponse.json({ error: 'Invalid edit token' }, { status: 403 })
+      return NextResponse.json({ error: 'Invalid edit token. Please use the original edit link from your email.' }, { status: 403 })
+    }
+
+    // Verify session token is valid and not expired
+    const { data: session, error: sessionError } = await supabase
+      .from('edit_verification_codes')
+      .select('*')
+      .eq('memorial_id', memorial.id)
+      .eq('code', `SESSION:${sessionToken}`)
+      .is('used_at', null)
+      .gt('expires_at', new Date().toISOString())
+      .single()
+
+    if (sessionError || !session) {
+      return NextResponse.json({ error: 'Session expired. Please refresh the page and verify your email again.' }, { status: 401 })
     }
 
     // Check video limit
@@ -183,10 +204,14 @@ export async function POST(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
   try {
     const body = await request.json()
-    const { token, videoId } = body
+    const { token, session, videoId } = body
 
     if (!token || !videoId) {
       return NextResponse.json({ error: 'Token and videoId are required' }, { status: 400 })
+    }
+
+    if (!session) {
+      return NextResponse.json({ error: 'Session expired. Please refresh the page and verify your email again.' }, { status: 401 })
     }
 
     const supabase = createAdminClient()
@@ -201,7 +226,21 @@ export async function DELETE(request: NextRequest) {
     const memorial = data as { id: string; videos: any[] } | null
 
     if (lookupError || !memorial) {
-      return NextResponse.json({ error: 'Invalid edit token' }, { status: 403 })
+      return NextResponse.json({ error: 'Invalid edit token. Please use the original edit link from your email.' }, { status: 403 })
+    }
+
+    // Verify session token is valid and not expired
+    const { data: sessionData, error: sessionError } = await supabase
+      .from('edit_verification_codes')
+      .select('*')
+      .eq('memorial_id', memorial.id)
+      .eq('code', `SESSION:${session}`)
+      .is('used_at', null)
+      .gt('expires_at', new Date().toISOString())
+      .single()
+
+    if (sessionError || !sessionData) {
+      return NextResponse.json({ error: 'Session expired. Please refresh the page and verify your email again.' }, { status: 401 })
     }
 
     const currentVideos = (memorial.videos || []) as any[]

@@ -16,10 +16,15 @@ export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData()
     const token = formData.get('token') as string
+    const sessionToken = formData.get('session') as string
     const photoFiles = formData.getAll('photos') as File[]
 
     if (!token) {
       return NextResponse.json({ error: 'Edit token is required' }, { status: 400 })
+    }
+
+    if (!sessionToken) {
+      return NextResponse.json({ error: 'Session expired. Please refresh the page and verify your email again.' }, { status: 401 })
     }
 
     if (photoFiles.length === 0) {
@@ -46,7 +51,7 @@ export async function POST(request: NextRequest) {
 
     const supabase = createAdminClient()
 
-    // Verify token and get memorial
+    // Verify edit token and get memorial
     const { data, error: lookupError } = await supabase
       .from('memorial_records')
       .select('id, photos, hosting_duration, memorial_slug')
@@ -56,7 +61,21 @@ export async function POST(request: NextRequest) {
     const memorial = data as MemorialRecord | null
 
     if (lookupError || !memorial) {
-      return NextResponse.json({ error: 'Invalid edit token' }, { status: 403 })
+      return NextResponse.json({ error: 'Invalid edit token. Please use the original edit link from your email.' }, { status: 403 })
+    }
+
+    // Verify session token is valid and not expired
+    const { data: session, error: sessionError } = await supabase
+      .from('edit_verification_codes')
+      .select('*')
+      .eq('memorial_id', memorial.id)
+      .eq('code', `SESSION:${sessionToken}`)
+      .is('used_at', null)
+      .gt('expires_at', new Date().toISOString())
+      .single()
+
+    if (sessionError || !session) {
+      return NextResponse.json({ error: 'Session expired. Please refresh the page and verify your email again.' }, { status: 401 })
     }
 
     // Check photo limit
@@ -153,10 +172,14 @@ export async function POST(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
   try {
     const body = await request.json()
-    const { token, photoId } = body
+    const { token, session, photoId } = body
 
     if (!token || !photoId) {
       return NextResponse.json({ error: 'Token and photoId are required' }, { status: 400 })
+    }
+
+    if (!session) {
+      return NextResponse.json({ error: 'Session expired. Please refresh the page and verify your email again.' }, { status: 401 })
     }
 
     const supabase = createAdminClient()
@@ -171,7 +194,21 @@ export async function DELETE(request: NextRequest) {
     const memorial = data as { id: string; photos: any[] } | null
 
     if (lookupError || !memorial) {
-      return NextResponse.json({ error: 'Invalid edit token' }, { status: 403 })
+      return NextResponse.json({ error: 'Invalid edit token. Please use the original edit link from your email.' }, { status: 403 })
+    }
+
+    // Verify session token is valid and not expired
+    const { data: sessionData, error: sessionError } = await supabase
+      .from('edit_verification_codes')
+      .select('*')
+      .eq('memorial_id', memorial.id)
+      .eq('code', `SESSION:${session}`)
+      .is('used_at', null)
+      .gt('expires_at', new Date().toISOString())
+      .single()
+
+    if (sessionError || !sessionData) {
+      return NextResponse.json({ error: 'Session expired. Please refresh the page and verify your email again.' }, { status: 401 })
     }
 
     const currentPhotos = (memorial.photos || []) as any[]
@@ -237,10 +274,14 @@ export async function DELETE(request: NextRequest) {
 export async function PATCH(request: NextRequest) {
   try {
     const body = await request.json()
-    const { token, photoId } = body
+    const { token, session, photoId } = body
 
     if (!token || !photoId) {
       return NextResponse.json({ error: 'Token and photoId are required' }, { status: 400 })
+    }
+
+    if (!session) {
+      return NextResponse.json({ error: 'Session expired. Please refresh the page and verify your email again.' }, { status: 401 })
     }
 
     const supabase = createAdminClient()
@@ -255,7 +296,21 @@ export async function PATCH(request: NextRequest) {
     const memorial = data as { id: string; photos: any[] } | null
 
     if (lookupError || !memorial) {
-      return NextResponse.json({ error: 'Invalid edit token' }, { status: 403 })
+      return NextResponse.json({ error: 'Invalid edit token. Please use the original edit link from your email.' }, { status: 403 })
+    }
+
+    // Verify session token is valid and not expired
+    const { data: sessionData, error: sessionError } = await supabase
+      .from('edit_verification_codes')
+      .select('*')
+      .eq('memorial_id', memorial.id)
+      .eq('code', `SESSION:${session}`)
+      .is('used_at', null)
+      .gt('expires_at', new Date().toISOString())
+      .single()
+
+    if (sessionError || !sessionData) {
+      return NextResponse.json({ error: 'Session expired. Please refresh the page and verify your email again.' }, { status: 401 })
     }
 
     const currentPhotos = (memorial.photos || []) as any[]

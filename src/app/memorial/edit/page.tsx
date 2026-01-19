@@ -225,6 +225,13 @@ function EditPageContent() {
   const uploadPhotos = useCallback(async (files: File[]) => {
     if (files.length === 0 || !token) return
 
+    // Get session token from URL or localStorage
+    const effectiveSessionToken = sessionToken || getStoredSession(token)
+    if (!effectiveSessionToken) {
+      setError('Session expired. Please refresh the page and verify your email again.')
+      return
+    }
+
     // Client-side validation BEFORE upload
     const MAX_PHOTO_SIZE = 10 * 1024 * 1024 // 10MB
     const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/heic', 'image/heif']
@@ -261,6 +268,7 @@ function EditPageContent() {
 
     const formData = new FormData()
     formData.append('token', token)
+    formData.append('session', effectiveSessionToken)
     files.forEach(file => formData.append('photos', file))
 
     try {
@@ -283,7 +291,7 @@ function EditPageContent() {
 
     setUploadingPhotos(false)
     if (photoInputRef.current) photoInputRef.current.value = ''
-  }, [token, photos.length, photoLimit])
+  }, [token, sessionToken, getStoredSession, photos.length, photoLimit])
 
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || [])
@@ -335,6 +343,13 @@ function EditPageContent() {
   const handleDeletePhoto = async (photoId: string) => {
     if (!token) return
 
+    // Get session token from URL or localStorage
+    const effectiveSessionToken = sessionToken || getStoredSession(token)
+    if (!effectiveSessionToken) {
+      setError('Session expired. Please refresh the page and verify your email again.')
+      return
+    }
+
     setDeletingId(photoId)
     setError('')
 
@@ -342,7 +357,7 @@ function EditPageContent() {
       const response = await fetch('/api/memorial/photos', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token, photoId }),
+        body: JSON.stringify({ token, session: effectiveSessionToken, photoId }),
       })
       const data = await response.json()
 
@@ -362,11 +377,18 @@ function EditPageContent() {
   const handleSetProfilePhoto = async (photoId: string) => {
     if (!token) return
 
+    // Get session token from URL or localStorage
+    const effectiveSessionToken = sessionToken || getStoredSession(token)
+    if (!effectiveSessionToken) {
+      setError('Session expired. Please refresh the page and verify your email again.')
+      return
+    }
+
     try {
       const response = await fetch('/api/memorial/photos', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token, photoId }),
+        body: JSON.stringify({ token, session: effectiveSessionToken, photoId }),
       })
       const data = await response.json()
 
@@ -384,6 +406,13 @@ function EditPageContent() {
   const handleAddYoutubeVideo = async () => {
     if (!token || !youtubeUrl) return
 
+    // Get session token from URL or localStorage
+    const effectiveSessionToken = sessionToken || getStoredSession(token)
+    if (!effectiveSessionToken) {
+      setError('Session expired. Please refresh the page and verify your email again.')
+      return
+    }
+
     const ytId = getYouTubeId(youtubeUrl)
     if (!ytId) {
       setError('Invalid YouTube URL')
@@ -397,7 +426,7 @@ function EditPageContent() {
       const response = await fetch('/api/memorial/videos', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token, url: youtubeUrl }),
+        body: JSON.stringify({ token, session: effectiveSessionToken, url: youtubeUrl }),
       })
       const data = await response.json()
 
@@ -446,6 +475,14 @@ function EditPageContent() {
     const file = e.target.files?.[0]
     if (!file || !token) return
 
+    // Get session token from URL or localStorage
+    const effectiveSessionToken = sessionToken || getStoredSession(token)
+    if (!effectiveSessionToken) {
+      setError('Session expired. Please refresh the page and verify your email again.')
+      if (videoInputRef.current) videoInputRef.current.value = ''
+      return
+    }
+
     // Client-side validation BEFORE upload
     const validationError = validateVideoFile(file)
     if (validationError) {
@@ -459,6 +496,7 @@ function EditPageContent() {
 
     const formData = new FormData()
     formData.append('token', token)
+    formData.append('session', effectiveSessionToken)
     formData.append('video', file)
 
     try {
@@ -501,6 +539,13 @@ function EditPageContent() {
   const uploadVideoFile = useCallback(async (file: File) => {
     if (!file || !token) return
 
+    // Get session token from URL or localStorage
+    const effectiveSessionToken = sessionToken || getStoredSession(token)
+    if (!effectiveSessionToken) {
+      setError('Session expired. Please refresh the page and verify your email again.')
+      return
+    }
+
     // Client-side validation BEFORE upload
     const validationError = validateVideoFile(file)
     if (validationError) {
@@ -513,6 +558,7 @@ function EditPageContent() {
 
     const formData = new FormData()
     formData.append('token', token)
+    formData.append('session', effectiveSessionToken)
     formData.append('video', file)
 
     try {
@@ -549,7 +595,7 @@ function EditPageContent() {
 
     setUploadingVideo(false)
     if (videoInputRef.current) videoInputRef.current.value = ''
-  }, [token])
+  }, [token, sessionToken, getStoredSession, validateVideoFile])
 
   // Video drag and drop handlers
   const handleVideoDragOver = useCallback((e: React.DragEvent) => {
@@ -604,6 +650,13 @@ function EditPageContent() {
   const handleDeleteVideo = async (videoId: string) => {
     if (!token) return
 
+    // Get session token from URL or localStorage
+    const effectiveSessionToken = sessionToken || getStoredSession(token)
+    if (!effectiveSessionToken) {
+      setError('Session expired. Please refresh the page and verify your email again.')
+      return
+    }
+
     setDeletingId(videoId)
     setError('')
 
@@ -611,7 +664,7 @@ function EditPageContent() {
       const response = await fetch('/api/memorial/videos', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token, videoId }),
+        body: JSON.stringify({ token, session: effectiveSessionToken, videoId }),
       })
       const data = await response.json()
 
@@ -630,6 +683,13 @@ function EditPageContent() {
   const handleSave = async (exitAfter: boolean = false) => {
     if (!memorial || !token) return
 
+    // Get session token from URL or localStorage
+    const effectiveSessionToken = sessionToken || getStoredSession(token)
+    if (!effectiveSessionToken) {
+      setError('Session expired. Please refresh the page and verify your email again.')
+      return
+    }
+
     setSaving(true)
     setError('')
     setSuccess(false)
@@ -640,6 +700,7 @@ function EditPageContent() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           token,
+          session: effectiveSessionToken,
           memorialText,
           theme: selectedTheme,
           frame: selectedFrame,
@@ -670,6 +731,13 @@ function EditPageContent() {
   const handleSaveAndView = async () => {
     if (!memorial || !token) return
 
+    // Get session token from URL or localStorage
+    const effectiveSessionToken = sessionToken || getStoredSession(token)
+    if (!effectiveSessionToken) {
+      setError('Session expired. Please refresh the page and verify your email again.')
+      return
+    }
+
     setSaving(true)
     setError('')
 
@@ -679,6 +747,7 @@ function EditPageContent() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           token,
+          session: effectiveSessionToken,
           memorialText,
           theme: selectedTheme,
           frame: selectedFrame,
