@@ -25,6 +25,25 @@ export async function POST(request: NextRequest) {
       const formData = await request.formData()
       token = formData.get('token') as string
       videoFile = formData.get('video') as File | null
+      
+      // Validate file size (max 50MB)
+      const MAX_VIDEO_SIZE = 50 * 1024 * 1024 // 50MB
+      if (videoFile && videoFile.size > MAX_VIDEO_SIZE) {
+        const sizeMB = Math.round(videoFile.size / (1024 * 1024))
+        return NextResponse.json({ 
+          error: `Video file is too large (${sizeMB}MB). Maximum size is 50MB. Try compressing the video or use a YouTube link instead.` 
+        }, { status: 400 })
+      }
+      
+      // Validate file type
+      if (videoFile) {
+        const validTypes = ['video/mp4', 'video/quicktime', 'video/webm', 'video/x-msvideo', 'video/x-m4v']
+        if (!validTypes.includes(videoFile.type)) {
+          return NextResponse.json({ 
+            error: `Invalid video format. Please upload MP4, MOV, or WEBM files. Or use a YouTube link.` 
+          }, { status: 400 })
+        }
+      }
     } else {
       // JSON (YouTube URL)
       const body = await request.json()
@@ -59,7 +78,7 @@ export async function POST(request: NextRequest) {
 
     if (currentVideos.length >= limit) {
       return NextResponse.json({ 
-        error: `Video limit reached (${limit} videos). Upgrade your plan for more.` 
+        error: `Video limit reached. Your plan allows ${limit} video${limit === 1 ? '' : 's'} and you already have ${currentVideos.length}.` 
       }, { status: 400 })
     }
 

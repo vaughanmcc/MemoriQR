@@ -26,6 +26,24 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No photos provided' }, { status: 400 })
     }
 
+    // Validate file sizes (max 10MB per photo)
+    const MAX_PHOTO_SIZE = 10 * 1024 * 1024 // 10MB
+    const oversizedFiles = photoFiles.filter(f => f.size > MAX_PHOTO_SIZE)
+    if (oversizedFiles.length > 0) {
+      return NextResponse.json({ 
+        error: `${oversizedFiles.length} photo(s) exceed the 10MB size limit. Please resize and try again.` 
+      }, { status: 400 })
+    }
+
+    // Validate file types
+    const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/heic', 'image/heif']
+    const invalidFiles = photoFiles.filter(f => !validTypes.includes(f.type))
+    if (invalidFiles.length > 0) {
+      return NextResponse.json({ 
+        error: `Invalid file type. Please upload images only (JPG, PNG, GIF, WEBP).` 
+      }, { status: 400 })
+    }
+
     const supabase = createAdminClient()
 
     // Verify token and get memorial
@@ -48,7 +66,14 @@ export async function POST(request: NextRequest) {
 
     if (availableSlots <= 0) {
       return NextResponse.json({ 
-        error: `Photo limit reached (${limit} photos). Upgrade your plan for more.` 
+        error: `Photo limit reached. Your plan allows ${limit} photos and you already have ${currentPhotos.length}.` 
+      }, { status: 400 })
+    }
+
+    // Check if trying to upload more than available slots
+    if (photoFiles.length > availableSlots) {
+      return NextResponse.json({ 
+        error: `You can only add ${availableSlots} more photo${availableSlots === 1 ? '' : 's'}. You tried to upload ${photoFiles.length}. Your plan allows ${limit} photos total.` 
       }, { status: 400 })
     }
 
