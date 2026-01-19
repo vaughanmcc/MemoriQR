@@ -1,0 +1,339 @@
+-- =====================================================
+-- PARTNER PORTAL MIGRATION
+-- Migration 005: Partner Portal & Commission Tracking
+-- =====================================================
+
+-- =====================================================
+-- CODE BATCHES TABLE
+-- Tracks batches of activation codes generated for partners
+-- =====================================================
+CREATE TABLE IF NOT EXISTS code_batches (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    partner_id UUID REFERENCES partners(id) ON DELETE CASCADE NOT NULL,
+    batch_number TEXT UNIQUE NOT NULL,
+    quantity INTEGER NOT NULL,
+    product_type TEXT CHECK (product_type IN ('nfc_only', 'qr_only', 'both')) NOT NULL,
+    hosting_duration INTEGER CHECK (hosting_duration IN (5, 10, 25)) NOT NULL,
+    unit_cost DECIMAL(10,2) NOT NULL, -- Cost per code to partner
+    total_cost DECIMAL(10,2) NOT NULL,
+    status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'generated', 'shipped', 'cancelled')),
+    requested_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    approved_at TIMESTAMP WITH TIME ZONE,
+    generated_at TIMESTAMP WITH TIME ZONE,
+    shipped_at TIMESTAMP WITH TIME ZONE,
+    notes TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- =====================================================
+-- PARTNER COMMISSIONS TABLE
+-- Tracks commissions earned by partners on each activation
+-- =====================================================
+CREATE TABLE IF NOT EXISTS partner_commissions (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    partner_id UUID REFERENCES partners(id) ON DELETE CASCADE NOT NULL,
+    activation_code TEXT REFERENCES retail_activation_codes(activation_code) ON DELETE SET NULL,
+    memorial_id UUID REFERENCES memorial_records(id) ON DELETE SET NULL,
+    order_value DECIMAL(10,2) NOT NULL, -- The retail price of the product
+    commission_rate DECIMAL(5,2) NOT NULL, -- Commission percentage at time of sale
+    commission_amount DECIMAL(10,2) NOT NULL, -- Calculated commission
+    status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'paid', 'cancelled')),
+    payout_id UUID, -- Links to payout batch when paid
+    earned_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    approved_at TIMESTAMP WITH TIME ZONE,
+    paid_at TIMESTAMP WITH TIME ZONE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- =====================================================
+-- PARTNER PAYOUTS TABLE
+-- Tracks monthly commission payouts to partners
+-- =====================================================
+CREATE TABLE IF NOT EXISTS partner_payouts (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    partner_id UUID REFERENCES partners(id) ON DELETE CASCADE NOT NULL,
+    payout_number TEXT UNIQUE NOT NULL,
+    period_start DATE NOT NULL,
+    period_end DATE NOT NULL,
+    total_activations INTEGER NOT NULL DEFAULT 0,
+    total_order_value DECIMAL(10,2) NOT NULL DEFAULT 0,
+    total_commission DECIMAL(10,2) NOT NULL DEFAULT 0,
+    status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'processing', 'paid', 'failed')),
+    payment_method TEXT, -- 'bank_transfer', 'paypal', etc.
+    payment_reference TEXT, -- Bank reference or PayPal transaction ID
+    notes TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    processed_at TIMESTAMP WITH TIME ZONE,
+    paid_at TIMESTAMP WITH TIME ZONE
+);
+
+-- =====================================================
+-- PARTNER SESSIONS TABLE
+-- Simple session management for partner portal
+-- =====================================================
+CREATE TABLE IF NOT EXISTS partner_sessions (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    partner_id UUID REFERENCES partners(id) ON DELETE CASCADE NOT NULL,
+    session_token TEXT UNIQUE NOT NULL,
+    expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    ip_address TEXT,
+    user_agent TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- =====================================================
+-- PARTNER LOGIN CODES TABLE
+-- Magic link / OTP for partner authentication
+-- =====================================================
+CREATE TABLE IF NOT EXISTS partner_login_codes (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    partner_id UUID REFERENCES partners(id) ON DELETE CASCADE NOT NULL,
+    code TEXT NOT NULL,
+    expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    used_at TIMESTAMP WITH TIME ZONE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- =====================================================
+-- UPDATE PARTNERS TABLE
+-- Add password hash and additional fields
+-- =====================================================
+ALTER TABLE partners 
+ADD COLUMN IF NOT EXISTS password_hash TEXT,
+ADD COLUMN IF NOT EXISTS last_login TIMESTAMP WITH TIME ZONE,
+ADD COLUMN IF NOT EXISTS login_count INTEGER DEFAULT 0,
+ADD COLUMN IF NOT EXISTS bank_account_name TEXT,
+ADD COLUMN IF NOT EXISTS bank_account_number TEXT,
+ADD COLUMN IF NOT EXISTS bank_name TEXT,
+ADD COLUMN IF NOT EXISTS payout_email TEXT;
+
+-- =====================================================
+-- INDEXES FOR PERFORMANCE
+-- =====================================================
+CREATE INDEX IF NOT EXISTS idx_code_batches_partner ON code_batches(partner_id);
+CREATE INDEX IF NOT EXISTS idx_code_batches_status ON code_batches(status);
+CREATE INDEX IF NOT EXISTS idx_partner_commissions_partner ON partner_commissions(partner_id);
+CREATE INDEX IF NOT EXISTS idx_partner_commissions_status ON partner_commissions(status);
+CREATE INDEX IF NOT EXISTS idx_partner_payouts_partner ON partner_payouts(partner_id);
+CREATE INDEX IF NOT EXISTS idx_partner_payouts_status ON partner_payouts(status);
+CREATE INDEX IF NOT EXISTS idx_partner_sessions_token ON partner_sessions(session_token);
+CREATE INDEX IF NOT EXISTS idx_partner_sessions_expires ON partner_sessions(expires_at);
+CREATE INDEX IF NOT EXISTS idx_retail_codes_partner ON retail_activation_codes(partner_id);
+
+-- =====================================================
+-- VIEWS FOR PARTNER DASHBOARD
+-- =====================================================
+
+-- Partner statistics view
+CREATE OR REPLACE VIEW partner_stats AS
+SELECT 
+    p.id AS partner_id,
+    p.partner_name,
+    p.commission_rate,
+    COALESCE(codes.total_codes, 0) AS total_codes,
+    COALESCE(codes.used_codes, 0) AS used_codes,
+    COALESCE(codes.available_codes, 0) AS available_codes,
+    COALESCE(comm.total_earned, 0) AS total_earned,
+    COALESCE(comm.pending_commission, 0) AS pending_commission,
+    COALESCE(comm.paid_commission, 0) AS paid_commission
+FROM partners p
+LEFT JOIN (
+    SELECT 
+        partner_id,
+        COUNT(*) AS total_codes,
+        COUNT(*) FILTER (WHERE is_used = true) AS used_codes,
+        COUNT(*) FILTER (WHERE is_used = false) AS available_codes
+    FROM retail_activation_codes
+    GROUP BY partner_id
+) codes ON codes.partner_id = p.id
+LEFT JOIN (
+    SELECT 
+        partner_id,
+        SUM(commission_amount) AS total_earned,
+        SUM(commission_amount) FILTER (WHERE status = 'pending') AS pending_commission,
+        SUM(commission_amount) FILTER (WHERE status = 'paid') AS paid_commission
+    FROM partner_commissions
+    GROUP BY partner_id
+) comm ON comm.partner_id = p.id;
+
+-- Monthly commission summary view
+CREATE OR REPLACE VIEW monthly_commission_summary AS
+SELECT 
+    partner_id,
+    DATE_TRUNC('month', earned_at) AS month,
+    COUNT(*) AS activations,
+    SUM(order_value) AS total_order_value,
+    SUM(commission_amount) AS total_commission,
+    SUM(commission_amount) FILTER (WHERE status = 'pending') AS pending,
+    SUM(commission_amount) FILTER (WHERE status = 'paid') AS paid
+FROM partner_commissions
+GROUP BY partner_id, DATE_TRUNC('month', earned_at)
+ORDER BY month DESC;
+
+-- =====================================================
+-- FUNCTIONS
+-- =====================================================
+
+-- Function to generate a batch of activation codes
+CREATE OR REPLACE FUNCTION generate_activation_codes(
+    p_partner_id UUID,
+    p_batch_id UUID,
+    p_quantity INTEGER,
+    p_product_type TEXT,
+    p_hosting_duration INTEGER
+) RETURNS INTEGER AS $$
+DECLARE
+    codes_generated INTEGER := 0;
+    new_code TEXT;
+    i INTEGER;
+BEGIN
+    FOR i IN 1..p_quantity LOOP
+        -- Generate unique 8-character alphanumeric code
+        LOOP
+            new_code := UPPER(SUBSTRING(MD5(RANDOM()::TEXT || CLOCK_TIMESTAMP()::TEXT) FROM 1 FOR 8));
+            -- Check if code already exists
+            IF NOT EXISTS (SELECT 1 FROM retail_activation_codes WHERE activation_code = new_code) THEN
+                EXIT;
+            END IF;
+        END LOOP;
+        
+        -- Insert the new code
+        INSERT INTO retail_activation_codes (
+            activation_code,
+            partner_id,
+            product_type,
+            hosting_duration,
+            is_used,
+            created_at,
+            expires_at
+        ) VALUES (
+            new_code,
+            p_partner_id,
+            p_product_type,
+            p_hosting_duration,
+            false,
+            NOW(),
+            NOW() + INTERVAL '2 years'
+        );
+        
+        codes_generated := codes_generated + 1;
+    END LOOP;
+    
+    -- Update batch status
+    UPDATE code_batches 
+    SET status = 'generated', generated_at = NOW()
+    WHERE id = p_batch_id;
+    
+    RETURN codes_generated;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Function to record commission when a code is activated
+CREATE OR REPLACE FUNCTION record_partner_commission()
+RETURNS TRIGGER AS $$
+DECLARE
+    v_partner_id UUID;
+    v_commission_rate DECIMAL(5,2);
+    v_order_value DECIMAL(10,2);
+    v_commission_amount DECIMAL(10,2);
+BEGIN
+    -- Only trigger when code is marked as used
+    IF NEW.is_used = true AND OLD.is_used = false THEN
+        -- Get partner info
+        SELECT partner_id INTO v_partner_id FROM retail_activation_codes WHERE activation_code = NEW.activation_code;
+        
+        IF v_partner_id IS NOT NULL THEN
+            -- Get commission rate
+            SELECT commission_rate INTO v_commission_rate FROM partners WHERE id = v_partner_id;
+            
+            -- Get order value from memorial (or use default based on product type)
+            SELECT base_price INTO v_order_value FROM memorial_records WHERE id = NEW.memorial_id;
+            
+            IF v_order_value IS NULL THEN
+                -- Default pricing if memorial not found
+                v_order_value := CASE 
+                    WHEN NEW.product_type = 'nfc_only' THEN
+                        CASE NEW.hosting_duration WHEN 5 THEN 99 WHEN 10 THEN 149 WHEN 25 THEN 199 END
+                    WHEN NEW.product_type = 'qr_only' THEN
+                        CASE NEW.hosting_duration WHEN 5 THEN 149 WHEN 10 THEN 199 WHEN 25 THEN 279 END
+                    WHEN NEW.product_type = 'both' THEN
+                        CASE NEW.hosting_duration WHEN 5 THEN 199 WHEN 10 THEN 249 WHEN 25 THEN 349 END
+                    ELSE 199
+                END;
+            END IF;
+            
+            -- Calculate commission
+            v_commission_amount := v_order_value * (v_commission_rate / 100);
+            
+            -- Insert commission record
+            INSERT INTO partner_commissions (
+                partner_id,
+                activation_code,
+                memorial_id,
+                order_value,
+                commission_rate,
+                commission_amount,
+                status,
+                earned_at
+            ) VALUES (
+                v_partner_id,
+                NEW.activation_code,
+                NEW.memorial_id,
+                v_order_value,
+                v_commission_rate,
+                v_commission_amount,
+                'pending',
+                NOW()
+            );
+        END IF;
+    END IF;
+    
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Create trigger for commission recording
+DROP TRIGGER IF EXISTS trg_record_commission ON retail_activation_codes;
+CREATE TRIGGER trg_record_commission
+AFTER UPDATE ON retail_activation_codes
+FOR EACH ROW
+EXECUTE FUNCTION record_partner_commission();
+
+-- =====================================================
+-- ROW LEVEL SECURITY
+-- =====================================================
+
+-- Enable RLS on new tables
+ALTER TABLE code_batches ENABLE ROW LEVEL SECURITY;
+ALTER TABLE partner_commissions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE partner_payouts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE partner_sessions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE partner_login_codes ENABLE ROW LEVEL SECURITY;
+
+-- Policies for code_batches (service role only for now)
+CREATE POLICY "Service role access for code_batches" ON code_batches
+    FOR ALL USING (true);
+
+-- Policies for partner_commissions
+CREATE POLICY "Service role access for partner_commissions" ON partner_commissions
+    FOR ALL USING (true);
+
+-- Policies for partner_payouts
+CREATE POLICY "Service role access for partner_payouts" ON partner_payouts
+    FOR ALL USING (true);
+
+-- Policies for partner_sessions
+CREATE POLICY "Service role access for partner_sessions" ON partner_sessions
+    FOR ALL USING (true);
+
+-- Policies for partner_login_codes
+CREATE POLICY "Service role access for partner_login_codes" ON partner_login_codes
+    FOR ALL USING (true);
+
+-- =====================================================
+-- SAMPLE DATA FOR TESTING (DEV ONLY)
+-- =====================================================
+
+-- Insert a test partner (uncomment for dev)
+-- INSERT INTO partners (partner_name, partner_type, contact_email, commission_rate) VALUES
+-- ('Auckland Vet Clinic', 'vet', 'partner@test.com', 20.00);
