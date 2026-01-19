@@ -12,6 +12,9 @@
  * - admin_order_notification: Fulfillment notification → memoriqr.global@gmail.com
  * - memorial_created: Memorial live notification → customer email
  * - edit_verification: MFA verification code → customer email
+ * - partner_login_code: Partner portal OTP → partner email
+ * - partner_code_request: Batch request notification → admin
+ * - partner_codes_generated: Codes ready notification → partner email
  */
 
 export default defineComponent({
@@ -353,6 +356,143 @@ memoriqr.co.nz`
 <p style="color: #777; font-size: 14px;">If you didn't request this code, please ignore this email.</p>
 </div>`,
         text: `Hi ${customer_name},\n\nYour verification code to edit the memorial for ${deceased_name} is:\n\n    ${verification_code}\n\nThis code expires in ${expires_in} (at ${expires_at}).\n\nIf you didn't request this code, please ignore this email.`
+      };
+    }
+    
+    // =====================================================
+    // PARTNER PORTAL EMAILS
+    // =====================================================
+    
+    // Partner login code (magic link OTP)
+    if (type === 'partner_login_code') {
+      const { partner_email, partner_name, login_code, expires_in } = body;
+      return {
+        to: partner_email,
+        replyTo: 'partners@memoriqr.co.nz',
+        from_name: 'MemoriQR Partner Portal',
+        subject: `Your Partner Login Code: ${login_code}`,
+        html: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+<div style="background: linear-gradient(135deg, #2d5a27 0%, #3d7a35 100%); padding: 30px; text-align: center; border-radius: 8px 8px 0 0;">
+<h1 style="color: #fff; margin: 0; font-size: 24px;">🔐 Partner Portal Login</h1>
+</div>
+<div style="padding: 30px; background: #fff; border: 1px solid #ddd; border-top: none;">
+<p style="color: #333; font-size: 16px;">Hi ${partner_name},</p>
+<p style="color: #555; line-height: 1.6;">Use this code to log in to your MemoriQR Partner Portal:</p>
+
+<div style="background: #f5f5f0; border: 2px dashed #2d5a27; padding: 30px; text-align: center; margin: 25px 0; border-radius: 8px;">
+<p style="margin: 0 0 10px; color: #666; font-size: 14px;">Your Login Code</p>
+<p style="font-size: 42px; font-weight: bold; letter-spacing: 10px; margin: 0; font-family: monospace; color: #2d5a27;">${login_code}</p>
+</div>
+
+<p style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; border-radius: 4px;">
+⏰ This code expires in <strong>${expires_in}</strong>
+</p>
+
+<p style="color: #777; font-size: 14px; margin-top: 20px;">If you didn't request this code, please ignore this email or contact us if you have concerns.</p>
+</div>
+<div style="background: #f5f5f0; padding: 20px; text-align: center; border-radius: 0 0 8px 8px;">
+<p style="color: #888; font-size: 12px; margin: 0;">MemoriQR Partner Portal</p>
+</div>
+</div>`,
+        text: `Hi ${partner_name},\n\nYour MemoriQR Partner Portal login code is:\n\n    ${login_code}\n\nThis code expires in ${expires_in}.\n\nIf you didn't request this code, please ignore this email.`
+      };
+    }
+    
+    // Partner code batch request (notification to admin)
+    if (type === 'partner_code_request') {
+      const { partner_name, partner_email, batch_number, quantity, product_type, hosting_duration, unit_cost, total_cost, notes } = body;
+      
+      const productDisplay = getProductDisplay(product_type);
+      
+      return {
+        to: 'memoriqr.global@gmail.com',
+        replyTo: partner_email,
+        from_name: 'MemoriQR Partner Portal',
+        subject: `📦 New Code Request: ${quantity}x ${productDisplay} from ${partner_name}`,
+        html: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+<div style="background: linear-gradient(135deg, #8B7355 0%, #A08060 100%); padding: 20px; text-align: center; border-radius: 8px 8px 0 0;">
+<h1 style="color: #fff; margin: 0;">📦 New Partner Code Request</h1>
+</div>
+
+<div style="padding: 25px; background: #fff; border: 1px solid #ddd; border-top: none;">
+
+<table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+<tr style="background: #f9f7f4;"><td colspan="2" style="padding: 12px; font-weight: bold; border: 1px solid #ddd;">Request Details</td></tr>
+<tr><td style="padding: 10px; border: 1px solid #eee; width: 40%;">Batch Number</td><td style="padding: 10px; border: 1px solid #eee; font-weight: 500;">${batch_number}</td></tr>
+<tr><td style="padding: 10px; border: 1px solid #eee;">Partner</td><td style="padding: 10px; border: 1px solid #eee;">${partner_name}<br><a href="mailto:${partner_email}" style="color: #8B7355;">${partner_email}</a></td></tr>
+<tr><td style="padding: 10px; border: 1px solid #eee;">Quantity</td><td style="padding: 10px; border: 1px solid #eee; font-weight: 500;">${quantity} codes</td></tr>
+<tr><td style="padding: 10px; border: 1px solid #eee;">Product</td><td style="padding: 10px; border: 1px solid #eee;">${productDisplay}</td></tr>
+<tr><td style="padding: 10px; border: 1px solid #eee;">Hosting</td><td style="padding: 10px; border: 1px solid #eee;">${hosting_duration} years</td></tr>
+<tr><td style="padding: 10px; border: 1px solid #eee;">Unit Cost</td><td style="padding: 10px; border: 1px solid #eee;">$${unit_cost.toFixed(2)} NZD</td></tr>
+<tr><td style="padding: 10px; border: 1px solid #eee;">Total Cost</td><td style="padding: 10px; border: 1px solid #eee; color: #2d5a27; font-weight: bold;">$${total_cost.toFixed(2)} NZD</td></tr>
+</table>
+
+${notes ? `<div style="background: #f9f7f4; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+<strong>Partner Notes:</strong><br>
+<p style="margin: 10px 0 0; color: #555;">${notes}</p>
+</div>` : ''}
+
+<div style="background: #f0f8ff; border: 1px solid #b8d4f0; padding: 15px; border-radius: 8px;">
+<strong>📋 Admin Actions:</strong>
+<p style="margin: 10px 0 5px;">1. Review and approve the batch request</p>
+<p style="margin: 5px 0;">2. Generate codes using admin API</p>
+<p style="margin: 5px 0 0;">3. Partner will be notified automatically</p>
+</div>
+
+</div>
+<div style="background: #f9f7f4; padding: 15px; text-align: center; border: 1px solid #ddd; border-top: none; border-radius: 0 0 8px 8px;">
+<p style="color: #888; font-size: 12px; margin: 0;">Partner Portal Admin Notification</p>
+</div>
+</div>`,
+        text: `NEW PARTNER CODE REQUEST\n\nBatch: ${batch_number}\nPartner: ${partner_name} (${partner_email})\nQuantity: ${quantity} codes\nProduct: ${productDisplay}\nHosting: ${hosting_duration} years\nUnit Cost: $${unit_cost.toFixed(2)} NZD\nTotal: $${total_cost.toFixed(2)} NZD\n${notes ? `\nNotes: ${notes}` : ''}\n\nACTIONS:\n1. Approve batch request\n2. Generate codes via admin API\n3. Partner will be notified`
+      };
+    }
+    
+    // Partner codes generated (notification to partner)
+    if (type === 'partner_codes_generated') {
+      const { partner_email, partner_name, batch_number, quantity, product_type, hosting_duration, codes_list, portal_url } = body;
+      
+      const productDisplay = getProductDisplay(product_type);
+      
+      return {
+        to: partner_email,
+        replyTo: 'partners@memoriqr.co.nz',
+        from_name: 'MemoriQR Partner Portal',
+        subject: `✅ Your ${quantity} activation codes are ready! (${batch_number})`,
+        html: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+<div style="background: linear-gradient(135deg, #2d5a27 0%, #3d7a35 100%); padding: 30px; text-align: center; border-radius: 8px 8px 0 0;">
+<h1 style="color: #fff; margin: 0; font-size: 24px;">✅ Your Codes Are Ready!</h1>
+</div>
+
+<div style="padding: 30px; background: #fff; border: 1px solid #ddd; border-top: none;">
+<p style="color: #333; font-size: 16px;">Hi ${partner_name},</p>
+<p style="color: #555; line-height: 1.6;">Great news! Your batch of activation codes has been generated and is ready to use.</p>
+
+<table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+<tr style="background: #f9f7f4;"><td colspan="2" style="padding: 12px; font-weight: bold; border: 1px solid #ddd;">Batch Details</td></tr>
+<tr><td style="padding: 10px; border: 1px solid #eee; width: 40%;">Batch Number</td><td style="padding: 10px; border: 1px solid #eee; font-weight: 500;">${batch_number}</td></tr>
+<tr><td style="padding: 10px; border: 1px solid #eee;">Codes Generated</td><td style="padding: 10px; border: 1px solid #eee; font-weight: 500; color: #2d5a27;">${quantity}</td></tr>
+<tr><td style="padding: 10px; border: 1px solid #eee;">Product</td><td style="padding: 10px; border: 1px solid #eee;">${productDisplay}</td></tr>
+<tr><td style="padding: 10px; border: 1px solid #eee;">Hosting</td><td style="padding: 10px; border: 1px solid #eee;">${hosting_duration} years</td></tr>
+</table>
+
+<div style="text-align: center; margin: 30px 0;">
+<a href="${portal_url}" style="display: inline-block; background: linear-gradient(135deg, #2d5a27 0%, #3d7a35 100%); color: #fff; text-decoration: none; padding: 15px 40px; border-radius: 8px; font-size: 16px;">View Codes in Portal</a>
+</div>
+
+<div style="background: #f9f7f4; padding: 20px; border-radius: 8px; margin: 20px 0;">
+<p style="font-weight: bold; margin: 0 0 10px;">Your Activation Codes:</p>
+<pre style="background: #fff; border: 1px solid #ddd; padding: 15px; border-radius: 4px; font-family: monospace; font-size: 14px; white-space: pre-wrap; word-break: break-all; margin: 0;">${codes_list}</pre>
+</div>
+
+<p style="color: #777; font-size: 14px;">You can also download all codes as a CSV from the Partner Portal. Each code can be used by one customer to activate their memorial.</p>
+</div>
+
+<div style="background: #f5f5f0; padding: 20px; text-align: center; border-radius: 0 0 8px 8px;">
+<p style="color: #888; font-size: 12px; margin: 0;">MemoriQR Partner Portal</p>
+</div>
+</div>`,
+        text: `Hi ${partner_name},\n\nYour batch of activation codes is ready!\n\nBatch: ${batch_number}\nCodes Generated: ${quantity}\nProduct: ${productDisplay}\nHosting: ${hosting_duration} years\n\nYOUR CODES:\n${codes_list}\n\nView all codes in the Partner Portal: ${portal_url}`
       };
     }
     
