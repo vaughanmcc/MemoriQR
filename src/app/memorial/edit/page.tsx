@@ -448,8 +448,8 @@ function EditPageContent() {
   // Upload video file handler
   // Client-side video validation helper
   const validateVideoFile = useCallback((file: File): string | null => {
-    // Vercel serverless functions have a 4.5MB body size limit on Hobby plan
-    const MAX_VIDEO_SIZE = 4 * 1024 * 1024 // 4MB
+    // Direct upload to Supabase - supports up to 50MB
+    const MAX_VIDEO_SIZE = 50 * 1024 * 1024 // 50MB
     const validTypes = ['video/mp4', 'video/quicktime', 'video/webm', 'video/x-msvideo', 'video/x-m4v']
     
     // Check video limit
@@ -460,16 +460,79 @@ function EditPageContent() {
     // Check file size
     if (file.size > MAX_VIDEO_SIZE) {
       const sizeMB = (file.size / (1024 * 1024)).toFixed(1)
-      return `Video file is too large (${sizeMB}MB). Maximum upload size is 4MB. For larger videos, please use a YouTube link instead.`
+      return `Video file is too large (${sizeMB}MB). Maximum upload size is 50MB.`
     }
     
     // Check file type
     if (!validTypes.includes(file.type)) {
-      return `Invalid video format (${file.type || 'unknown'}). Please upload MP4, MOV, or WEBM files. Or use a YouTube link.`
+      return `Invalid video format (${file.type || 'unknown'}). Please upload MP4, MOV, or WEBM files.`
     }
     
     return null // Valid
   }, [videos.length, videoLimit])
+
+  // Direct upload video to Supabase Storage (bypasses Vercel serverless limits)
+  const uploadVideoDirectly = async (file: File, effectiveSessionToken: string): Promise<boolean> => {
+    try {
+      // Step 1: Get signed upload URL from API
+      const urlResponse = await fetch('/api/memorial/videos/upload-url', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          token,
+          session: effectiveSessionToken,
+          fileName: file.name,
+          fileType: file.type,
+          fileSize: file.size,
+        }),
+      })
+
+      const urlData = await urlResponse.json()
+      if (urlData.error) {
+        setError(urlData.error)
+        return false
+      }
+
+      // Step 2: Upload directly to Supabase Storage
+      const uploadResponse = await fetch(urlData.uploadUrl, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': file.type,
+        },
+        body: file,
+      })
+
+      if (!uploadResponse.ok) {
+        setError('Failed to upload video. Please try again.')
+        return false
+      }
+
+      // Step 3: Register the video with our API
+      const registerResponse = await fetch('/api/memorial/videos/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          token,
+          session: effectiveSessionToken,
+          path: urlData.path,
+          fileName: file.name,
+        }),
+      })
+
+      const registerData = await registerResponse.json()
+      if (registerData.error) {
+        setError(registerData.error)
+        return false
+      }
+
+      setVideos(registerData.videos)
+      return true
+    } catch (err) {
+      console.error('Video upload error:', err)
+      setError('Failed to upload video. Please try again.')
+      return false
+    }
+  }
 
   const handleVideoFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -494,41 +557,11 @@ function EditPageContent() {
     setUploadingVideo(true)
     setError('')
 
-    const formData = new FormData()
-    formData.append('token', token)
-    formData.append('session', effectiveSessionToken)
-    formData.append('video', file)
-
-    try {
-      const response = await fetch('/api/memorial/videos', {
-        method: 'POST',
-        body: formData,
-      })
-      
-      if (!response.ok) {
-        try {
-          const data = await response.json()
-          setError(data.error || `Upload failed (${response.status})`)
-        } catch {
-          setError(`Upload failed with status ${response.status}. The file may be too large.`)
-        }
-        setUploadingVideo(false)
-        if (videoInputRef.current) videoInputRef.current.value = ''
-        return
-      }
-      
-      const data = await response.json()
-
-      if (data.error) {
-        setError(data.error)
-      } else {
-        setVideos(data.videos)
-        setSuccess(true)
-        setTimeout(() => setSuccess(false), 3000)
-      }
-    } catch (err) {
-      console.error('Video upload error:', err)
-      setError('Failed to upload video. The file may be too large. Try a smaller file or use YouTube.')
+    const success = await uploadVideoDirectly(file, effectiveSessionToken)
+    
+    if (success) {
+      setSuccess(true)
+      setTimeout(() => setSuccess(false), 3000)
     }
 
     setUploadingVideo(false)
@@ -556,41 +589,11 @@ function EditPageContent() {
     setUploadingVideo(true)
     setError('')
 
-    const formData = new FormData()
-    formData.append('token', token)
-    formData.append('session', effectiveSessionToken)
-    formData.append('video', file)
-
-    try {
-      const response = await fetch('/api/memorial/videos', {
-        method: 'POST',
-        body: formData,
-      })
-      
-      if (!response.ok) {
-        try {
-          const data = await response.json()
-          setError(data.error || `Upload failed (${response.status})`)
-        } catch {
-          setError(`Upload failed with status ${response.status}. The file may be too large.`)
-        }
-        setUploadingVideo(false)
-        if (videoInputRef.current) videoInputRef.current.value = ''
-        return
-      }
-      
-      const data = await response.json()
-
-      if (data.error) {
-        setError(data.error)
-      } else {
-        setVideos(data.videos)
-        setSuccess(true)
-        setTimeout(() => setSuccess(false), 3000)
-      }
-    } catch (err) {
-      console.error('Video upload error:', err)
-      setError('Failed to upload video. The file may be too large. Try a smaller file or use YouTube.')
+    const success = await uploadVideoDirectly(file, effectiveSessionToken)
+    
+    if (success) {
+      setSuccess(true)
+      setTimeout(() => setSuccess(false), 3000)
     }
 
     setUploadingVideo(false)
@@ -1111,7 +1114,7 @@ function EditPageContent() {
                         <span className={isDraggingVideo ? 'text-primary-600 font-medium' : ''}>
                           {isDraggingVideo ? 'Drop video here!' : 'Drag & drop a video file here'}
                         </span>
-                        <span className="text-xs text-gray-400">max 4MB (use YouTube for larger videos)</span>
+                        <span className="text-xs text-gray-400">max 50MB</span>
                       </div>
                     )}
                   </div>

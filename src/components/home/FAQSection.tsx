@@ -38,7 +38,7 @@ const faqs = [
   },
   {
     question: 'How do video uploads work?',
-    answer: 'You have two options for adding videos: 1) Upload directly (max 4MB per file) - suitable for very short clips. 2) Link a YouTube video (unlimited size, no extra cost) - recommended for most videos. Set your YouTube video to "unlisted" if you want to keep it private. YouTube hosting is completely free and has no size limits.',
+    answer: 'You can upload video files up to 50MB directly, or link YouTube videos for unlimited size. YouTube is recommended for longer videos as it provides better streaming quality.',
   },
   {
     question: 'Is my memorial private?',

@@ -1013,7 +1013,7 @@ export function MemorialUploadForm({
                 </span>
               </div>
               <p className="text-sm text-gray-500 mb-4">
-                Upload video files (max 4MB each) or link YouTube videos (unlimited size).
+                Upload video files (max 50MB each) or link YouTube videos (unlimited size).
               </p>
 
               {/* Video entries */}
@@ -1064,7 +1064,7 @@ export function MemorialUploadForm({
                             : 'bg-gray-100 text-gray-600 border-2 border-transparent hover:bg-gray-200'
                         }`}
                       >
-                        Upload File (max 4MB)
+                        Upload File (max 50MB)
                       </button>
                     </div>
 
