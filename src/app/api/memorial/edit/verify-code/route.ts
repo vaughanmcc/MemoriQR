@@ -52,9 +52,9 @@ export async function POST(request: NextRequest) {
       .update({ used_at: new Date().toISOString() })
       .eq('id', verification.id)
 
-    // Generate a session token for this edit session (valid for 2 hours)
+    // Generate a session token for this edit session (valid for 1 hour)
     const sessionToken = generateSessionToken()
-    const sessionExpires = new Date(Date.now() + 2 * 60 * 60 * 1000) // 2 hours
+    const sessionExpires = new Date(Date.now() + 1 * 60 * 60 * 1000) // 1 hour
 
     // Store session token in the verification table
     // We store the full token (hashed first 32 chars) for validation
