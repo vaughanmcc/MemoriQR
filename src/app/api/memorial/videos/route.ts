@@ -6,7 +6,7 @@ import type { HostingDuration } from '@/types/database'
 
 interface MemorialRecord {
   id: string
-  videos: any[]
+  videos_json: any[]
   hosting_duration: HostingDuration
 }
 
@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
     // Verify token and get memorial
     const { data, error: lookupError } = await supabase
       .from('memorial_records')
-      .select('id, videos, hosting_duration')
+      .select('id, videos_json, hosting_duration')
       .eq('edit_token', token)
       .single()
 
@@ -94,7 +94,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check video limit
-    const currentVideos = (memorial.videos || []) as any[]
+    const currentVideos = (memorial.videos_json || []) as any[]
     const limit = TIER_LIMITS[memorial.hosting_duration]?.videos || 2
 
     if (currentVideos.length >= limit) {
@@ -174,7 +174,7 @@ export async function POST(request: NextRequest) {
     const { error: updateError } = await supabase
       .from('memorial_records')
       .update({ 
-        videos: updatedVideos,
+        videos_json: updatedVideos,
         updated_at: new Date().toISOString(),
       })
       .eq('id', memorial.id)
@@ -219,11 +219,11 @@ export async function DELETE(request: NextRequest) {
     // Verify token and get memorial
     const { data, error: lookupError } = await supabase
       .from('memorial_records')
-      .select('id, videos')
+      .select('id, videos_json')
       .eq('edit_token', token)
       .single()
 
-    const memorial = data as { id: string; videos: any[] } | null
+    const memorial = data as { id: string; videos_json: any[] } | null
 
     if (lookupError || !memorial) {
       return NextResponse.json({ error: 'Invalid edit token. Please use the original edit link from your email.' }, { status: 403 })
@@ -243,7 +243,7 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Session expired. Please refresh the page and verify your email again.' }, { status: 401 })
     }
 
-    const currentVideos = (memorial.videos || []) as any[]
+    const currentVideos = (memorial.videos_json || []) as any[]
     const videoToDelete = currentVideos.find((v: any) => v.id === videoId)
 
     if (!videoToDelete) {
@@ -265,7 +265,7 @@ export async function DELETE(request: NextRequest) {
     const { error: updateError } = await supabase
       .from('memorial_records')
       .update({ 
-        videos: updatedVideos,
+        videos_json: updatedVideos,
         updated_at: new Date().toISOString(),
       })
       .eq('id', memorial.id)

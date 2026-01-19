@@ -5,8 +5,8 @@ import type { HostingDuration } from '@/types/database'
 
 interface MemorialRecord {
   id: string
-  photos: any[]
-  videos?: any[]
+  photos_json: any[]
+  videos_json?: any[]
   hosting_duration: HostingDuration
   memorial_slug: string
 }
@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
     // Verify edit token and get memorial
     const { data, error: lookupError } = await supabase
       .from('memorial_records')
-      .select('id, photos, hosting_duration, memorial_slug')
+      .select('id, photos_json, hosting_duration, memorial_slug')
       .eq('edit_token', token)
       .single()
 
@@ -79,7 +79,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check photo limit
-    const currentPhotos = (memorial.photos || []) as any[]
+    const currentPhotos = (memorial.photos_json || []) as any[]
     const limit = TIER_LIMITS[memorial.hosting_duration as keyof typeof TIER_LIMITS]?.photos || 20
     const availableSlots = limit - currentPhotos.length
 
@@ -141,7 +141,7 @@ export async function POST(request: NextRequest) {
     const { error: updateError } = await supabase
       .from('memorial_records')
       .update({ 
-        photos: updatedPhotos,
+        photos_json: updatedPhotos,
         updated_at: new Date().toISOString(),
       })
       .eq('id', memorial.id)
@@ -187,11 +187,11 @@ export async function DELETE(request: NextRequest) {
     // Verify token and get memorial
     const { data, error: lookupError } = await supabase
       .from('memorial_records')
-      .select('id, photos')
+      .select('id, photos_json')
       .eq('edit_token', token)
       .single()
 
-    const memorial = data as { id: string; photos: any[] } | null
+    const memorial = data as { id: string; photos_json: any[] } | null
 
     if (lookupError || !memorial) {
       return NextResponse.json({ error: 'Invalid edit token. Please use the original edit link from your email.' }, { status: 403 })
@@ -211,7 +211,7 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Session expired. Please refresh the page and verify your email again.' }, { status: 401 })
     }
 
-    const currentPhotos = (memorial.photos || []) as any[]
+    const currentPhotos = (memorial.photos_json || []) as any[]
     const photoToDelete = currentPhotos.find((p: any) => p.id === photoId)
 
     if (!photoToDelete) {
@@ -244,7 +244,7 @@ export async function DELETE(request: NextRequest) {
     const { error: updateError } = await supabase
       .from('memorial_records')
       .update({ 
-        photos: updatedPhotos,
+        photos_json: updatedPhotos,
         updated_at: new Date().toISOString(),
       })
       .eq('id', memorial.id)
@@ -289,11 +289,11 @@ export async function PATCH(request: NextRequest) {
     // Verify token and get memorial
     const { data, error: lookupError } = await supabase
       .from('memorial_records')
-      .select('id, photos')
+      .select('id, photos_json')
       .eq('edit_token', token)
       .single()
 
-    const memorial = data as { id: string; photos: any[] } | null
+    const memorial = data as { id: string; photos_json: any[] } | null
 
     if (lookupError || !memorial) {
       return NextResponse.json({ error: 'Invalid edit token. Please use the original edit link from your email.' }, { status: 403 })
@@ -313,7 +313,7 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: 'Session expired. Please refresh the page and verify your email again.' }, { status: 401 })
     }
 
-    const currentPhotos = (memorial.photos || []) as any[]
+    const currentPhotos = (memorial.photos_json || []) as any[]
     
     // Update isProfile flag
     const updatedPhotos = currentPhotos.map((p: any) => ({
@@ -324,7 +324,7 @@ export async function PATCH(request: NextRequest) {
     const { error: updateError } = await supabase
       .from('memorial_records')
       .update({ 
-        photos: updatedPhotos,
+        photos_json: updatedPhotos,
         updated_at: new Date().toISOString(),
       })
       .eq('id', memorial.id)
