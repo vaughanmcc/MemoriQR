@@ -2,48 +2,59 @@ import Image from 'next/image'
 
 export function UseCasesSection() {
   return (
-    <section className="py-16 md:py-24 bg-white">
+    <section className="py-12 md:py-16 bg-white">
       <div className="container-wide">
-        <div className="grid md:grid-cols-2 gap-8 md:gap-12 items-center">
+        {/* Section header */}
+        <div className="text-center mb-10">
+          <p className="text-primary-600 font-medium text-sm uppercase tracking-wider mb-2">
+            For People & Pets
+          </p>
+          <h2 className="text-2xl md:text-3xl font-serif text-gray-900">
+            Honour Every Life, Every Memory
+          </h2>
+        </div>
+
+        {/* Image cards - constrained width */}
+        <div className="max-w-4xl mx-auto grid md:grid-cols-2 gap-6">
           {/* Gravestone with QR Code */}
-          <div className="relative group">
-            <div className="relative aspect-[4/3] rounded-2xl overflow-hidden shadow-lg bg-memorial-cream">
+          <div className="relative group cursor-pointer">
+            <div className="relative aspect-[3/2] rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-shadow duration-300">
               <Image
                 src="/images/gravestone-qr.jpg"
                 alt="Gravestone with MemoriQR plate attached"
                 fill
-                className="object-cover"
-                sizes="(max-width: 768px) 100vw, 50vw"
+                className="object-cover group-hover:scale-105 transition-transform duration-500"
+                sizes="(max-width: 768px) 100vw, 400px"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
-              <div className="absolute bottom-0 left-0 right-0 p-6">
-                <p className="text-white text-lg font-medium">
-                  A lasting tribute at the graveside
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
+              <div className="absolute bottom-0 left-0 right-0 p-4">
+                <p className="text-white font-medium">
+                  Cemetery Memorials
                 </p>
-                <p className="text-white/80 text-sm mt-1">
-                  Weatherproof Metalphoto® plates designed to last generations
+                <p className="text-white/70 text-sm">
+                  Weatherproof plates built to last
                 </p>
               </div>
             </div>
           </div>
 
-          {/* Pet Memorial - Girl scanning NFC */}
-          <div className="relative group">
-            <div className="relative aspect-[4/3] rounded-2xl overflow-hidden shadow-lg bg-memorial-cream">
+          {/* Pet Memorial */}
+          <div className="relative group cursor-pointer">
+            <div className="relative aspect-[3/2] rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-shadow duration-300">
               <Image
                 src="/images/pet-memorial-nfc.jpg"
                 alt="Person scanning NFC tag at pet memorial"
                 fill
-                className="object-cover"
-                sizes="(max-width: 768px) 100vw, 50vw"
+                className="object-cover group-hover:scale-105 transition-transform duration-500"
+                sizes="(max-width: 768px) 100vw, 400px"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
-              <div className="absolute bottom-0 left-0 right-0 p-6">
-                <p className="text-white text-lg font-medium">
-                  Remembering beloved companions
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
+              <div className="absolute bottom-0 left-0 right-0 p-4">
+                <p className="text-white font-medium">
+                  Pet Memorials
                 </p>
-                <p className="text-white/80 text-sm mt-1">
-                  Tap to instantly relive precious memories
+                <p className="text-white/70 text-sm">
+                  Tap to relive precious moments
                 </p>
               </div>
             </div>
