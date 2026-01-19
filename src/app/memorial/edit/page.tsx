@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, Suspense, useRef } from 'react'
+import { useState, useEffect, Suspense, useRef, useCallback } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Heart, Loader2, AlertCircle, Check, Palette, Image as ImageIcon, Save, Upload, X, Star, Plus, Video, Trash2, Eye, Mail, ShieldCheck } from 'lucide-react'
 import Image from 'next/image'
@@ -50,6 +50,10 @@ function EditPageContent() {
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
   const [memorial, setMemorial] = useState<MemorialData | null>(null)
+  
+  // Drag and drop state
+  const [isDraggingPhotos, setIsDraggingPhotos] = useState(false)
+  const [isDraggingVideo, setIsDraggingVideo] = useState(false)
 
   // Editable fields
   const [memorialText, setMemorialText] = useState('')
@@ -164,9 +168,8 @@ function EditPageContent() {
     setVerifyingCode(false)
   }
 
-  // Photo upload handler
-  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || [])
+  // Photo upload handler - works with both input change and drag-drop
+  const uploadPhotos = useCallback(async (files: File[]) => {
     if (files.length === 0 || !token) return
 
     setUploadingPhotos(true)
@@ -196,7 +199,38 @@ function EditPageContent() {
 
     setUploadingPhotos(false)
     if (photoInputRef.current) photoInputRef.current.value = ''
+  }, [token])
+
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || [])
+    await uploadPhotos(files)
   }
+
+  // Photo drag and drop handlers
+  const handlePhotoDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDraggingPhotos(true)
+  }, [])
+
+  const handlePhotoDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDraggingPhotos(false)
+  }, [])
+
+  const handlePhotoDrop = useCallback(async (e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDraggingPhotos(false)
+
+    const files = Array.from(e.dataTransfer.files).filter(file => 
+      file.type.startsWith('image/')
+    )
+    if (files.length > 0) {
+      await uploadPhotos(files)
+    }
+  }, [uploadPhotos])
 
   // Photo delete handler
   const handleDeletePhoto = async (photoId: string) => {
@@ -316,6 +350,66 @@ function EditPageContent() {
     setUploadingVideo(false)
     if (videoInputRef.current) videoInputRef.current.value = ''
   }
+
+  // Video upload helper for drag-drop
+  const uploadVideoFile = useCallback(async (file: File) => {
+    if (!file || !token) return
+
+    setUploadingVideo(true)
+    setError('')
+
+    const formData = new FormData()
+    formData.append('token', token)
+    formData.append('video', file)
+
+    try {
+      const response = await fetch('/api/memorial/videos', {
+        method: 'POST',
+        body: formData,
+      })
+      const data = await response.json()
+
+      if (data.error) {
+        setError(data.error)
+      } else {
+        setVideos(data.videos)
+        setSuccess(true)
+        setTimeout(() => setSuccess(false), 3000)
+      }
+    } catch {
+      setError('Failed to upload video')
+    }
+
+    setUploadingVideo(false)
+    if (videoInputRef.current) videoInputRef.current.value = ''
+  }, [token])
+
+  // Video drag and drop handlers
+  const handleVideoDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDraggingVideo(true)
+  }, [])
+
+  const handleVideoDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDraggingVideo(false)
+  }, [])
+
+  const handleVideoDrop = useCallback(async (e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDraggingVideo(false)
+
+    const files = Array.from(e.dataTransfer.files).filter(file => 
+      file.type.startsWith('video/')
+    )
+    if (files.length > 0) {
+      // Only upload first video
+      await uploadVideoFile(files[0])
+    }
+  }, [uploadVideoFile])
 
   // Delete video handler
   const handleDeleteVideo = async (videoId: string) => {
@@ -618,6 +712,36 @@ function EditPageContent() {
                   </label>
                 )}
               </div>
+              
+              {/* Drag and drop zone for photos */}
+              {photos.length < photoLimit && (
+                <div
+                  onDragOver={handlePhotoDragOver}
+                  onDragLeave={handlePhotoDragLeave}
+                  onDrop={handlePhotoDrop}
+                  className={`border-2 border-dashed rounded-xl p-6 mb-4 text-center transition-all ${
+                    isDraggingPhotos
+                      ? 'border-primary-500 bg-primary-50'
+                      : 'border-gray-300 hover:border-gray-400'
+                  }`}
+                >
+                  {uploadingPhotos ? (
+                    <div className="flex flex-col items-center gap-2 text-primary-600">
+                      <Loader2 className="h-8 w-8 animate-spin" />
+                      <span>Uploading photos...</span>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center gap-2 text-gray-500">
+                      <Upload className={`h-8 w-8 ${isDraggingPhotos ? 'text-primary-500' : ''}`} />
+                      <span className={isDraggingPhotos ? 'text-primary-600 font-medium' : ''}>
+                        {isDraggingPhotos ? 'Drop photos here!' : 'Drag & drop photos here'}
+                      </span>
+                      <span className="text-xs text-gray-400">or use the Add Photos button above</span>
+                    </div>
+                  )}
+                </div>
+              )}
+              
               <div className="grid grid-cols-4 sm:grid-cols-6 gap-3 mt-2">
                 {photos.map((photo) => (
                   <div
@@ -707,6 +831,35 @@ function EditPageContent() {
               {/* Add video */}
               {videos.length < videoLimit && (
                 <div className="space-y-3">
+                  {/* Drag and drop zone for videos */}
+                  <div
+                    onDragOver={handleVideoDragOver}
+                    onDragLeave={handleVideoDragLeave}
+                    onDrop={handleVideoDrop}
+                    className={`border-2 border-dashed rounded-xl p-6 text-center transition-all ${
+                      isDraggingVideo
+                        ? 'border-primary-500 bg-primary-50'
+                        : 'border-gray-300 hover:border-gray-400'
+                    }`}
+                  >
+                    {uploadingVideo ? (
+                      <div className="flex flex-col items-center gap-2 text-primary-600">
+                        <Loader2 className="h-8 w-8 animate-spin" />
+                        <span>Uploading video...</span>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col items-center gap-2 text-gray-500">
+                        <Video className={`h-8 w-8 ${isDraggingVideo ? 'text-primary-500' : ''}`} />
+                        <span className={isDraggingVideo ? 'text-primary-600 font-medium' : ''}>
+                          {isDraggingVideo ? 'Drop video here!' : 'Drag & drop a video file here'}
+                        </span>
+                        <span className="text-xs text-gray-400">max 50MB</span>
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div className="text-center text-sm text-gray-500">or</div>
+                  
                   <div className="flex gap-2">
                     <input
                       type="url"
@@ -727,14 +880,16 @@ function EditPageContent() {
                       )}
                     </button>
                   </div>
+                  
                   <div className="text-center text-sm text-gray-500">or</div>
+                  
                   <label className="btn-outline w-full cursor-pointer flex items-center justify-center gap-2">
                     {uploadingVideo ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
                     ) : (
                       <Upload className="h-4 w-4" />
                     )}
-                    Upload Video File (max 50MB)
+                    Browse for Video File
                     <input
                       ref={videoInputRef}
                       type="file"
