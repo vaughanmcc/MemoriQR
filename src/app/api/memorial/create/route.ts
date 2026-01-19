@@ -166,6 +166,32 @@ export async function POST(request: NextRequest) {
       })
       videoOrder++
     }
+    
+    // Handle pre-uploaded video paths (from direct browser uploads to bypass Vercel limit)
+    const uploadedVideoPathsJson = formData.get('uploadedVideoPaths') as string | null
+    if (uploadedVideoPathsJson) {
+      try {
+        const uploadedPaths = JSON.parse(uploadedVideoPathsJson) as string[]
+        for (const path of uploadedPaths) {
+          // Get the public URL for this already-uploaded file
+          const { data: { publicUrl } } = supabase.storage
+            .from('memorial-videos')
+            .getPublicUrl(path)
+
+          videos.push({
+            id: `video-${Date.now()}-${videoOrder}`,
+            type: 'upload',
+            youtubeId: null,
+            url: publicUrl,
+            title: path.split('/').pop() || 'Uploaded video',
+            order: videoOrder,
+          })
+          videoOrder++
+        }
+      } catch (e) {
+        console.error('Failed to parse uploadedVideoPaths:', e)
+      }
+    }
 
     let memorialSlug: string
     let memorialId: string

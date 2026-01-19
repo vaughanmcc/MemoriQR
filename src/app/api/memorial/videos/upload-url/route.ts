@@ -13,14 +13,10 @@ interface MemorialRecord {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { token, session, fileName, fileType, fileSize } = body
+    const { token, session, fileName, fileType, fileSize, isActivation } = body
 
     if (!token) {
-      return NextResponse.json({ error: 'Edit token is required' }, { status: 400 })
-    }
-
-    if (!session) {
-      return NextResponse.json({ error: 'Session expired. Please refresh the page and verify your email again.' }, { status: 401 })
+      return NextResponse.json({ error: 'Token is required' }, { status: 400 })
     }
 
     if (!fileName || !fileType) {
@@ -45,32 +41,65 @@ export async function POST(request: NextRequest) {
     }
 
     const supabase = createAdminClient()
+    let memorial: MemorialRecord | null = null
 
-    // Verify edit token and get memorial
-    const { data, error: lookupError } = await supabase
-      .from('memorial_records')
-      .select('id, videos_json, hosting_duration')
-      .eq('edit_token', token)
-      .single()
+    // Check if this is an activation flow or an edit flow
+    if (isActivation) {
+      // For activation, token is the activation code - look up by that
+      const { data, error: lookupError } = await supabase
+        .from('memorial_records')
+        .select('id, videos_json, hosting_duration')
+        .eq('activation_code', token)
+        .single()
+      
+      memorial = data as MemorialRecord | null
+      
+      if (lookupError || !memorial) {
+        // Also try looking up by memorial ID for partner activations
+        const { data: memData } = await supabase
+          .from('memorial_records')
+          .select('id, videos_json, hosting_duration')
+          .eq('id', token)
+          .single()
+        
+        memorial = memData as MemorialRecord | null
+      }
+      
+      if (!memorial) {
+        return NextResponse.json({ error: 'Invalid activation code' }, { status: 403 })
+      }
+    } else {
+      // For edit flow, require session token
+      if (!session) {
+        return NextResponse.json({ error: 'Session expired. Please refresh the page and verify your email again.' }, { status: 401 })
+      }
 
-    const memorial = data as MemorialRecord | null
+      // Verify edit token and get memorial
+      const { data, error: lookupError } = await supabase
+        .from('memorial_records')
+        .select('id, videos_json, hosting_duration')
+        .eq('edit_token', token)
+        .single()
 
-    if (lookupError || !memorial) {
-      return NextResponse.json({ error: 'Invalid edit token. Please use the original edit link from your email.' }, { status: 403 })
-    }
+      memorial = data as MemorialRecord | null
 
-    // Verify session token is valid and not expired
-    const { data: sessionData, error: sessionError } = await supabase
-      .from('edit_verification_codes')
-      .select('*')
-      .eq('memorial_id', memorial.id)
-      .eq('code', `SESSION:${session}`)
-      .is('used_at', null)
-      .gt('expires_at', new Date().toISOString())
-      .single()
+      if (lookupError || !memorial) {
+        return NextResponse.json({ error: 'Invalid edit token. Please use the original edit link from your email.' }, { status: 403 })
+      }
 
-    if (sessionError || !sessionData) {
-      return NextResponse.json({ error: 'Session expired. Please refresh the page and verify your email again.' }, { status: 401 })
+      // Verify session token is valid and not expired
+      const { data: sessionData, error: sessionError } = await supabase
+        .from('edit_verification_codes')
+        .select('*')
+        .eq('memorial_id', memorial.id)
+        .eq('code', `SESSION:${session}`)
+        .is('used_at', null)
+        .gt('expires_at', new Date().toISOString())
+        .single()
+
+      if (sessionError || !sessionData) {
+        return NextResponse.json({ error: 'Session expired. Please refresh the page and verify your email again.' }, { status: 401 })
+      }
     }
 
     // Check video limit
@@ -99,7 +128,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      uploadUrl: signedUrl.signedUrl,
+      signedUrl: signedUrl.signedUrl,
       token: signedUrl.token,
       path: uniqueFileName,
       memorialId: memorial.id,

@@ -631,6 +631,50 @@ export function MemorialUploadForm({
     setError('')
 
     try {
+      // First, upload any video files directly to Supabase storage
+      // This bypasses Vercel's 4.5MB body limit
+      const uploadedVideoPaths: string[] = []
+      const youtubeUrls: string[] = []
+      
+      for (const video of videos) {
+        if (video.type === 'youtube' && video.url) {
+          youtubeUrls.push(video.url)
+        } else if (video.type === 'file' && video.file) {
+          // Get a signed upload URL from our API
+          const uploadUrlRes = await fetch('/api/memorial/videos/upload-url', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              token: activationCode || memorialId, // Use activation code as identifier
+              fileName: video.file.name,
+              fileType: video.file.type,
+              fileSize: video.file.size,
+              isActivation: true, // Flag to allow activation-based uploads
+            }),
+          })
+          
+          const uploadUrlData = await uploadUrlRes.json()
+          
+          if (uploadUrlData.error) {
+            throw new Error(`Video upload failed: ${uploadUrlData.error}`)
+          }
+          
+          // Upload directly to Supabase storage
+          const uploadRes = await fetch(uploadUrlData.signedUrl, {
+            method: 'PUT',
+            headers: { 'Content-Type': video.file.type },
+            body: video.file,
+          })
+          
+          if (!uploadRes.ok) {
+            throw new Error('Failed to upload video to storage')
+          }
+          
+          // Store the path for later
+          uploadedVideoPaths.push(uploadUrlData.path)
+        }
+      }
+
       const formData = new FormData()
       
       formData.append('activationType', activationType)
@@ -659,17 +703,12 @@ export function MemorialUploadForm({
         formData.append('photos', photo)
       })
 
-      // Append video data
-      const videoUrls: string[] = []
-      videos.forEach((video, index) => {
-        if (video.type === 'youtube' && video.url) {
-          videoUrls.push(video.url)
-        } else if (video.type === 'file' && video.file) {
-          formData.append('videoFiles', video.file)
-        }
-      })
-      if (videoUrls.length > 0) {
-        formData.append('videoUrls', JSON.stringify(videoUrls))
+      // Send video data - now as paths instead of files
+      if (youtubeUrls.length > 0) {
+        formData.append('videoUrls', JSON.stringify(youtubeUrls))
+      }
+      if (uploadedVideoPaths.length > 0) {
+        formData.append('uploadedVideoPaths', JSON.stringify(uploadedVideoPaths))
       }
 
       const response = await fetch('/api/memorial/create', {
