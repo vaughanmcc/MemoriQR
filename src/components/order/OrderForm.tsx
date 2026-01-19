@@ -513,11 +513,12 @@ export function OrderForm() {
                   {errors.postalCode && <p className="text-sm text-red-500 mt-1">{errors.postalCode}</p>}
                 </div>
                 <div>
-                  <label className="label">Country</label>
+                  <label className="label">Country <span className="text-red-500">*</span></label>
                   <select
                     value={country}
                     onChange={(e) => setCountry(e.target.value as 'NZ' | 'AU')}
                     className="input"
+                    required
                   >
                     <option value="NZ">New Zealand</option>
                     <option value="AU">Australia</option>
