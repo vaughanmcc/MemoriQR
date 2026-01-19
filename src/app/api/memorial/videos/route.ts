@@ -117,7 +117,20 @@ export async function POST(request: NextRequest) {
 
       if (uploadError) {
         console.error('Failed to upload video:', uploadError)
-        return NextResponse.json({ error: 'Failed to upload video' }, { status: 500 })
+        // Provide more specific error messages
+        if (uploadError.message?.includes('Payload too large') || uploadError.message?.includes('413')) {
+          return NextResponse.json({ 
+            error: 'Video file is too large for server. Please compress to under 50MB or use YouTube.' 
+          }, { status: 400 })
+        }
+        if (uploadError.message?.includes('bucket') || uploadError.message?.includes('not found')) {
+          return NextResponse.json({ 
+            error: 'Video storage is not configured. Please contact support.' 
+          }, { status: 500 })
+        }
+        return NextResponse.json({ 
+          error: `Failed to upload video: ${uploadError.message || 'Unknown error'}` 
+        }, { status: 500 })
       }
 
       const { data: { publicUrl } } = supabase.storage

@@ -465,6 +465,19 @@ function EditPageContent() {
         method: 'POST',
         body: formData,
       })
+      
+      if (!response.ok) {
+        try {
+          const data = await response.json()
+          setError(data.error || `Upload failed (${response.status})`)
+        } catch {
+          setError(`Upload failed with status ${response.status}. The file may be too large.`)
+        }
+        setUploadingVideo(false)
+        if (videoInputRef.current) videoInputRef.current.value = ''
+        return
+      }
+      
       const data = await response.json()
 
       if (data.error) {
@@ -474,8 +487,9 @@ function EditPageContent() {
         setSuccess(true)
         setTimeout(() => setSuccess(false), 3000)
       }
-    } catch {
-      setError('Failed to upload video. Please try again.')
+    } catch (err) {
+      console.error('Video upload error:', err)
+      setError('Failed to upload video. The file may be too large. Try a smaller file or use YouTube.')
     }
 
     setUploadingVideo(false)
@@ -505,6 +519,19 @@ function EditPageContent() {
         method: 'POST',
         body: formData,
       })
+      
+      if (!response.ok) {
+        try {
+          const data = await response.json()
+          setError(data.error || `Upload failed (${response.status})`)
+        } catch {
+          setError(`Upload failed with status ${response.status}. The file may be too large.`)
+        }
+        setUploadingVideo(false)
+        if (videoInputRef.current) videoInputRef.current.value = ''
+        return
+      }
+      
       const data = await response.json()
 
       if (data.error) {
@@ -514,8 +541,9 @@ function EditPageContent() {
         setSuccess(true)
         setTimeout(() => setSuccess(false), 3000)
       }
-    } catch {
-      setError('Failed to upload video. Please try again.')
+    } catch (err) {
+      console.error('Video upload error:', err)
+      setError('Failed to upload video. The file may be too large. Try a smaller file or use YouTube.')
     }
 
     setUploadingVideo(false)
