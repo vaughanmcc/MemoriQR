@@ -15,6 +15,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Token and code are required' }, { status: 400 })
     }
 
+    // Trim and normalize the code
+    const normalizedCode = code.toString().trim()
+
     const supabase = createAdminClient()
 
     // Look up memorial by edit token
@@ -28,16 +31,34 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Memorial not found or invalid token' }, { status: 404 })
     }
 
-    // Look up verification code
+    // Look up verification code - get the most recent unused code for this memorial
     const { data: verification, error: verificationError } = await supabase
       .from('edit_verification_codes')
       .select('*')
       .eq('memorial_id', memorial.id)
-      .eq('code', code)
+      .eq('code', normalizedCode)
       .is('used_at', null)
+      .order('created_at', { ascending: false })
+      .limit(1)
       .single()
 
     if (verificationError || !verification) {
+      // Debug: Check if code exists but is already used
+      const { data: usedCode } = await supabase
+        .from('edit_verification_codes')
+        .select('used_at, created_at')
+        .eq('memorial_id', memorial.id)
+        .eq('code', normalizedCode)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single()
+      
+      if (usedCode?.used_at) {
+        return NextResponse.json({ 
+          error: 'This code has already been used. Please request a new code.' 
+        }, { status: 400 })
+      }
+      
       return NextResponse.json({ error: 'Invalid verification code' }, { status: 400 })
     }
 

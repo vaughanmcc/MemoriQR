@@ -43,12 +43,13 @@ export async function POST(request: NextRequest) {
     const code = generateCode()
     const expiresAt = new Date(Date.now() + 60 * 60 * 1000) // 1 hour from now
 
-    // Delete any existing unused codes for this memorial
+    // Delete any existing unused verification codes for this memorial (but not session tokens)
     await supabase
       .from('edit_verification_codes')
       .delete()
       .eq('memorial_id', memorial.id)
       .is('used_at', null)
+      .not('code', 'like', 'SESSION:%')
 
     // Insert new verification code
     const { error: insertError } = await supabase

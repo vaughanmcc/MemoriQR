@@ -165,6 +165,10 @@ function EditPageContent() {
     
     setSendingCode(true)
     setError('')
+    setVerificationCode('') // Clear any previous code
+    
+    // Clear stored session when requesting a new code
+    clearStoredSession(token)
     
     try {
       const response = await fetch('/api/memorial/edit/send-code', {
