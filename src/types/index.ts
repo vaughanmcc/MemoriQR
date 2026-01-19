@@ -3,7 +3,6 @@ import { HostingDuration, ProductType } from './database'
 export interface CartItem {
   hostingDuration: HostingDuration
   productType: ProductType
-  engravingText?: string
   deceasedName: string
   deceasedType: 'pet' | 'human'
   species?: string

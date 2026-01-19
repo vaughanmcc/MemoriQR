@@ -192,7 +192,6 @@ Handles order confirmation + activation emails, memorial creation emails, and ed
   "deceased_name": "Buddy",
   "product_type": "both",
   "hosting_duration": 10,
-  "engraving_text": "In Loving Memory of Buddy",
   "amount_paid": 249,
   "currency": "NZD",
   "activation_code": "12345678",
@@ -379,7 +378,6 @@ export default defineComponent({
       deceased_name,
       product_type,
       hosting_duration,
-      engraving_text,
       amount_paid,
       currency,
       activation_code,
@@ -466,17 +464,9 @@ export default defineComponent({
             </td>
           </tr>
           <tr>
-            <td style="padding: 15px; border-bottom: 1px solid #eee; color: #666; width: 40%; vertical-align: top;">Activation Code</td>
-            <td style="padding: 15px; border-bottom: 1px solid #eee;">
-              <code style="background-color: #f0f0f0; padding: 8px 15px; border-radius: 4px; font-size: 18px; font-weight: bold; letter-spacing: 2px;">${activation_code}</code>
-            </td>
-          </tr>
-          <tr>
-            <td style="padding: 15px; color: #666; vertical-align: top;">Engraving Text</td>
+            <td style="padding: 15px; color: #666; width: 40%; vertical-align: top;">Activation Code</td>
             <td style="padding: 15px;">
-              <div style="background-color: #fffbf0; border: 1px dashed #d4a853; padding: 15px; border-radius: 4px; font-style: italic; color: #333;">
-                ${engraving_text || '<em style="color: #999;">No engraving requested</em>'}
-              </div>
+              <code style="background-color: #f0f0f0; padding: 8px 15px; border-radius: 4px; font-size: 18px; font-weight: bold; letter-spacing: 2px;">${activation_code}</code>
             </td>
           </tr>
         </table>
@@ -523,7 +513,6 @@ export default defineComponent({
             <td style="padding: 20px;">
               <strong style="color: #333; font-size: 14px; display: block; margin-bottom: 12px;">📋 Action Checklist:</strong>
               <p style="margin: 0 0 8px; color: #555; font-size: 14px;">☐ Code NFC tag with activation code: <strong>${activation_code}</strong></p>
-              ${engraving_text ? `<p style="margin: 0 0 8px; color: #555; font-size: 14px;">☐ Request engraving: <strong>"${engraving_text}"</strong></p>` : ''}
               <p style="margin: 0; color: #555; font-size: 14px;">☐ Pack and ship to address above</p>
             </td>
           </tr>
@@ -554,7 +543,6 @@ AMOUNT: $${amount_paid} ${currency}
 MEMORIAL FOR: ${deceased_name}
 
 ACTIVATION CODE: ${activation_code}
-ENGRAVING: ${engraving_text || 'None'}
 
 CUSTOMER:
 ${customer_name}
@@ -565,7 +553,6 @@ ${shippingHtml.replace(/<br>/g, '\\n')}
 
 ACTION CHECKLIST:
 - Code NFC tag with: ${activation_code}
-${engraving_text ? `- Request engraving: "${engraving_text}"` : ''}
 - Pack and ship
     `.trim();
 

@@ -24,7 +24,7 @@ interface CheckoutRequest {
   deceasedType: 'pet' | 'human'
   deceasedName: string
   species?: string
-  engravingText?: string
+
   email: string
   fullName: string
   phone?: string
@@ -41,7 +41,6 @@ export async function POST(request: NextRequest) {
       deceasedType,
       deceasedName,
       species,
-      engravingText,
       email,
       fullName,
       phone,
@@ -154,7 +153,6 @@ export async function POST(request: NextRequest) {
       hosting_duration: hostingDuration,
       total_amount: price,
       order_status: 'pending',
-      engraving_text: engravingText || null,
     }
     
     const { error: orderError } = await supabase

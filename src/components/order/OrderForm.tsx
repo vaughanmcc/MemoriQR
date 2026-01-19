@@ -38,7 +38,6 @@ export function OrderForm() {
   const [deceasedName, setDeceasedName] = useState('')
   const [species, setSpecies] = useState('')
   const [speciesOther, setSpeciesOther] = useState('')
-  const [engravingText, setEngravingText] = useState('')
   const [email, setEmail] = useState('')
   const [fullName, setFullName] = useState('')
   const [phone, setPhone] = useState('')
@@ -51,7 +50,6 @@ export function OrderForm() {
   const [country, setCountry] = useState<'NZ' | 'AU'>('NZ')
 
   const price = DEFAULT_PRICING[duration][productType]
-  const needsEngraving = productType === 'qr_only' || productType === 'both'
 
   // Refs for autofill detection and validation
   const emailRef = useRef<HTMLInputElement>(null)
@@ -133,7 +131,6 @@ export function OrderForm() {
           deceasedType,
           deceasedName,
           species: deceasedType === 'pet' ? resolvedSpecies || null : null,
-          engravingText: needsEngraving ? engravingText : null,
           email,
           fullName,
           phone,
@@ -359,23 +356,6 @@ export function OrderForm() {
                 </div>
               )}
 
-              {/* Engraving text */}
-              {needsEngraving && (
-                <div className="mb-6">
-                  <label className="label">Engraving Text (optional)</label>
-                  <input
-                    type="text"
-                    value={engravingText}
-                    onChange={(e) => setEngravingText(e.target.value.slice(0, 50))}
-                    placeholder="e.g., Forever in our hearts"
-                    className="input"
-                    maxLength={50}
-                  />
-                  <p className="text-sm text-gray-500 mt-1">
-                    {engravingText.length}/50 characters. Appears on the QR plate.
-                  </p>
-                </div>
-              )}
             </div>
 
             <div className="flex gap-4">

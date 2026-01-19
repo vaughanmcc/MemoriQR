@@ -435,8 +435,7 @@ created_at TIMESTAMP DEFAULT NOW()
 1. Customer visits memoriqr.co.nz
 2. Selects hosting duration (5/10/25 years)
 3. Selects product type (NFC/QR/Both)
-4. Adds engraving text (if QR plate selected)
-5. Completes checkout via Stripe
+4. Completes checkout via Stripe
 
 **Automation Flow:**
 1. Payment success → Stripe webhook to Pipedream
@@ -451,7 +450,6 @@ created_at TIMESTAMP DEFAULT NOW()
    - Create `supplier_orders` entry for Metal Image NZ
    - Send automated email to Metal Image NZ with:
      - Order number
-     - Engraving text
      - QR code image (generated via API, points to memorial URL)
      - Shipping address
 5. **IF product_type is nfc_only:**
@@ -1072,7 +1070,6 @@ node scripts/check-code.js ABC123  # (scripts load dotenv internally)
 - [ ] Set up tax rules (15% GST in NZ)
 
 **Custom Fields for Orders:**
-- [ ] Add "Engraving Text" field (for QR plates)
 - [ ] Add "Deceased Name" field (pre-fill memorial)
 - [ ] Add "Memorial Type" field (Pet/Human)
 
