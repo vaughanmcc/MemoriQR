@@ -273,11 +273,26 @@ function EditPageContent() {
     e.stopPropagation()
     setIsDraggingPhotos(false)
 
-    const files = Array.from(e.dataTransfer.files).filter(file => 
-      file.type.startsWith('image/')
-    )
-    if (files.length > 0) {
-      await uploadPhotos(files)
+    const allFiles = Array.from(e.dataTransfer.files)
+    const imageFiles = allFiles.filter(file => file.type.startsWith('image/'))
+    const nonImageFiles = allFiles.filter(file => !file.type.startsWith('image/'))
+    
+    if (nonImageFiles.length > 0 && imageFiles.length === 0) {
+      // Only non-image files were dropped
+      const hasVideo = nonImageFiles.some(file => file.type.startsWith('video/'))
+      setError(hasVideo 
+        ? 'Please drop image files here, not videos. Use the video section below for videos.'
+        : 'Invalid file type. Please drop image files (JPG, PNG, GIF, etc.)'
+      )
+      return
+    }
+    
+    if (imageFiles.length > 0) {
+      if (nonImageFiles.length > 0) {
+        // Mixed files - upload images but warn about others
+        setError(`${nonImageFiles.length} non-image file(s) were skipped.`)
+      }
+      await uploadPhotos(imageFiles)
     }
   }, [uploadPhotos])
 
@@ -451,12 +466,23 @@ function EditPageContent() {
     e.stopPropagation()
     setIsDraggingVideo(false)
 
-    const files = Array.from(e.dataTransfer.files).filter(file => 
-      file.type.startsWith('video/')
-    )
-    if (files.length > 0) {
+    const allFiles = Array.from(e.dataTransfer.files)
+    const videoFiles = allFiles.filter(file => file.type.startsWith('video/'))
+    const nonVideoFiles = allFiles.filter(file => !file.type.startsWith('video/'))
+    
+    if (nonVideoFiles.length > 0 && videoFiles.length === 0) {
+      // Only non-video files were dropped
+      const hasImage = nonVideoFiles.some(file => file.type.startsWith('image/'))
+      setError(hasImage 
+        ? 'Please drop video files here, not images. Use the photos section above for images.'
+        : 'Invalid file type. Please drop a video file (MP4, MOV, etc.)'
+      )
+      return
+    }
+    
+    if (videoFiles.length > 0) {
       // Only upload first video
-      await uploadVideoFile(files[0])
+      await uploadVideoFile(videoFiles[0])
     }
   }, [uploadVideoFile])
 
