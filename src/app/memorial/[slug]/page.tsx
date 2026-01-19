@@ -3,6 +3,10 @@ import { notFound } from 'next/navigation'
 import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { MemorialPage } from '@/components/memorial/MemorialPage'
 
+// Disable caching so edits appear immediately
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 interface Props {
   params: { slug: string }
 }
