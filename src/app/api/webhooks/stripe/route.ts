@@ -130,7 +130,11 @@ export async function POST(request: NextRequest) {
         if (customer && memorial) {
           // Extract the code from order number (remove MQR- prefix)
           const activationCode = orderNumber.replace('MQR-', '')
-          const nfcUrl = `${process.env.NEXT_PUBLIC_APP_URL}/activate/${activationCode}`
+          // Activation URL for customer to set up their memorial
+          const activationUrl = `${process.env.NEXT_PUBLIC_APP_URL}/activate/${activationCode}`
+          // Memorial URL for viewing (and for NFC tag programming)
+          const memorialUrl = `${process.env.NEXT_PUBLIC_APP_URL}/memorial/${memorial.memorial_slug}`
+          const qrCodeUrl = `${process.env.NEXT_PUBLIC_APP_URL}/api/qr/${memorial.memorial_slug}`
           
           // Debug: log shipping details
           console.log('Stripe session shipping_details:', JSON.stringify(session.shipping_details, null, 2))
@@ -154,14 +158,10 @@ export async function POST(request: NextRequest) {
                 hosting_duration: order?.hosting_duration,
                 amount_paid: session.amount_total ? session.amount_total / 100 : 0,
                 currency: session.currency?.toUpperCase() || 'NZD',
-                activation_url: nfcUrl,
+                activation_url: activationUrl,
               }),
             })
 
-            // Build the memorial URL for NFC encoding
-            const memorialUrl = `${process.env.NEXT_PUBLIC_APP_URL}/memorial/${memorial.memorial_slug}`
-            const qrCodeUrl = `${process.env.NEXT_PUBLIC_APP_URL}/api/qr/${memorial.memorial_slug}`
-            
             // Get shipping address - prefer Stripe's collected address, fall back to our DB
             const shippingAddress = session.shipping_details?.address 
               ? JSON.stringify(session.shipping_details.address)
@@ -182,7 +182,7 @@ export async function POST(request: NextRequest) {
                 amount_paid: session.amount_total ? session.amount_total / 100 : 0,
                 currency: session.currency?.toUpperCase() || 'NZD',
                 activation_code: activationCode,
-                nfc_url: nfcUrl,
+                nfc_url: memorialUrl,  // NFC should link to memorial viewing page
                 memorial_url: memorialUrl,
                 qr_code_url: qrCodeUrl,
                 shipping_address: shippingAddress,
