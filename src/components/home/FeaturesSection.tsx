@@ -18,7 +18,7 @@ const features = [
   {
     icon: Shield,
     title: 'Metalphoto® Technology',
-    description: 'Our anodised aluminium plates feature sub-surface printing with 20+ year UV resistance and an 8 micron protective layer.',
+    description: 'Our anodised aluminium plates feature sub-surface printing with 20+ year UV resistance, 8 micron protective layer, and 3M industrial adhesive rated to 204°C.',
   },
   {
     icon: Cloud,
