@@ -71,6 +71,49 @@ function EditPageContent() {
   const availableThemes = memorial ? getAvailableThemes(memorial.hostingDuration) : []
   const availableFramesList = memorial ? getAvailableFrames(memorial.hostingDuration) : []
 
+  // Get stored session token from localStorage
+  const getStoredSession = useCallback((editToken: string): string | null => {
+    if (typeof window === 'undefined') return null
+    try {
+      const stored = localStorage.getItem(`memoriqr_edit_session_${editToken}`)
+      if (stored) {
+        const { sessionToken, expiresAt } = JSON.parse(stored)
+        // Check if session is still valid
+        if (new Date(expiresAt) > new Date()) {
+          return sessionToken
+        }
+        // Session expired, remove it
+        localStorage.removeItem(`memoriqr_edit_session_${editToken}`)
+      }
+    } catch {
+      // Ignore errors
+    }
+    return null
+  }, [])
+
+  // Store session token in localStorage
+  const storeSession = useCallback((editToken: string, sessionToken: string, expiresAt: string) => {
+    if (typeof window === 'undefined') return
+    try {
+      localStorage.setItem(`memoriqr_edit_session_${editToken}`, JSON.stringify({
+        sessionToken,
+        expiresAt
+      }))
+    } catch {
+      // Ignore errors (e.g., localStorage full)
+    }
+  }, [])
+
+  // Clear stored session
+  const clearStoredSession = useCallback((editToken: string) => {
+    if (typeof window === 'undefined') return
+    try {
+      localStorage.removeItem(`memoriqr_edit_session_${editToken}`)
+    } catch {
+      // Ignore errors
+    }
+  }, [])
+
   // Handle MFA verification flow
   useEffect(() => {
     if (!token) {
@@ -80,14 +123,18 @@ function EditPageContent() {
       return
     }
 
+    // Check for session token: URL param first, then localStorage
+    const effectiveSessionToken = sessionToken || getStoredSession(token)
+
     // If we have a session token, verify it and load memorial data
-    if (sessionToken) {
+    if (effectiveSessionToken) {
       setVerificationStep('verified')
-      fetch(`/api/memorial/edit?token=${token}&session=${sessionToken}`)
+      fetch(`/api/memorial/edit?token=${token}&session=${effectiveSessionToken}`)
         .then((res) => res.json())
         .then((data) => {
           if (data.error) {
-            // Session invalid, need to re-verify
+            // Session invalid, clear stored session and need to re-verify
+            clearStoredSession(token)
             setError(data.error)
             setVerificationStep('send')
           } else {
@@ -110,7 +157,7 @@ function EditPageContent() {
       setVerificationStep('send')
       setLoading(false)
     }
-  }, [token, sessionToken])
+  }, [token, sessionToken, getStoredSession, clearStoredSession])
 
   // Send verification code to email
   const handleSendCode = async () => {
@@ -158,6 +205,8 @@ function EditPageContent() {
       if (data.error) {
         setError(data.error)
       } else {
+        // Store session in localStorage for future visits
+        storeSession(token, data.sessionToken, data.expiresAt)
         // Redirect to same page with session token
         router.push(`/memorial/edit?token=${token}&session=${data.sessionToken}`)
       }
