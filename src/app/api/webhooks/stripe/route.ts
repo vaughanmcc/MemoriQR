@@ -159,6 +159,7 @@ export async function POST(request: NextRequest) {
                 amount_paid: session.amount_total ? session.amount_total / 100 : 0,
                 currency: session.currency?.toUpperCase() || 'NZD',
                 activation_url: activationUrl,
+                surface_preparation_note: 'Before attaching your NFC tag or QR plate, please ensure the surface is clean, flat, and properly prepared. Remove any dust, dirt, or moisture. The surface must be free of chemicals such as oils (including wood treatments), waxes, silicones, or other contaminants that may prevent proper adhesion.',
               }),
             })
 

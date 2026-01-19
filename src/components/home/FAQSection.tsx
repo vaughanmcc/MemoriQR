@@ -57,6 +57,10 @@ const faqs = [
     answer: 'Yes! We ship throughout New Zealand ($10) and Australia ($15). NFC tags ship in 2-3 business days, and QR plates ship in 7-10 business days.',
   },
   {
+    question: 'How do I properly prepare the surface?',
+    answer: 'For best adhesion, ensure the surface is clean, flat, and properly prepared before attaching your NFC tag or QR plate. Remove any dust, dirt, or moisture. The surface must be free of chemicals such as oils (including wood treatments), waxes, silicones, or other contaminants that may prevent proper adhesion. For porous surfaces like untreated wood or stone, allow the surface to fully dry before application. Apply firm pressure for 30 seconds and allow 24 hours for the adhesive to fully cure before exposure to moisture or extreme temperatures.',
+  },
+  {
     question: 'Can I use this for a human memorial?',
     answer: 'Absolutely. Many families use MemoriQR for human memorials too. The plates are especially popular for cemetery markers, urns, and keepsake boxes.',
   },
