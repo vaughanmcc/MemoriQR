@@ -156,7 +156,14 @@ Handles order confirmation + activation emails, memorial creation emails, and ed
   "memorialName": "Buddy",
   "memorialUrl": "https://app.memoriqr.com/memorial/buddy-2026-xyz",
   "editUrl": "https://app.memoriqr.com/memorial/edit?token=...",
-  "qrCodeUrl": "https://app.memoriqr.com/api/qr/buddy-2026-xyz"
+  "qrCodeUrl": "https://app.memoriqr.com/api/qr/buddy-2026-xyz",
+  "hostingYears": 10,
+  "packageLimits": {
+    "photos": 40,
+    "videos": 3,
+    "themes": 10,
+    "frames": 10
+  }
 }
 ```
 
@@ -596,7 +603,14 @@ export default defineComponent({
       $.flow.exit('Not a memorial_created event');
     }
     
-    const { email, memorialName, memorialUrl, editUrl, qrCodeUrl, sender_name, reply_to } = body;
+    const { email, memorialName, memorialUrl, editUrl, qrCodeUrl, sender_name, reply_to, hostingYears, packageLimits } = body;
+    
+    // Package limits with defaults for backward compatibility
+    const photos = packageLimits?.photos || 20;
+    const videos = packageLimits?.videos || 2;
+    const themes = packageLimits?.themes || 5;
+    const frames = packageLimits?.frames || 5;
+    const years = hostingYears || 5;
     
     const emailHtml = `
 <!DOCTYPE html>
@@ -644,6 +658,33 @@ export default defineComponent({
               <a href="${memorialUrl}" style="display: inline-block; background: linear-gradient(135deg, #8B7355 0%, #A08060 100%); color: #ffffff; text-decoration: none; padding: 15px 40px; border-radius: 8px; font-size: 16px; font-weight: 500;">
                 View Memorial Page
               </a>
+            </td>
+          </tr>
+        </table>
+        
+        <!-- Package Limits Section -->
+        <table role="presentation" cellspacing="0" cellpadding="0" width="100%" style="margin: 0 0 30px; background-color: #f9f7f4; border-radius: 8px;">
+          <tr>
+            <td style="padding: 25px;">
+              <h3 style="color: #333; margin: 0 0 15px; font-size: 18px; font-weight: 500;">📦 Your ${years}-Year Package Includes</h3>
+              <table role="presentation" cellspacing="0" cellpadding="0" width="100%">
+                <tr>
+                  <td style="padding: 8px 0; color: #555; font-size: 14px;">
+                    <span style="color: #5A7F5A;">✓</span> ${photos} curated photos
+                  </td>
+                  <td style="padding: 8px 0; color: #555; font-size: 14px;">
+                    <span style="color: #5A7F5A;">✓</span> ${videos} videos
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0; color: #555; font-size: 14px;">
+                    <span style="color: #5A7F5A;">✓</span> ${themes} memorial themes
+                  </td>
+                  <td style="padding: 8px 0; color: #555; font-size: 14px;">
+                    <span style="color: #5A7F5A;">✓</span> ${frames} photo frames
+                  </td>
+                </tr>
+              </table>
             </td>
           </tr>
         </table>
@@ -745,6 +786,14 @@ QR CODE (download):
 EDIT MEMORIAL:
 \${editUrl}
 (Keep this link private - anyone with it can edit the memorial)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+YOUR \${years}-YEAR PACKAGE INCLUDES:
+✓ \${photos} curated photos
+✓ \${videos} videos
+✓ \${themes} memorial themes
+✓ \${frames} photo frames
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 

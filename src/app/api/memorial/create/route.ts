@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/server'
 import { generateSlug, getYouTubeId, sanitizeText } from '@/lib/utils'
-import { calculateExpiryDate, DEFAULT_PRICING } from '@/lib/pricing'
+import { calculateExpiryDate, DEFAULT_PRICING, TIER_LIMITS } from '@/lib/pricing'
 import type { HostingDuration, ProductType } from '@/types/database'
 
 export async function POST(request: NextRequest) {
@@ -299,6 +299,11 @@ export async function POST(request: NextRequest) {
       try {
         const webhookUrl = process.env.PIPEDREAM_WEBHOOK_URL
         if (webhookUrl) {
+          // Get package limits for this plan
+          const limits = TIER_LIMITS[hostingDuration]
+          const themeCount = hostingDuration === 5 ? 5 : hostingDuration === 10 ? 10 : 25
+          const frameCount = hostingDuration === 5 ? 5 : hostingDuration === 10 ? 10 : 25
+          
           await fetch(webhookUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -311,6 +316,14 @@ export async function POST(request: NextRequest) {
               memorialUrl: `${baseUrl}/memorial/${memorialSlug}`,
               editUrl: `${baseUrl}/memorial/edit?token=${editToken}`,
               qrCodeUrl: `${baseUrl}/api/qr/${memorialSlug}`,
+              // Package details
+              hostingYears: hostingDuration,
+              packageLimits: {
+                photos: limits.photos,
+                videos: limits.videos,
+                themes: themeCount,
+                frames: frameCount,
+              },
             }),
           })
           console.log('Memorial creation email sent to:', customerEmail)
