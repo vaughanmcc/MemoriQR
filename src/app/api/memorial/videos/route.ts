@@ -26,12 +26,12 @@ export async function POST(request: NextRequest) {
       token = formData.get('token') as string
       videoFile = formData.get('video') as File | null
       
-      // Validate file size (max 50MB)
-      const MAX_VIDEO_SIZE = 50 * 1024 * 1024 // 50MB
+      // Validate file size (max 4MB - Vercel serverless limit)
+      const MAX_VIDEO_SIZE = 4 * 1024 * 1024 // 4MB
       if (videoFile && videoFile.size > MAX_VIDEO_SIZE) {
-        const sizeMB = Math.round(videoFile.size / (1024 * 1024))
+        const sizeMB = (videoFile.size / (1024 * 1024)).toFixed(1)
         return NextResponse.json({ 
-          error: `Video file is too large (${sizeMB}MB). Maximum size is 50MB. Try compressing the video or use a YouTube link instead.` 
+          error: `Video file is too large (${sizeMB}MB). Maximum upload size is 4MB. For larger videos, please use a YouTube link instead.` 
         }, { status: 400 })
       }
       

@@ -419,7 +419,8 @@ function EditPageContent() {
   // Upload video file handler
   // Client-side video validation helper
   const validateVideoFile = useCallback((file: File): string | null => {
-    const MAX_VIDEO_SIZE = 50 * 1024 * 1024 // 50MB
+    // Vercel serverless functions have a 4.5MB body size limit on Hobby plan
+    const MAX_VIDEO_SIZE = 4 * 1024 * 1024 // 4MB
     const validTypes = ['video/mp4', 'video/quicktime', 'video/webm', 'video/x-msvideo', 'video/x-m4v']
     
     // Check video limit
@@ -429,8 +430,8 @@ function EditPageContent() {
     
     // Check file size
     if (file.size > MAX_VIDEO_SIZE) {
-      const sizeMB = Math.round(file.size / (1024 * 1024))
-      return `Video file is too large (${sizeMB}MB). Maximum size is 50MB. Try compressing the video or use a YouTube link instead.`
+      const sizeMB = (file.size / (1024 * 1024)).toFixed(1)
+      return `Video file is too large (${sizeMB}MB). Maximum upload size is 4MB. For larger videos, please use a YouTube link instead.`
     }
     
     // Check file type
@@ -582,11 +583,22 @@ function EditPageContent() {
       return
     }
     
+    // Check if trying to upload too many videos
+    const availableSlots = videoLimit - videos.length
+    if (availableSlots <= 0) {
+      setError(`Video limit reached. Your plan allows ${videoLimit} video${videoLimit === 1 ? '' : 's'} and you already have ${videos.length}.`)
+      return
+    }
+    
+    if (videoFiles.length > 1) {
+      setError(`You can only upload 1 video at a time. You dropped ${videoFiles.length} videos. Please drop them one by one.`)
+      return
+    }
+    
     if (videoFiles.length > 0) {
-      // Only upload first video
       await uploadVideoFile(videoFiles[0])
     }
-  }, [uploadVideoFile])
+  }, [uploadVideoFile, videos.length, videoLimit])
 
   // Delete video handler
   const handleDeleteVideo = async (videoId: string) => {
@@ -1030,7 +1042,7 @@ function EditPageContent() {
                         <span className={isDraggingVideo ? 'text-primary-600 font-medium' : ''}>
                           {isDraggingVideo ? 'Drop video here!' : 'Drag & drop a video file here'}
                         </span>
-                        <span className="text-xs text-gray-400">max 50MB</span>
+                        <span className="text-xs text-gray-400">max 4MB (use YouTube for larger videos)</span>
                       </div>
                     )}
                   </div>
