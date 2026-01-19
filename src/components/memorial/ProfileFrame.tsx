@@ -57,62 +57,49 @@ export function ProfileFrame({ imageUrl, alt, shape, frameColor, frameStyle = 'o
   // For oval: use clip-path ellipse for perfect shape
   if (isOval) {
     return (
-      <div style={{ position: 'relative' }}>
+      <div className="relative">
         {/* Decorative elements around the oval */}
-        <div style={{ 
-          position: 'absolute', 
-          top: -20, 
-          left: '50%', 
-          transform: 'translateX(-50%)',
-          fontSize: '24px',
-          color: frameColor.main,
-          textShadow: `0 2px 4px ${frameColor.dark}66`,
-          zIndex: 10,
-        }}>
+        <div 
+          className="absolute -top-5 left-1/2 -translate-x-1/2 text-2xl z-10"
+          style={{ 
+            color: frameColor.main,
+            textShadow: `0 2px 4px ${frameColor.dark}66`,
+          }}
+        >
           {topBottomSymbol}
         </div>
-        <div style={{ 
-          position: 'absolute', 
-          bottom: -20, 
-          left: '50%', 
-          transform: 'translateX(-50%)',
-          fontSize: '24px',
-          color: frameColor.main,
-          textShadow: `0 2px 4px ${frameColor.dark}66`,
-          zIndex: 10,
-        }}>
+        <div 
+          className="absolute -bottom-5 left-1/2 -translate-x-1/2 text-2xl z-10"
+          style={{ 
+            color: frameColor.main,
+            textShadow: `0 2px 4px ${frameColor.dark}66`,
+          }}
+        >
           {topBottomSymbol}
         </div>
-        <div style={{ 
-          position: 'absolute', 
-          left: -15, 
-          top: '50%', 
-          transform: 'translateY(-50%) rotate(-90deg)',
-          fontSize: '20px',
-          color: frameColor.main,
-          textShadow: `0 2px 4px ${frameColor.dark}66`,
-          zIndex: 10,
-        }}>
+        <div 
+          className="absolute -left-4 top-1/2 -translate-y-1/2 -rotate-90 text-xl z-10"
+          style={{ 
+            color: frameColor.main,
+            textShadow: `0 2px 4px ${frameColor.dark}66`,
+          }}
+        >
           {topBottomSymbol}
         </div>
-        <div style={{ 
-          position: 'absolute', 
-          right: -15, 
-          top: '50%', 
-          transform: 'translateY(-50%) rotate(90deg)',
-          fontSize: '20px',
-          color: frameColor.main,
-          textShadow: `0 2px 4px ${frameColor.dark}66`,
-          zIndex: 10,
-        }}>
+        <div 
+          className="absolute -right-4 top-1/2 -translate-y-1/2 rotate-90 text-xl z-10"
+          style={{ 
+            color: frameColor.main,
+            textShadow: `0 2px 4px ${frameColor.dark}66`,
+          }}
+        >
           {topBottomSymbol}
         </div>
         
+        {/* Responsive oval frame - larger on mobile */}
         <div 
+          className="relative w-[280px] h-[373px] sm:w-[300px] sm:h-[400px] md:w-[320px] md:h-[427px]"
           style={{
-            position: 'relative',
-            width: 260,
-            height: 347,
             background: `linear-gradient(135deg, ${frameColor.dark} 0%, ${frameColor.main} 25%, ${frameColor.light} 50%, ${frameColor.main} 75%, ${frameColor.dark} 100%)`,
             clipPath: 'ellipse(50% 50% at 50% 50%)',
             boxShadow: `0 8px 32px ${frameColor.dark}66`,
@@ -120,12 +107,8 @@ export function ProfileFrame({ imageUrl, alt, shape, frameColor, frameStyle = 'o
         >
           {/* Inner image with smaller ellipse */}
           <div
+            className="absolute top-3 left-3 right-3 bottom-3 sm:top-4 sm:left-4 sm:right-4 sm:bottom-4"
             style={{
-              position: 'absolute',
-              top: 14,
-              left: 14,
-              right: 14,
-              bottom: 14,
               clipPath: 'ellipse(50% 50% at 50% 50%)',
               overflow: 'hidden',
             }}
@@ -139,7 +122,7 @@ export function ProfileFrame({ imageUrl, alt, shape, frameColor, frameStyle = 'o
                 objectPosition: 'center center',
               }}
               priority
-              sizes="260px"
+              sizes="(max-width: 640px) 280px, (max-width: 768px) 300px, 320px"
             />
           </div>
         </div>
@@ -147,12 +130,8 @@ export function ProfileFrame({ imageUrl, alt, shape, frameColor, frameStyle = 'o
     )
   }
 
-  // Non-oval shapes
-  const outerWidth = 240
-  const outerHeight = 240
-  const padding = isNone ? 0 : 14
-  const innerWidth = outerWidth - (padding * 2)
-  const innerHeight = outerHeight - (padding * 2)
+  // Non-oval shapes - responsive sizes
+  const isNoneFrame = isNone
 
   const getBorderRadius = () => {
     switch (shape) {
@@ -166,110 +145,85 @@ export function ProfileFrame({ imageUrl, alt, shape, frameColor, frameStyle = 'o
 
   return (
     <div 
+      className="relative w-[260px] h-[260px] sm:w-[280px] sm:h-[280px] md:w-[300px] md:h-[300px] flex items-center justify-center"
       style={{
-        position: 'relative',
-        width: outerWidth,
-        height: outerHeight,
         borderRadius,
-        background: isNone ? 'transparent' : `linear-gradient(135deg, ${frameColor.dark} 0%, ${frameColor.main} 25%, ${frameColor.light} 50%, ${frameColor.main} 75%, ${frameColor.dark} 100%)`,
-        padding: padding,
-        boxShadow: isNone ? 'none' : `0 8px 32px ${frameColor.dark}66, inset 0 3px 6px ${frameColor.light}aa, inset 0 -3px 6px ${frameColor.dark}66`,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
+        background: isNoneFrame ? 'transparent' : `linear-gradient(135deg, ${frameColor.dark} 0%, ${frameColor.main} 25%, ${frameColor.light} 50%, ${frameColor.main} 75%, ${frameColor.dark} 100%)`,
+        boxShadow: isNoneFrame ? 'none' : `0 8px 32px ${frameColor.dark}66, inset 0 3px 6px ${frameColor.light}aa, inset 0 -3px 6px ${frameColor.dark}66`,
       }}
     >
       {/* Decorative corner elements for non-none frames */}
-      {!isNone && (
+      {!isNoneFrame && (
         <>
           {/* Top-left corner */}
-          <div style={{
-            position: 'absolute',
-            top: -4,
-            left: -4,
-            fontSize: '20px',
-            color: frameColor.light,
-            textShadow: `1px 1px 2px ${frameColor.dark}`,
-            zIndex: 10,
-          }}>
+          <div 
+            className="absolute -top-1 -left-1 text-xl z-10"
+            style={{
+              color: frameColor.light,
+              textShadow: `1px 1px 2px ${frameColor.dark}`,
+            }}
+          >
             {cornerSymbol}
           </div>
           {/* Top-right corner */}
-          <div style={{
-            position: 'absolute',
-            top: -4,
-            right: -4,
-            fontSize: '20px',
-            color: frameColor.light,
-            textShadow: `1px 1px 2px ${frameColor.dark}`,
-            transform: 'scaleX(-1)',
-            zIndex: 10,
-          }}>
+          <div 
+            className="absolute -top-1 -right-1 text-xl z-10 -scale-x-100"
+            style={{
+              color: frameColor.light,
+              textShadow: `1px 1px 2px ${frameColor.dark}`,
+            }}
+          >
             {cornerSymbol}
           </div>
           {/* Bottom-left corner */}
-          <div style={{
-            position: 'absolute',
-            bottom: -4,
-            left: -4,
-            fontSize: '20px',
-            color: frameColor.light,
-            textShadow: `1px 1px 2px ${frameColor.dark}`,
-            transform: 'scaleY(-1)',
-            zIndex: 10,
-          }}>
+          <div 
+            className="absolute -bottom-1 -left-1 text-xl z-10 -scale-y-100"
+            style={{
+              color: frameColor.light,
+              textShadow: `1px 1px 2px ${frameColor.dark}`,
+            }}
+          >
             {cornerSymbol}
           </div>
           {/* Bottom-right corner */}
-          <div style={{
-            position: 'absolute',
-            bottom: -4,
-            right: -4,
-            fontSize: '20px',
-            color: frameColor.light,
-            textShadow: `1px 1px 2px ${frameColor.dark}`,
-            transform: 'scale(-1, -1)',
-            zIndex: 10,
-          }}>
+          <div 
+            className="absolute -bottom-1 -right-1 text-xl z-10 scale-[-1]"
+            style={{
+              color: frameColor.light,
+              textShadow: `1px 1px 2px ${frameColor.dark}`,
+            }}
+          >
             {cornerSymbol}
           </div>
           {/* Top center decoration */}
-          <div style={{
-            position: 'absolute',
-            top: -12,
-            left: '50%',
-            transform: 'translateX(-50%)',
-            fontSize: '16px',
-            color: frameColor.main,
-            textShadow: `0 1px 2px ${frameColor.dark}`,
-            zIndex: 10,
-          }}>
+          <div 
+            className="absolute -top-3 left-1/2 -translate-x-1/2 text-base z-10"
+            style={{
+              color: frameColor.main,
+              textShadow: `0 1px 2px ${frameColor.dark}`,
+            }}
+          >
             {topBottomSymbol}
           </div>
           {/* Bottom center decoration */}
-          <div style={{
-            position: 'absolute',
-            bottom: -12,
-            left: '50%',
-            transform: 'translateX(-50%)',
-            fontSize: '16px',
-            color: frameColor.main,
-            textShadow: `0 1px 2px ${frameColor.dark}`,
-            zIndex: 10,
-          }}>
+          <div 
+            className="absolute -bottom-3 left-1/2 -translate-x-1/2 text-base z-10"
+            style={{
+              color: frameColor.main,
+              textShadow: `0 1px 2px ${frameColor.dark}`,
+            }}
+          >
             {topBottomSymbol}
           </div>
         </>
       )}
       
+      {/* Inner image container - responsive padding */}
       <div 
+        className="absolute inset-3 sm:inset-3.5 md:inset-4 overflow-hidden"
         style={{
-          position: 'relative',
-          width: innerWidth,
-          height: innerHeight,
           borderRadius,
-          overflow: 'hidden',
-          boxShadow: isNone ? '0 4px 20px rgba(0, 0, 0, 0.15)' : 'inset 0 0 25px rgba(0, 0, 0, 0.3)',
+          boxShadow: isNoneFrame ? '0 4px 20px rgba(0, 0, 0, 0.15)' : 'inset 0 0 25px rgba(0, 0, 0, 0.3)',
         }}
       >
         <Image
@@ -281,7 +235,7 @@ export function ProfileFrame({ imageUrl, alt, shape, frameColor, frameStyle = 'o
             objectPosition: 'center center',
           }}
           priority
-          sizes="240px"
+          sizes="(max-width: 640px) 260px, (max-width: 768px) 280px, 300px"
         />
       </div>
     </div>
