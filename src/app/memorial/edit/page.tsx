@@ -225,6 +225,37 @@ function EditPageContent() {
   const uploadPhotos = useCallback(async (files: File[]) => {
     if (files.length === 0 || !token) return
 
+    // Client-side validation BEFORE upload
+    const MAX_PHOTO_SIZE = 10 * 1024 * 1024 // 10MB
+    const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/heic', 'image/heif']
+    
+    // Check available slots
+    const availableSlots = photoLimit - photos.length
+    if (availableSlots <= 0) {
+      setError(`Photo limit reached. Your plan allows ${photoLimit} photos and you already have ${photos.length}.`)
+      return
+    }
+    
+    if (files.length > availableSlots) {
+      setError(`You can only add ${availableSlots} more photo${availableSlots === 1 ? '' : 's'}. You selected ${files.length}. Your plan allows ${photoLimit} photos total.`)
+      return
+    }
+    
+    // Check file sizes
+    const oversizedFiles = files.filter(f => f.size > MAX_PHOTO_SIZE)
+    if (oversizedFiles.length > 0) {
+      const sizes = oversizedFiles.map(f => `${f.name} (${Math.round(f.size / (1024 * 1024))}MB)`).join(', ')
+      setError(`${oversizedFiles.length} photo(s) exceed the 10MB size limit: ${sizes}`)
+      return
+    }
+    
+    // Check file types
+    const invalidFiles = files.filter(f => !validTypes.includes(f.type))
+    if (invalidFiles.length > 0) {
+      setError(`Invalid file type: ${invalidFiles.map(f => f.name).join(', ')}. Please upload images only (JPG, PNG, GIF, WEBP).`)
+      return
+    }
+
     setUploadingPhotos(true)
     setError('')
 
@@ -247,12 +278,12 @@ function EditPageContent() {
         setTimeout(() => setSuccess(false), 3000)
       }
     } catch {
-      setError('Failed to upload photos')
+      setError('Failed to upload photos. Please try again.')
     }
 
     setUploadingPhotos(false)
     if (photoInputRef.current) photoInputRef.current.value = ''
-  }, [token])
+  }, [token, photos.length, photoLimit])
 
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || [])
@@ -386,9 +417,41 @@ function EditPageContent() {
   }
 
   // Upload video file handler
+  // Client-side video validation helper
+  const validateVideoFile = useCallback((file: File): string | null => {
+    const MAX_VIDEO_SIZE = 50 * 1024 * 1024 // 50MB
+    const validTypes = ['video/mp4', 'video/quicktime', 'video/webm', 'video/x-msvideo', 'video/x-m4v']
+    
+    // Check video limit
+    if (videos.length >= videoLimit) {
+      return `Video limit reached. Your plan allows ${videoLimit} video${videoLimit === 1 ? '' : 's'} and you already have ${videos.length}.`
+    }
+    
+    // Check file size
+    if (file.size > MAX_VIDEO_SIZE) {
+      const sizeMB = Math.round(file.size / (1024 * 1024))
+      return `Video file is too large (${sizeMB}MB). Maximum size is 50MB. Try compressing the video or use a YouTube link instead.`
+    }
+    
+    // Check file type
+    if (!validTypes.includes(file.type)) {
+      return `Invalid video format (${file.type || 'unknown'}). Please upload MP4, MOV, or WEBM files. Or use a YouTube link.`
+    }
+    
+    return null // Valid
+  }, [videos.length, videoLimit])
+
   const handleVideoFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file || !token) return
+
+    // Client-side validation BEFORE upload
+    const validationError = validateVideoFile(file)
+    if (validationError) {
+      setError(validationError)
+      if (videoInputRef.current) videoInputRef.current.value = ''
+      return
+    }
 
     setUploadingVideo(true)
     setError('')
@@ -412,7 +475,7 @@ function EditPageContent() {
         setTimeout(() => setSuccess(false), 3000)
       }
     } catch {
-      setError('Failed to upload video')
+      setError('Failed to upload video. Please try again.')
     }
 
     setUploadingVideo(false)
@@ -423,6 +486,13 @@ function EditPageContent() {
   const uploadVideoFile = useCallback(async (file: File) => {
     if (!file || !token) return
 
+    // Client-side validation BEFORE upload
+    const validationError = validateVideoFile(file)
+    if (validationError) {
+      setError(validationError)
+      return
+    }
+
     setUploadingVideo(true)
     setError('')
 
@@ -445,7 +515,7 @@ function EditPageContent() {
         setTimeout(() => setSuccess(false), 3000)
       }
     } catch {
-      setError('Failed to upload video')
+      setError('Failed to upload video. Please try again.')
     }
 
     setUploadingVideo(false)
