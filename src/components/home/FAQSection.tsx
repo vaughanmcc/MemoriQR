@@ -60,6 +60,10 @@ const faqs = [
     question: 'Can I use this for a human memorial?',
     answer: 'Absolutely. Many families use MemoriQR for human memorials too. The plates are especially popular for cemetery markers, urns, and keepsake boxes.',
   },
+  {
+    question: 'Are QR plates allowed at all cemeteries?',
+    answer: 'Cemetery policies vary. Some cemeteries welcome QR memorial plates, while others have restrictions on what can be attached to headstones or grave markers. We strongly recommend checking with your cemetery before purchasing to confirm their policy on memorial tags and plates. If you\'re unsure, contact us and we can help guide you through common considerations.',
+  },
 ]
 
 function FAQItem({ question, answer }: { question: string; answer: string }) {

@@ -98,7 +98,7 @@ export function ProfileFrame({ imageUrl, alt, shape, frameColor, frameStyle = 'o
         
         {/* Responsive oval frame - larger on mobile */}
         <div 
-          className="relative w-[280px] h-[373px] sm:w-[300px] sm:h-[400px] md:w-[320px] md:h-[427px]"
+          className="relative w-[300px] h-[400px] sm:w-[340px] sm:h-[453px] md:w-[360px] md:h-[480px]"
           style={{
             background: `linear-gradient(135deg, ${frameColor.dark} 0%, ${frameColor.main} 25%, ${frameColor.light} 50%, ${frameColor.main} 75%, ${frameColor.dark} 100%)`,
             clipPath: 'ellipse(50% 50% at 50% 50%)',
@@ -122,7 +122,7 @@ export function ProfileFrame({ imageUrl, alt, shape, frameColor, frameStyle = 'o
                 objectPosition: 'center center',
               }}
               priority
-              sizes="(max-width: 640px) 280px, (max-width: 768px) 300px, 320px"
+              sizes="(max-width: 640px) 300px, (max-width: 768px) 340px, 360px"
             />
           </div>
         </div>
@@ -145,7 +145,7 @@ export function ProfileFrame({ imageUrl, alt, shape, frameColor, frameStyle = 'o
 
   return (
     <div 
-      className="relative w-[260px] h-[260px] sm:w-[280px] sm:h-[280px] md:w-[300px] md:h-[300px] flex items-center justify-center"
+      className="relative w-[280px] h-[280px] sm:w-[320px] sm:h-[320px] md:w-[340px] md:h-[340px] flex items-center justify-center"
       style={{
         borderRadius,
         background: isNoneFrame ? 'transparent' : `linear-gradient(135deg, ${frameColor.dark} 0%, ${frameColor.main} 25%, ${frameColor.light} 50%, ${frameColor.main} 75%, ${frameColor.dark} 100%)`,

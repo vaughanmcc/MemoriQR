@@ -60,6 +60,11 @@ export function UseCasesSection() {
             </div>
           </div>
         </div>
+
+        {/* Cemetery disclaimer */}
+        <p className="text-center text-xs text-gray-400 mt-6 max-w-2xl mx-auto">
+          Please check with your cemetery before purchasing – policies on memorial attachments vary by location.
+        </p>
       </div>
     </section>
   )
