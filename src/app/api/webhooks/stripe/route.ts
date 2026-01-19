@@ -131,6 +131,13 @@ export async function POST(request: NextRequest) {
         if (customer && memorial) {
           // Extract the code from order number (remove MQR- prefix)
           const activationCode = orderNumber.replace('MQR-', '')
+          const nfcUrl = `${process.env.NEXT_PUBLIC_APP_URL}/activate/${activationCode}`
+          
+          // Debug: log shipping details
+          console.log('Stripe session shipping_details:', JSON.stringify(session.shipping_details, null, 2))
+          console.log('Stripe session customer_details:', JSON.stringify(session.customer_details, null, 2))
+          console.log('Order engraving_text:', order?.engraving_text)
+          
           try {
             // Send customer order confirmation
             await fetch(webhookUrl, {
@@ -149,7 +156,7 @@ export async function POST(request: NextRequest) {
                 hosting_duration: order?.hosting_duration,
                 amount_paid: session.amount_total ? session.amount_total / 100 : 0,
                 currency: session.currency?.toUpperCase() || 'NZD',
-                activation_url: `${process.env.NEXT_PUBLIC_APP_URL}/activate/${activationCode}`,
+                activation_url: nfcUrl,
               }),
             })
 
@@ -165,11 +172,12 @@ export async function POST(request: NextRequest) {
                 deceased_name: memorial.deceased_name,
                 product_type: order?.product_type,
                 hosting_duration: order?.hosting_duration,
-                engraving_text: order?.engraving_text || 'N/A',
+                engraving_text: order?.engraving_text || null,
                 amount_paid: session.amount_total ? session.amount_total / 100 : 0,
                 currency: session.currency?.toUpperCase() || 'NZD',
                 activation_code: activationCode,
-                shipping_address: session.shipping_details?.address ? JSON.stringify(session.shipping_details.address) : 'N/A',
+                nfc_url: nfcUrl,
+                shipping_address: session.shipping_details?.address || null,
                 shipping_name: session.shipping_details?.name || customer.full_name,
               }),
             })
