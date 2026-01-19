@@ -195,6 +195,9 @@ Handles order confirmation + activation emails, memorial creation emails, and ed
   "amount_paid": 249,
   "currency": "NZD",
   "activation_code": "12345678",
+  "nfc_url": "https://memoriqr.co.nz/activate/12345678",
+  "memorial_url": "https://memoriqr.co.nz/memorial/buddy-2026-xyz",
+  "qr_code_url": "https://memoriqr.co.nz/api/qr/buddy-2026-xyz",
   "shipping_address": "{\"line1\":\"123 Main St\",\"city\":\"Auckland\",\"postal_code\":\"1010\",\"country\":\"NZ\"}",
   "shipping_name": "Jane Doe"
 }

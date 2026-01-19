@@ -113,10 +113,10 @@ export async function POST(request: NextRequest) {
       // Send order confirmation email via Pipedream
       const webhookUrl = process.env.PIPEDREAM_WEBHOOK_URL
       if (webhookUrl) {
-        // Get customer details
+        // Get customer details including shipping address
         const { data: customer } = await supabase
           .from('customers')
-          .select('email, full_name')
+          .select('email, full_name, shipping_address')
           .eq('id', customerId)
           .single()
 
@@ -158,6 +158,15 @@ export async function POST(request: NextRequest) {
               }),
             })
 
+            // Build the memorial URL for NFC encoding
+            const memorialUrl = `${process.env.NEXT_PUBLIC_APP_URL}/memorial/${memorial.memorial_slug}`
+            const qrCodeUrl = `${process.env.NEXT_PUBLIC_APP_URL}/api/qr/${memorial.memorial_slug}`
+            
+            // Get shipping address - prefer Stripe's collected address, fall back to our DB
+            const shippingAddress = session.shipping_details?.address 
+              ? JSON.stringify(session.shipping_details.address)
+              : (customer.shipping_address ? JSON.stringify(customer.shipping_address) : null)
+
             // Send admin notification for fulfillment
             await fetch(webhookUrl, {
               method: 'POST',
@@ -174,7 +183,9 @@ export async function POST(request: NextRequest) {
                 currency: session.currency?.toUpperCase() || 'NZD',
                 activation_code: activationCode,
                 nfc_url: nfcUrl,
-                shipping_address: session.shipping_details?.address || null,
+                memorial_url: memorialUrl,
+                qr_code_url: qrCodeUrl,
+                shipping_address: shippingAddress,
                 shipping_name: session.shipping_details?.name || customer.full_name,
               }),
             })
