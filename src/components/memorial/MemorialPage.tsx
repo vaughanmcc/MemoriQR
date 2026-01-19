@@ -145,6 +145,9 @@ export function MemorialPage({ memorial }: MemorialPageProps) {
   const theme = THEMES[memorial.theme || 'classic'] || THEMES.classic
   const frame = FRAMES[memorial.frame || 'classic-gold'] || FRAMES['classic-gold']
   const isPet = memorial.deceased_type === 'pet'
+  
+  // Find the profile photo (marked as isProfile) or default to first photo
+  const profilePhoto = photos.find(p => p.isProfile) || photos[0]
 
   return (
     <div 
@@ -194,10 +197,10 @@ export function MemorialPage({ memorial }: MemorialPageProps) {
         {/* Hero section with framed photo */}
         <div className="text-center mb-12">
           {/* Main profile photo with ornamental frame - themed colors */}
-          {photos.length > 0 && (
+          {profilePhoto && (
             <div className="flex justify-center mb-6">
               <ProfileFrame
-                imageUrl={photos[0].url}
+                imageUrl={profilePhoto.url}
                 alt={memorial.deceased_name}
                 shape={getFrameShape(memorial.frame || 'oval-classic')}
                 frameColor={theme.frame}
