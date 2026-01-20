@@ -10,6 +10,7 @@
  * - contact_form: Contact form submissions → info@memoriqr.co.nz
  * - order_confirmation: Order confirmation → customer email
  * - admin_order_notification: Fulfillment notification → memoriqr.global@gmail.com
+ * - retail_fulfillment: Retail scratch card activation → memoriqr.global@gmail.com
  * - memorial_created: Memorial live notification → customer email
  * - edit_verification: MFA verification code → customer email
  * - partner_login_code: Partner portal OTP → partner email
@@ -228,6 +229,129 @@ ${qr_code_url ? `<div style="border: 1px solid #ddd; border-radius: 8px; padding
 </div>
 </div>`,
         text: `NEW ORDER: ${order_number}\n\nPRODUCT: ${productDisplay}\nHOSTING: ${hosting_duration} years\nAMOUNT: $${amount_paid} ${currency}\nMEMORIAL FOR: ${deceased_name}\n\nFULFILLMENT DETAILS:\nActivation Code: ${activation_code}\nNFC URL: ${nfc_url}\nMemorial Page: ${memorial_url}\nQR Code: ${qr_code_url || 'N/A'}\n\nCUSTOMER:\n${customer_name}\n${customer_email}\n\nSHIP TO:\n${shippingText}\n\nACTION CHECKLIST:\n- Program NFC tag with URL: ${nfc_url}\n- Print QR code for plate (if applicable)\n- Pack and ship`
+      };
+    }
+    
+    // =====================================================
+    // RETAIL FULFILLMENT EMAIL (scratch card activation)
+    // Sent to admin when customer activates a retail scratch card
+    // =====================================================
+    if (type === 'retail_fulfillment') {
+      const { 
+        customer_email, 
+        customer_name, 
+        deceased_name,
+        product_type,
+        hosting_duration,
+        activation_code,
+        shipping_name,
+        shipping_address,
+        memorial_url,
+        nfc_url,
+        qr_code_url,
+        partner_id
+      } = body;
+      
+      // Parse shipping address
+      let shippingHtml = 'No shipping address provided';
+      let shippingText = 'No shipping address provided';
+      try {
+        const addr = JSON.parse(shipping_address || '{}');
+        if (addr.line1) {
+          const parts = [
+            shipping_name || customer_name,
+            addr.line1,
+            addr.line2,
+            `${addr.city} ${addr.postal_code || ''}`.trim(),
+            addr.country
+          ].filter(Boolean);
+          shippingHtml = parts.join('<br>');
+          shippingText = parts.join('\n');
+        }
+      } catch (e) {
+        shippingHtml = shipping_address || 'No address provided';
+        shippingText = shipping_address || 'No address provided';
+      }
+      
+      // Format product type for display
+      const productDisplay = {
+        'nfc_only': '🏷️ NFC Tag Only',
+        'qr_only': '📱 QR Code Plate Only',
+        'both': '🏷️📱 QR Code Plate + NFC Tag'
+      }[product_type] || product_type;
+      
+      return {
+        to: 'memoriqr.global@gmail.com',
+        replyTo: customer_email,
+        from_name: 'MemoriQR Retail',
+        subject: `🎫 Retail Activation: ${productDisplay} for ${deceased_name}`,
+        html: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+<div style="background: linear-gradient(135deg, #6B46C1 0%, #805AD5 100%); padding: 20px; text-align: center; border-radius: 8px 8px 0 0;">
+<h1 style="color: #fff; margin: 0;">🎫 Retail Scratch Card Activated</h1>
+<p style="color: rgba(255,255,255,0.9); margin: 10px 0 0; font-size: 14px;">Customer activated their memorial - product ready to ship!</p>
+</div>
+
+<div style="padding: 25px; background: #fff; border: 1px solid #ddd; border-top: none;">
+
+<div style="background: #f0fff4; border: 1px solid #9ae6b4; padding: 15px; border-radius: 8px; margin-bottom: 20px; text-align: center;">
+<p style="margin: 0; color: #276749; font-size: 16px;">✅ Memorial is <strong>LIVE</strong> - customer can view it now!</p>
+<p style="margin: 10px 0 0;"><a href="${memorial_url}" style="color: #6B46C1; font-weight: bold;">${memorial_url}</a></p>
+</div>
+
+<table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+<tr style="background: #f9f7f4;"><td colspan="2" style="padding: 12px; font-weight: bold; border: 1px solid #ddd;">Activation Details</td></tr>
+<tr><td style="padding: 10px; border: 1px solid #eee; width: 40%;">Activation Code</td><td style="padding: 10px; border: 1px solid #eee; font-weight: 500; font-family: monospace; letter-spacing: 2px;">${activation_code}</td></tr>
+<tr><td style="padding: 10px; border: 1px solid #eee;">Product</td><td style="padding: 10px; border: 1px solid #eee; font-weight: 500;">${productDisplay}</td></tr>
+<tr><td style="padding: 10px; border: 1px solid #eee;">Hosting</td><td style="padding: 10px; border: 1px solid #eee;">${hosting_duration} years</td></tr>
+<tr><td style="padding: 10px; border: 1px solid #eee;">Memorial For</td><td style="padding: 10px; border: 1px solid #eee; font-weight: 500;">${deceased_name}</td></tr>
+${partner_id ? `<tr><td style="padding: 10px; border: 1px solid #eee;">Partner ID</td><td style="padding: 10px; border: 1px solid #eee; font-family: monospace; font-size: 12px;">${partner_id}</td></tr>` : ''}
+</table>
+
+<div style="background: #6B46C1; color: #fff; padding: 12px; font-weight: bold; border-radius: 8px 8px 0 0;">⚙️ Fulfillment Details</div>
+<div style="border: 2px solid #6B46C1; border-top: none; padding: 15px; margin-bottom: 20px; border-radius: 0 0 8px 8px;">
+<p style="margin: 0 0 10px;"><strong>NFC URL (program to tag):</strong><br>
+<a href="${nfc_url}" style="color: #6B46C1; word-break: break-all;">${nfc_url}</a></p>
+<p style="margin: 0;"><strong>Memorial Page:</strong><br>
+<a href="${memorial_url}" style="color: #6B46C1; word-break: break-all;">${memorial_url}</a></p>
+</div>
+
+${qr_code_url ? `<div style="border: 1px solid #ddd; border-radius: 8px; padding: 15px; text-align: center; margin-bottom: 20px;">
+<p style="margin: 0 0 10px; font-weight: bold;">QR Code for Plate</p>
+<img src="${qr_code_url}" alt="QR Code" style="width: 150px; height: 150px;">
+<p style="margin: 10px 0 0;"><a href="${qr_code_url}" style="color: #6B46C1; font-size: 13px;">Download QR Code</a></p>
+</div>` : ''}
+
+<table style="width: 100%; margin-bottom: 20px;">
+<tr>
+<td style="width: 48%; vertical-align: top;">
+<div style="border: 1px solid #ddd; border-radius: 8px;">
+<div style="background: #f9f7f4; padding: 10px; border-bottom: 1px solid #ddd;"><strong>👤 Customer</strong></div>
+<div style="padding: 12px;">${customer_name || shipping_name}<br><a href="mailto:${customer_email}" style="color: #6B46C1;">${customer_email}</a></div>
+</div>
+</td>
+<td style="width: 4%;"></td>
+<td style="width: 48%; vertical-align: top;">
+<div style="border: 1px solid #ddd; border-radius: 8px;">
+<div style="background: #f9f7f4; padding: 10px; border-bottom: 1px solid #ddd;"><strong>📍 Ship To</strong></div>
+<div style="padding: 12px;">${shippingHtml}</div>
+</div>
+</td>
+</tr>
+</table>
+
+<div style="background: #f0f8ff; border: 1px solid #b8d4f0; padding: 15px; border-radius: 8px;">
+<strong>📋 Action Checklist:</strong>
+<p style="margin: 10px 0 5px;">☐ Program NFC tag with URL: <strong>${nfc_url}</strong></p>
+<p style="margin: 5px 0;">☐ Print QR code for plate (if applicable)</p>
+<p style="margin: 5px 0 0;">☐ Pack and ship to address above</p>
+</div>
+
+</div>
+<div style="background: #f9f7f4; padding: 15px; text-align: center; border: 1px solid #ddd; border-top: none; border-radius: 0 0 8px 8px;">
+<p style="color: #888; font-size: 12px; margin: 0;">Retail activation fulfillment notification</p>
+</div>
+</div>`,
+        text: `RETAIL SCRATCH CARD ACTIVATED\n\nACTIVATION CODE: ${activation_code}\nPRODUCT: ${productDisplay}\nHOSTING: ${hosting_duration} years\nMEMORIAL FOR: ${deceased_name}\n${partner_id ? `PARTNER ID: ${partner_id}\n` : ''}\nMEMORIAL IS LIVE:\n${memorial_url}\n\nFULFILLMENT DETAILS:\nNFC URL: ${nfc_url}\nQR Code: ${qr_code_url || 'N/A'}\n\nCUSTOMER:\n${customer_name || shipping_name}\n${customer_email}\n\nSHIP TO:\n${shippingText}\n\nACTION CHECKLIST:\n- Program NFC tag with URL: ${nfc_url}\n- Print QR code for plate (if applicable)\n- Pack and ship`
       };
     }
     

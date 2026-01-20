@@ -371,6 +371,15 @@ export function MemorialUploadForm({
     setTodayLocalISO(new Date().toLocaleDateString('en-CA'))
   }, [])
   const [contactEmail, setContactEmail] = useState(initialEmail || '')
+  
+  // Shipping address for retail activations (product ships after activation)
+  const [shippingName, setShippingName] = useState('')
+  const [shippingLine1, setShippingLine1] = useState('')
+  const [shippingLine2, setShippingLine2] = useState('')
+  const [shippingCity, setShippingCity] = useState('')
+  const [shippingPostalCode, setShippingPostalCode] = useState('')
+  const [shippingCountry, setShippingCountry] = useState('New Zealand')
+  
   const [photos, setPhotos] = useState<File[]>([])
   const [photosPreviews, setPhotosPreviews] = useState<string[]>([])
   const [profilePhotoIndex, setProfilePhotoIndex] = useState(0)
@@ -699,6 +708,18 @@ export function MemorialUploadForm({
       formData.append('frame', selectedFrame)
       if (contactEmail) formData.append('contactEmail', contactEmail)
 
+      // Shipping address for retail activations
+      if (activationType === 'retail' && shippingName && shippingLine1) {
+        formData.append('shippingName', shippingName)
+        formData.append('shippingAddress', JSON.stringify({
+          line1: shippingLine1,
+          line2: shippingLine2 || '',
+          city: shippingCity,
+          postal_code: shippingPostalCode,
+          country: shippingCountry,
+        }))
+      }
+
       photos.forEach((photo) => {
         formData.append('photos', photo)
       })
@@ -900,11 +921,98 @@ export function MemorialUploadForm({
               </div>
             )}
 
+            {/* Shipping address for retail activations - product ships after memorial is created */}
+            {activationType === 'retail' && (
+              <div className="border-t pt-6 mt-6">
+                <h3 className="font-medium text-gray-900 mb-4 flex items-center">
+                  📦 Shipping Address
+                  <span className="ml-2 text-sm font-normal text-gray-500">
+                    (We'll mail your {productType === 'both' ? 'QR plate and NFC tag' : productType === 'qr_only' ? 'QR plate' : 'NFC tag'} here)
+                  </span>
+                </h3>
+                
+                <div className="space-y-4">
+                  <div>
+                    <label className="label">Full Name (for shipping)</label>
+                    <input
+                      type="text"
+                      value={shippingName}
+                      onChange={(e) => setShippingName(e.target.value)}
+                      className="input"
+                      placeholder="John Smith"
+                      required
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="label">Address Line 1</label>
+                    <input
+                      type="text"
+                      value={shippingLine1}
+                      onChange={(e) => setShippingLine1(e.target.value)}
+                      className="input"
+                      placeholder="123 Main Street"
+                      required
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="label">Address Line 2 (optional)</label>
+                    <input
+                      type="text"
+                      value={shippingLine2}
+                      onChange={(e) => setShippingLine2(e.target.value)}
+                      className="input"
+                      placeholder="Apartment, suite, unit, etc."
+                    />
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="label">City / Town</label>
+                      <input
+                        type="text"
+                        value={shippingCity}
+                        onChange={(e) => setShippingCity(e.target.value)}
+                        className="input"
+                        placeholder="Auckland"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="label">Postcode</label>
+                      <input
+                        type="text"
+                        value={shippingPostalCode}
+                        onChange={(e) => setShippingPostalCode(e.target.value)}
+                        className="input"
+                        placeholder="1010"
+                        required
+                      />
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <label className="label">Country</label>
+                    <select
+                      value={shippingCountry}
+                      onChange={(e) => setShippingCountry(e.target.value)}
+                      className="input"
+                    >
+                      <option value="New Zealand">New Zealand</option>
+                      <option value="Australia">Australia</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            )}
+
             <button
               onClick={() => setStep(2)}
               disabled={
                 !deceasedName
                 || (activationType === 'retail' && !initialEmail && !contactEmail)
+                || (activationType === 'retail' && (!shippingName || !shippingLine1 || !shippingCity || !shippingPostalCode))
                 || (deceasedType === 'pet' && (!species || (species === 'Other' && !speciesOther.trim())))
               }
               className="btn-primary w-full"

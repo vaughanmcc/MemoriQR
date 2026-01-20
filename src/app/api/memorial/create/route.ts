@@ -26,6 +26,11 @@ export async function POST(request: NextRequest) {
     const frame = formData.get('frame') as string || 'classic-gold'
     const contactEmail = formData.get('contactEmail') as string | null
     
+    // Shipping address for retail activations
+    const shippingName = formData.get('shippingName') as string | null
+    const shippingAddressJson = formData.get('shippingAddress') as string | null
+    const shippingAddress = shippingAddressJson ? JSON.parse(shippingAddressJson) : null
+    
     const photoFiles = formData.getAll('photos') as File[]
 
     if (!deceasedName) {
@@ -238,7 +243,7 @@ export async function POST(request: NextRequest) {
       const expiryDate = calculateExpiryDate(new Date(), hostingDuration)
       const price = DEFAULT_PRICING[hostingDuration][productType]
 
-      // Create memorial
+      // Create memorial with shipping info and fulfillment status
       const { data: memorial, error: memorialError } = await supabase
         .from('memorial_records')
         .insert({
@@ -259,6 +264,11 @@ export async function POST(request: NextRequest) {
           base_price: price,
           hosting_expires_at: expiryDate.toISOString(),
           contact_email: contactEmail,
+          // Retail-specific fields for fulfillment
+          activation_source: 'retail',
+          fulfillment_status: 'pending',
+          shipping_name: shippingName,
+          shipping_address: shippingAddress,
         })
         .select('id')
         .single()
@@ -353,6 +363,30 @@ export async function POST(request: NextRequest) {
             }),
           })
           console.log('Memorial creation email sent to:', customerEmail)
+          
+          // For retail activations, also send fulfillment email to admin
+          if (activationType === 'retail' && shippingAddress) {
+            await fetch(webhookUrl, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                type: 'retail_fulfillment',
+                customer_email: customerEmail,
+                customer_name: shippingName || deceasedName,
+                deceased_name: deceasedName,
+                product_type: productType,
+                hosting_duration: hostingDuration,
+                activation_code: activationCode,
+                shipping_name: shippingName,
+                shipping_address: JSON.stringify(shippingAddress),
+                memorial_url: `${baseUrl}/memorial/${memorialSlug}`,
+                nfc_url: `${baseUrl}/qr/${memorialSlug}`,
+                qr_code_url: `${baseUrl}/api/qr/${memorialSlug}`,
+                partner_id: partnerId,
+              }),
+            })
+            console.log('Retail fulfillment email sent to admin')
+          }
         } else {
           console.warn('PIPEDREAM_WEBHOOK_URL not configured - email not sent')
         }
