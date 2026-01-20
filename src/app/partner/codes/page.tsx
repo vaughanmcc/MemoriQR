@@ -185,7 +185,7 @@ export default function PartnerCodesPage() {
                     <div>
                       <p className="font-medium text-gray-900">{batch.batch_number}</p>
                       <p className="text-sm text-gray-500">
-                        {batch.quantity} codes • {getProductLabel(batch.product_type)} • {batch.hosting_duration} years
+                        {batch.quantity} codes • {getProductLabel(batch.product_type)} • {batch.hosting_duration ? `${batch.hosting_duration} years` : 'Customer selects'}
                       </p>
                     </div>
                   </div>
@@ -267,7 +267,7 @@ export default function PartnerCodesPage() {
                       {getProductLabel(code.product_type)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                      {code.hosting_duration} years
+                      {code.hosting_duration ? `${code.hosting_duration} years` : <span className="text-gray-400 italic">At activation</span>}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       {code.is_used ? (
@@ -330,7 +330,7 @@ function RequestCodesModal({
 }) {
   const [quantity, setQuantity] = useState(50)
   const [productType, setProductType] = useState('both')
-  const [hostingDuration, setHostingDuration] = useState(10)
+  const [hostingDuration, setHostingDuration] = useState<number | null>(null) // null = customer chooses at activation
   const [notes, setNotes] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -347,7 +347,7 @@ function RequestCodesModal({
         body: JSON.stringify({
           quantity,
           productType,
-          hostingDuration,
+          hostingDuration, // null means customer chooses at activation
           notes
         })
       })
@@ -366,14 +366,18 @@ function RequestCodesModal({
     }
   }
 
-  // Calculate pricing
+  // Calculate pricing - use base product price if no duration selected
   const retailPricing: { [key: string]: { [key: number]: number } } = {
     'nfc_only': { 5: 99, 10: 149, 25: 199 },
     'qr_only': { 5: 149, 10: 199, 25: 279 },
     'both': { 5: 199, 10: 249, 25: 349 }
   }
 
-  const retailPrice = retailPricing[productType][hostingDuration]
+  // If no hosting duration selected, show range
+  const showPriceRange = hostingDuration === null
+  const minPrice = retailPricing[productType][5]
+  const maxPrice = retailPricing[productType][25]
+  const retailPrice = hostingDuration ? retailPricing[productType][hostingDuration] : 0
   const partnerPrice = retailPrice * 0.6
   const totalCost = partnerPrice * quantity
   const potentialRevenue = retailPrice * quantity
@@ -428,14 +432,16 @@ function RequestCodesModal({
                   Hosting Duration
                 </label>
                 <select
-                  value={hostingDuration}
-                  onChange={(e) => setHostingDuration(parseInt(e.target.value))}
+                  value={hostingDuration ?? ''}
+                  onChange={(e) => setHostingDuration(e.target.value ? parseInt(e.target.value) : null)}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
                 >
+                  <option value="">Customer chooses at activation</option>
                   <option value={5}>5 Years</option>
                   <option value={10}>10 Years</option>
                   <option value={25}>25 Years</option>
                 </select>
+                <p className="text-xs text-gray-500 mt-1">Leave blank if customers should choose duration when activating</p>
               </div>
 
               <div>
@@ -453,24 +459,42 @@ function RequestCodesModal({
 
               {/* Pricing Summary */}
               <div className="bg-gray-50 rounded-lg p-4 space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Retail price per code:</span>
-                  <span className="font-medium">${retailPrice.toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Your cost per code (40% off):</span>
-                  <span className="font-medium text-green-600">${partnerPrice.toFixed(2)}</span>
-                </div>
-                <div className="border-t pt-2 mt-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Total cost ({quantity} codes):</span>
-                    <span className="font-bold">${totalCost.toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between text-sm text-green-600">
-                    <span>Potential profit:</span>
-                    <span className="font-bold">${potentialProfit.toFixed(2)}</span>
-                  </div>
-                </div>
+                {showPriceRange ? (
+                  <>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">Retail price range:</span>
+                      <span className="font-medium">${minPrice} – ${maxPrice}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">Your cost range (40% off):</span>
+                      <span className="font-medium text-green-600">${(minPrice * 0.6).toFixed(2)} – ${(maxPrice * 0.6).toFixed(2)}</span>
+                    </div>
+                    <p className="text-xs text-gray-500 mt-2">
+                      Final pricing depends on customer's hosting duration choice at activation. You'll be invoiced based on actual selections.
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">Retail price per code:</span>
+                      <span className="font-medium">${retailPrice.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">Your cost per code (40% off):</span>
+                      <span className="font-medium text-green-600">${partnerPrice.toFixed(2)}</span>
+                    </div>
+                    <div className="border-t pt-2 mt-2">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-600">Total cost ({quantity} codes):</span>
+                        <span className="font-bold">${totalCost.toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between text-sm text-green-600">
+                        <span>Potential profit:</span>
+                        <span className="font-bold">${potentialProfit.toFixed(2)}</span>
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
 

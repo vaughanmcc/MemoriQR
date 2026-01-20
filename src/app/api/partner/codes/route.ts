@@ -126,7 +126,8 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    if (![5, 10, 25].includes(hostingDuration)) {
+    // Hosting duration is optional - null means customer chooses at activation
+    if (hostingDuration !== null && ![5, 10, 25].includes(hostingDuration)) {
       return NextResponse.json(
         { error: 'Invalid hosting duration' },
         { status: 400 }
@@ -136,13 +137,15 @@ export async function POST(request: NextRequest) {
     const supabase = createAdminClient()
 
     // Calculate wholesale pricing (discounted for partners)
+    // If no hosting duration, we'll bill based on actual usage later
     const retailPricing: { [key: string]: { [key: number]: number } } = {
       'nfc_only': { 5: 99, 10: 149, 25: 199 },
       'qr_only': { 5: 149, 10: 199, 25: 279 },
       'both': { 5: 199, 10: 249, 25: 349 }
     }
 
-    const retailPrice = retailPricing[productType][hostingDuration]
+    // If hosting duration is set, calculate fixed pricing; otherwise use 0 (billed on activation)
+    const retailPrice = hostingDuration ? retailPricing[productType][hostingDuration] : 0
     // Partner pays 60% of retail (40% margin for them)
     const unitCost = retailPrice * 0.6
     const totalCost = unitCost * quantity
@@ -158,7 +161,7 @@ export async function POST(request: NextRequest) {
         batch_number: batchNumber,
         quantity,
         product_type: productType,
-        hosting_duration: hostingDuration,
+        hosting_duration: hostingDuration, // Can be null
         unit_cost: unitCost,
         total_cost: totalCost,
         status: 'pending',

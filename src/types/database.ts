@@ -270,7 +270,7 @@ export interface Database {
           memorial_id: string | null
           partner_id: string | null
           product_type: 'nfc_only' | 'qr_only' | 'both'
-          hosting_duration: 5 | 10 | 25
+          hosting_duration: 5 | 10 | 25 | null
           is_used: boolean
           used_at: string | null
           created_at: string
@@ -281,7 +281,7 @@ export interface Database {
           memorial_id?: string | null
           partner_id?: string | null
           product_type: 'nfc_only' | 'qr_only' | 'both'
-          hosting_duration: 5 | 10 | 25
+          hosting_duration?: 5 | 10 | 25 | null
           is_used?: boolean
           used_at?: string | null
           created_at?: string
@@ -292,7 +292,7 @@ export interface Database {
           memorial_id?: string | null
           partner_id?: string | null
           product_type?: 'nfc_only' | 'qr_only' | 'both'
-          hosting_duration?: 5 | 10 | 25
+          hosting_duration?: 5 | 10 | 25 | null
           is_used?: boolean
           used_at?: string | null
           created_at?: string
@@ -440,7 +440,7 @@ export interface Database {
           batch_number: string
           quantity: number
           product_type: 'nfc_only' | 'qr_only' | 'both'
-          hosting_duration: 5 | 10 | 25
+          hosting_duration: 5 | 10 | 25 | null
           unit_cost: number
           total_cost: number
           status: 'pending' | 'approved' | 'generated' | 'shipped' | 'cancelled'
@@ -457,7 +457,7 @@ export interface Database {
           batch_number: string
           quantity: number
           product_type: 'nfc_only' | 'qr_only' | 'both'
-          hosting_duration: 5 | 10 | 25
+          hosting_duration: 5 | 10 | 25 | null
           unit_cost: number
           total_cost: number
           status?: 'pending' | 'approved' | 'generated' | 'shipped' | 'cancelled'
@@ -474,7 +474,7 @@ export interface Database {
           batch_number?: string
           quantity?: number
           product_type?: 'nfc_only' | 'qr_only' | 'both'
-          hosting_duration?: 5 | 10 | 25
+          hosting_duration?: 5 | 10 | 25 | null
           unit_cost?: number
           total_cost?: number
           status?: 'pending' | 'approved' | 'generated' | 'shipped' | 'cancelled'
