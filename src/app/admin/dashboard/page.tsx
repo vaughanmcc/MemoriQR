@@ -75,6 +75,9 @@ export default function AdminDashboardPage() {
               <Link href="/admin/dashboard" className="text-white/90 hover:text-white px-3 py-1 rounded bg-white/10">
                 Dashboard
               </Link>
+              <Link href="/admin/codes" className="text-white/70 hover:text-white px-3 py-1 rounded hover:bg-white/10">
+                Generate Codes
+              </Link>
               <Link href="/admin/partners" className="text-white/70 hover:text-white px-3 py-1 rounded hover:bg-white/10">
                 Partners
               </Link>
@@ -155,6 +158,12 @@ export default function AdminDashboardPage() {
               Review Applications
             </Link>
             <Link
+              href="/admin/codes"
+              className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors"
+            >
+              Generate Retail Codes
+            </Link>
+            <Link
               href="/admin/partners"
               className="bg-stone-100 text-stone-700 px-4 py-2 rounded-lg hover:bg-stone-200 transition-colors"
             >
@@ -175,6 +184,9 @@ export default function AdminDashboardPage() {
           <div className="space-y-2">
             <Link href="/admin/dashboard" className="block px-4 py-2 bg-stone-100 rounded-lg text-stone-800">
               Dashboard
+            </Link>
+            <Link href="/admin/codes" className="block px-4 py-2 hover:bg-stone-50 rounded-lg text-stone-600">
+              Generate Codes
             </Link>
             <Link href="/admin/partners" className="block px-4 py-2 hover:bg-stone-50 rounded-lg text-stone-600">
               Partners
