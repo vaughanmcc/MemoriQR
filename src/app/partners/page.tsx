@@ -225,7 +225,7 @@ export default function PartnersPage() {
                 </div>
                 <h3 className="font-semibold mb-2">Receive Your Starter Kit</h3>
                 <p className="text-gray-600 text-sm">
-                  Get pre-made tags, referral cards, and marketing materials shipped to your location.
+                  Get referral cards and marketing materials shipped to your location.
                 </p>
               </div>
               
