@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useState } from 'react'
-import { Header } from '@/components/layout/Header'
+import { SimpleHeader } from '@/components/layout/SimpleHeader'
 import { Footer } from '@/components/layout/Footer'
 import { 
   Handshake, 
@@ -119,7 +119,7 @@ export default function PartnersPage() {
 
   return (
     <>
-      <Header />
+      <SimpleHeader />
       <main className="min-h-screen">
       {/* Hero Section */}
       <section className="bg-gradient-to-br from-primary-600 to-primary-800 text-white py-16 md:py-24">
