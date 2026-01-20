@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 
@@ -33,7 +33,20 @@ const STATUS_STYLES: Record<string, string> = {
   rejected: 'bg-stone-100 text-stone-600',
 };
 
+// Wrapper component to handle Suspense for useSearchParams
 export default function AdminPartnersPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-stone-100 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-stone-800"></div>
+      </div>
+    }>
+      <AdminPartnersContent />
+    </Suspense>
+  );
+}
+
+function AdminPartnersContent() {
   const [partners, setPartners] = useState<Partner[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
