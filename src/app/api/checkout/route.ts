@@ -24,7 +24,7 @@ interface CheckoutRequest {
   deceasedType: 'pet' | 'human'
   deceasedName: string
   species?: string
-  engravingText?: string
+
   email: string
   fullName: string
   phone?: string
@@ -41,7 +41,6 @@ export async function POST(request: NextRequest) {
       deceasedType,
       deceasedName,
       species,
-      engravingText,
       email,
       fullName,
       phone,
@@ -154,7 +153,6 @@ export async function POST(request: NextRequest) {
       hosting_duration: hostingDuration,
       total_amount: price,
       order_status: 'pending',
-      engraving_text: engravingText || null,
     }
     
     const { error: orderError } = await supabase
@@ -220,6 +218,14 @@ export async function POST(request: NextRequest) {
       })
     }
 
+    const isPreview = process.env.VERCEL_ENV === 'preview'
+    const rawBaseUrl = isPreview
+      ? (process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_SITE_URL || 'https://dev.memoriqr.co.nz')
+      : (request.headers.get('origin') || process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_SITE_URL || 'https://memoriqr.co.nz')
+    
+    // Trim any whitespace/newlines from env vars
+    const baseUrl = rawBaseUrl.trim()
+
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       mode: 'payment',
@@ -275,8 +281,8 @@ export async function POST(request: NextRequest) {
         memorial_id: memorial.id,
         customer_id: customerId,
       },
-      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/order/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/order?cancelled=true`,
+      success_url: `${baseUrl}/order/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${baseUrl}/order?cancelled=true`,
     })
 
     // Update order with session ID
@@ -286,8 +292,8 @@ export async function POST(request: NextRequest) {
       .eq('order_number', orderNumber)
 
     return NextResponse.json({ url: session.url })
-  } catch (error) {
-    console.error('Checkout error:', error)
+  } catch (error: any) {
+    console.error('Checkout error:', error?.message || error)
     return NextResponse.json(
       { error: 'Failed to create checkout session' },
       { status: 500 }

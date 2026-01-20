@@ -5,6 +5,14 @@
   "devCommand": "npm run dev",
   "installCommand": "npm install",
   "regions": ["syd1"],
+  "functions": {
+    "src/app/api/memorial/videos/route.ts": {
+      "maxDuration": 60
+    },
+    "src/app/api/memorial/photos/route.ts": {
+      "maxDuration": 30
+    }
+  },
   "env": {
     "NEXT_PUBLIC_SITE_URL": "https://memoriqr.co.nz"
   },

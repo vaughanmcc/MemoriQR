@@ -60,12 +60,27 @@ export async function POST(request: NextRequest) {
       .single() as { data: Pick<Order, 'id' | 'memorial_id' | 'order_status' | 'product_type' | 'hosting_duration'> | null }
 
     if (order && order.order_status === 'paid') {
+      // Fetch species from the memorial record if it exists
+      let species: string | null = null
+      if (order.memorial_id) {
+        const { data: memorial } = await supabase
+          .from('memorial_records')
+          .select('species')
+          .eq('id', order.memorial_id)
+          .single()
+        
+        if (memorial) {
+          species = memorial.species
+        }
+      }
+
       return NextResponse.json({
         valid: true,
         type: 'online',
         memorialId: order.memorial_id,
         productType: order.product_type,
         hostingDuration: order.hosting_duration,
+        species: species,
       })
     }
 

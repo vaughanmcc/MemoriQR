@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { 
   Upload, 
@@ -18,6 +18,31 @@ import {
 import type { HostingDuration, ProductType } from '@/types/database'
 import { SPECIES_OPTIONS } from '@/types'
 import { TIER_LIMITS } from '@/lib/pricing'
+
+// Normalize species value - moved outside component to avoid stale closures
+const speciesOptionsArray = SPECIES_OPTIONS as readonly string[]
+function normalizeSpeciesValue(value?: string): { species: string; speciesOther: string } {
+  const trimmed = value?.trim()
+  if (!trimmed) {
+    return { species: '', speciesOther: '' }
+  }
+
+  const otherMatch = trimmed.match(/^other\s*[:\-–—/]\s*(.+)$/i)
+    || trimmed.match(/^other\s*\((.+)\)$/i)
+
+  if (otherMatch?.[1]) {
+    return { species: 'Other', speciesOther: otherMatch[1].trim() }
+  }
+
+  const matchedSpecies = speciesOptionsArray.find(
+    (option) => option.toLowerCase() === trimmed.toLowerCase()
+  )
+
+  return {
+    species: matchedSpecies ?? 'Other',
+    speciesOther: matchedSpecies ? '' : trimmed,
+  }
+}
 
 // Video entry can be either a file upload or a YouTube URL
 interface VideoEntry {
@@ -319,6 +344,10 @@ export function MemorialUploadForm({
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
+  // Normalize initial species using the module-level function
+  const { species: normalizedInitialSpecies, speciesOther: normalizedInitialSpeciesOther } =
+    normalizeSpeciesValue(initialSpecies)
+
   // Change step and scroll to form section for better UX
   const goToStep = (newStep: number) => {
     setStep(newStep)
@@ -327,13 +356,20 @@ export function MemorialUploadForm({
     }, 0)
   }
 
-  // Form state
-  const [deceasedName, setDeceasedName] = useState(initialName || '')
-  const [deceasedType, setDeceasedType] = useState<'pet' | 'human'>(initialType || 'pet')
-  const [species, setSpecies] = useState(initialSpecies || '')
+  // Form state - use lazy initializers to ensure hydration matches
+  const [deceasedName, setDeceasedName] = useState(() => initialName || '')
+  const [deceasedType, setDeceasedType] = useState<'pet' | 'human'>(() => initialType || 'pet')
+  const [species, setSpecies] = useState(() => normalizeSpeciesValue(initialSpecies).species)
+  const [speciesOther, setSpeciesOther] = useState(() => normalizeSpeciesValue(initialSpecies).speciesOther)
   const [birthDate, setBirthDate] = useState('')
   const [deathDate, setDeathDate] = useState('')
   const [memorialText, setMemorialText] = useState('')
+  
+  // Calculate max date on client side to use user's timezone
+  const [todayLocalISO, setTodayLocalISO] = useState('')
+  useEffect(() => {
+    setTodayLocalISO(new Date().toLocaleDateString('en-CA'))
+  }, [])
   const [contactEmail, setContactEmail] = useState(initialEmail || '')
   const [photos, setPhotos] = useState<File[]>([])
   const [photosPreviews, setPhotosPreviews] = useState<string[]>([])
@@ -344,6 +380,26 @@ export function MemorialUploadForm({
   const [isDragging, setIsDragging] = useState(false)
   const [isDraggingVideo, setIsDraggingVideo] = useState<number | null>(null)
   const [isDraggingVideoZone, setIsDraggingVideoZone] = useState(false)
+
+  // Debug logging for species prop
+  useEffect(() => {
+    console.log('[MemorialUploadForm] Props received:', {
+      initialSpecies,
+      normalizedSpecies: normalizedInitialSpecies,
+      normalizedSpeciesOther: normalizedInitialSpeciesOther,
+      currentSpeciesState: species,
+    })
+  }, [])
+
+  // Sync species from props when they change (e.g., after hydration or prop updates)
+  useEffect(() => {
+    console.log('[MemorialUploadForm] Syncing species from initialSpecies:', initialSpecies)
+    if (initialSpecies) {
+      const normalized = normalizeSpeciesValue(initialSpecies)
+      setSpecies(normalized.species)
+      setSpeciesOther(normalized.speciesOther)
+    }
+  }, [initialSpecies])
   
   // Get video limit, available themes and frames for this plan
   const videoLimit = TIER_LIMITS[hostingDuration]?.videos || 2
@@ -575,6 +631,50 @@ export function MemorialUploadForm({
     setError('')
 
     try {
+      // First, upload any video files directly to Supabase storage
+      // This bypasses Vercel's 4.5MB body limit
+      const uploadedVideoPaths: string[] = []
+      const youtubeUrls: string[] = []
+      
+      for (const video of videos) {
+        if (video.type === 'youtube' && video.url) {
+          youtubeUrls.push(video.url)
+        } else if (video.type === 'file' && video.file) {
+          // Get a signed upload URL from our API
+          const uploadUrlRes = await fetch('/api/memorial/videos/upload-url', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              token: activationCode || memorialId, // Use activation code as identifier
+              fileName: video.file.name,
+              fileType: video.file.type,
+              fileSize: video.file.size,
+              isActivation: true, // Flag to allow activation-based uploads
+            }),
+          })
+          
+          const uploadUrlData = await uploadUrlRes.json()
+          
+          if (uploadUrlData.error) {
+            throw new Error(`Video upload failed: ${uploadUrlData.error}`)
+          }
+          
+          // Upload directly to Supabase storage
+          const uploadRes = await fetch(uploadUrlData.signedUrl, {
+            method: 'PUT',
+            headers: { 'Content-Type': video.file.type },
+            body: video.file,
+          })
+          
+          if (!uploadRes.ok) {
+            throw new Error('Failed to upload video to storage')
+          }
+          
+          // Store the path for later
+          uploadedVideoPaths.push(uploadUrlData.path)
+        }
+      }
+
       const formData = new FormData()
       
       formData.append('activationType', activationType)
@@ -582,9 +682,13 @@ export function MemorialUploadForm({
       if (memorialId) formData.append('memorialId', memorialId)
       if (partnerId) formData.append('partnerId', partnerId)
       
+      const resolvedSpecies = deceasedType === 'pet'
+        ? (species === 'Other' ? speciesOther.trim() : species)
+        : ''
+
       formData.append('deceasedName', deceasedName)
       formData.append('deceasedType', deceasedType)
-      if (species) formData.append('species', species)
+      if (resolvedSpecies) formData.append('species', resolvedSpecies)
       if (birthDate) formData.append('birthDate', birthDate)
       if (deathDate) formData.append('deathDate', deathDate)
       if (memorialText) formData.append('memorialText', memorialText)
@@ -599,17 +703,12 @@ export function MemorialUploadForm({
         formData.append('photos', photo)
       })
 
-      // Append video data
-      const videoUrls: string[] = []
-      videos.forEach((video, index) => {
-        if (video.type === 'youtube' && video.url) {
-          videoUrls.push(video.url)
-        } else if (video.type === 'file' && video.file) {
-          formData.append('videoFiles', video.file)
-        }
-      })
-      if (videoUrls.length > 0) {
-        formData.append('videoUrls', JSON.stringify(videoUrls))
+      // Send video data - now as paths instead of files
+      if (youtubeUrls.length > 0) {
+        formData.append('videoUrls', JSON.stringify(youtubeUrls))
+      }
+      if (uploadedVideoPaths.length > 0) {
+        formData.append('uploadedVideoPaths', JSON.stringify(uploadedVideoPaths))
       }
 
       const response = await fetch('/api/memorial/create', {
@@ -730,7 +829,13 @@ export function MemorialUploadForm({
                 <label className="label">Species</label>
                 <select
                   value={species}
-                  onChange={(e) => setSpecies(e.target.value)}
+                  onChange={(e) => {
+                    const nextValue = e.target.value
+                    setSpecies(nextValue)
+                    if (nextValue !== 'Other') {
+                      setSpeciesOther('')
+                    }
+                  }}
                   className="input"
                 >
                   <option value="">Select species</option>
@@ -738,6 +843,19 @@ export function MemorialUploadForm({
                     <option key={s} value={s}>{s}</option>
                   ))}
                 </select>
+                {species === 'Other' && (
+                  <div className="mt-3">
+                    <label className="label">Please specify</label>
+                    <input
+                      type="text"
+                      value={speciesOther}
+                      onChange={(e) => setSpeciesOther(e.target.value)}
+                      placeholder="e.g., Ferret"
+                      className="input"
+                      required
+                    />
+                  </div>
+                )}
               </div>
             )}
 
@@ -748,6 +866,7 @@ export function MemorialUploadForm({
                   type="date"
                   value={birthDate}
                   onChange={(e) => setBirthDate(e.target.value)}
+                  max={todayLocalISO}
                   className="input"
                 />
               </div>
@@ -757,7 +876,7 @@ export function MemorialUploadForm({
                   type="date"
                   value={deathDate}
                   onChange={(e) => setDeathDate(e.target.value)}
-                  max={new Date().toISOString().split('T')[0]}
+                  max={todayLocalISO}
                   className="input"
                 />
               </div>
@@ -783,7 +902,11 @@ export function MemorialUploadForm({
 
             <button
               onClick={() => setStep(2)}
-              disabled={!deceasedName || (activationType === 'retail' && !initialEmail && !contactEmail)}
+              disabled={
+                !deceasedName
+                || (activationType === 'retail' && !initialEmail && !contactEmail)
+                || (deceasedType === 'pet' && (!species || (species === 'Other' && !speciesOther.trim())))
+              }
               className="btn-primary w-full"
             >
               Continue
@@ -1186,9 +1309,18 @@ export function MemorialUploadForm({
                       }`}
                     >
                       {/* Ornamental frame style preview with theme colors */}
-                      <div className={`frame-preview frame-preview-themed frame-pattern-${frame.style} h-20 w-full flex items-center justify-center mb-2 rounded-lg overflow-hidden`}>
-                        <div className="frame-preview-inner w-12 h-12 bg-gradient-to-br from-gray-100 to-gray-200 rounded flex items-center justify-center">
-                          <span className="text-2xl">{frame.preview}</span>
+                      <div className="h-20 w-full flex items-center justify-center mb-2">
+                        <div 
+                          className={`frame-preview frame-preview-themed frame-pattern-${frame.style} flex items-center justify-center ${
+                            frame.shape === 'oval' ? 'w-16 h-20' : 'w-full h-full rounded-lg'
+                          }`}
+                          style={frame.shape === 'oval' ? { borderRadius: '50%' } : undefined}
+                        >
+                          <div className={`frame-preview-inner bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center ${
+                            frame.shape === 'oval' ? 'w-10 h-14 rounded-full' : 'w-12 h-12 rounded'
+                          }`}>
+                            <span className="text-2xl">{frame.preview}</span>
+                          </div>
                         </div>
                       </div>
                       <p className="font-medium text-sm text-gray-800">
@@ -1207,9 +1339,18 @@ export function MemorialUploadForm({
                     <div className="absolute z-50 bottom-full left-1/2 -translate-x-1/2 mb-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 pointer-events-none">
                       <div className="w-56 p-4 rounded-xl shadow-2xl bg-white border border-gray-200">
                         {/* Large ornamental frame preview with theme colors */}
-                        <div className={`frame-preview frame-preview-themed frame-pattern-${frame.style} frame-preview-lg mx-auto mb-3`}>
-                          <div className="frame-preview-inner w-full h-full bg-gradient-to-br from-memorial-sage/30 to-memorial-cream rounded flex items-center justify-center">
-                            <span className="text-5xl">🐕</span>
+                        <div className="flex items-center justify-center mb-3">
+                          <div 
+                            className={`frame-preview frame-preview-themed frame-pattern-${frame.style} flex items-center justify-center ${
+                              frame.shape === 'oval' ? 'w-28 h-36' : 'w-36 h-36 rounded-lg'
+                            }`}
+                            style={frame.shape === 'oval' ? { borderRadius: '50%' } : undefined}
+                          >
+                            <div className={`frame-preview-inner bg-gradient-to-br from-memorial-sage/30 to-memorial-cream flex items-center justify-center ${
+                              frame.shape === 'oval' ? 'w-20 h-28 rounded-full' : 'w-full h-full rounded'
+                            }`}>
+                              <span className="text-5xl">🐕</span>
+                            </div>
                           </div>
                         </div>
                         <div className="text-center">
@@ -1282,7 +1423,7 @@ export function MemorialUploadForm({
                   {photosPreviews.length > 0 && (
                     <div className={`memorial-profile-frame frame-themed frame-pattern-${availableFrames.find(f => f.id === selectedFrame)?.style || 'none'}`}>
                       <div className="frame-outer">
-                        <div className="frame-inner w-40 h-40 md:w-48 md:h-48">
+                        <div className="frame-inner">
                           <img
                             src={photosPreviews[profilePhotoIndex]}
                             alt={deceasedName}
@@ -1315,7 +1456,7 @@ export function MemorialUploadForm({
                 )}
 
                 {/* Species badge for pets */}
-                {deceasedType === 'pet' && species && (
+                {deceasedType === 'pet' && (species === 'Other' ? speciesOther.trim() : species) && (
                   <div className="flex justify-center mb-4">
                     <span 
                       className="px-4 py-1 rounded-full text-sm"
@@ -1324,7 +1465,7 @@ export function MemorialUploadForm({
                         color: availableThemes.find(t => t.id === selectedTheme)?.colors.bg
                       }}
                     >
-                      Beloved {species}
+                      Beloved {species === 'Other' ? speciesOther.trim() : species}
                     </span>
                   </div>
                 )}

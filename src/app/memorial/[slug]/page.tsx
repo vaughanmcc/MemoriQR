@@ -1,7 +1,11 @@
 import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { MemorialPage } from '@/components/memorial/MemorialPage'
+
+// Disable caching so edits appear immediately
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
 
 interface Props {
   params: { slug: string }
@@ -96,8 +100,9 @@ export default async function MemorialPageRoute({ params }: Props) {
     )
   }
 
-  // Increment view count (fire and forget)
-  supabase.rpc('increment_memorial_views', { slug: params.slug })
+  // Increment view count - use admin client for permissions
+  const adminSupabase = createAdminClient()
+  await adminSupabase.rpc('increment_memorial_views', { slug: params.slug })
 
   return <MemorialPage memorial={memorial} />
 }

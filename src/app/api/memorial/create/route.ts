@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/server'
 import { generateSlug, getYouTubeId, sanitizeText } from '@/lib/utils'
-import { calculateExpiryDate, DEFAULT_PRICING } from '@/lib/pricing'
+import { calculateExpiryDate, DEFAULT_PRICING, TIER_LIMITS } from '@/lib/pricing'
 import type { HostingDuration, ProductType } from '@/types/database'
 
 export async function POST(request: NextRequest) {
@@ -166,6 +166,32 @@ export async function POST(request: NextRequest) {
       })
       videoOrder++
     }
+    
+    // Handle pre-uploaded video paths (from direct browser uploads to bypass Vercel limit)
+    const uploadedVideoPathsJson = formData.get('uploadedVideoPaths') as string | null
+    if (uploadedVideoPathsJson) {
+      try {
+        const uploadedPaths = JSON.parse(uploadedVideoPathsJson) as string[]
+        for (const path of uploadedPaths) {
+          // Get the public URL for this already-uploaded file
+          const { data: { publicUrl } } = supabase.storage
+            .from('memorial-videos')
+            .getPublicUrl(path)
+
+          videos.push({
+            id: `video-${Date.now()}-${videoOrder}`,
+            type: 'upload',
+            youtubeId: null,
+            url: publicUrl,
+            title: path.split('/').pop() || 'Uploaded video',
+            order: videoOrder,
+          })
+          videoOrder++
+        }
+      } catch (e) {
+        console.error('Failed to parse uploadedVideoPaths:', e)
+      }
+    }
 
     let memorialSlug: string
     let memorialId: string
@@ -294,21 +320,36 @@ export async function POST(request: NextRequest) {
     }
 
     // Trigger email with edit link and QR code (via Pipedream webhook)
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://memoriqr.co.nz'
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://app.memoriqr.com'
     if (customerEmail && editToken) {
       try {
         const webhookUrl = process.env.PIPEDREAM_WEBHOOK_URL
         if (webhookUrl) {
+          // Get package limits for this plan
+          const limits = TIER_LIMITS[hostingDuration]
+          const themeCount = hostingDuration === 5 ? 5 : hostingDuration === 10 ? 10 : 25
+          const frameCount = hostingDuration === 5 ? 5 : hostingDuration === 10 ? 10 : 25
+          
           await fetch(webhookUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               type: 'memorial_created',
               email: customerEmail,
+              sender_name: 'MemoriQR',
+              reply_to: 'memoriqr.global@gmail.com',
               memorialName: deceasedName,
               memorialUrl: `${baseUrl}/memorial/${memorialSlug}`,
               editUrl: `${baseUrl}/memorial/edit?token=${editToken}`,
               qrCodeUrl: `${baseUrl}/api/qr/${memorialSlug}`,
+              // Package details
+              hostingYears: hostingDuration,
+              packageLimits: {
+                photos: limits.photos,
+                videos: limits.videos,
+                themes: themeCount,
+                frames: frameCount,
+              },
             }),
           })
           console.log('Memorial creation email sent to:', customerEmail)

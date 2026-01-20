@@ -33,7 +33,8 @@ MemoriQR creates lasting digital memorials for pets and people through NFC tags 
                             ▼
 ┌─────────────────────────────────────────────────────────────┐
 │           NEXT.JS (Application Engine)                      │
-│           PROD: Vercel Free | DEV: localhost:3000           │
+│  PROD: Vercel (app.memoriqr.com) | DEV: localhost:3000 /     │
+│                   Vercel Preview (*.vercel.app)             │
 │  ┌─────────────────────────────────────────────────────┐   │
 │  │  Complex Application Features                        │   │
 │  │  • /memorial/[slug] - Memorial Viewer               │   │
@@ -70,8 +71,9 @@ MemoriQR creates lasting digital memorials for pets and people through NFC tags 
 | Component | Technology | URL/Port |
 |-----------|-----------|----------|
 | WordPress | LocalWP | `localhost:10003` (varies) |
-| Next.js | npm run dev | `localhost:3000` |
-| Supabase | Cloud (free tier) | Shared instance |
+| Next.js (local) | npm run dev | `localhost:3000` |
+| Next.js (preview) | Vercel Preview | `*.vercel.app` |
+| Supabase | Cloud (dev project) | Shared instance |
 | Stripe | Test mode + CLI | Webhook forwarding |
 
 ### PROD Environment Components
@@ -79,8 +81,8 @@ MemoriQR creates lasting digital memorials for pets and people through NFC tags 
 | Component | Technology | URL |
 |-----------|-----------|-----|
 | WordPress | Hostinger Managed | `memoriqr.com` or `memoriqr.co.nz` |
-| Next.js | Vercel Free | `app.memoriqr.com` |
-| Supabase | Cloud (same or separate project) | API |
+| Next.js | Vercel (Production) | `app.memoriqr.com` |
+| Supabase | Cloud (prod project) | API |
 | Stripe | Live mode | Webhooks |
 
 ---
@@ -241,13 +243,16 @@ All packages include prepaid hosting, Cloudinary image optimization, and YouTube
 
 ## Technical Architecture
 
-### Recommended Stack (Production)
+### Current Tech Stack (Application)
 
-**Frontend/Public Site:**
-- WordPress on Hostinger Business Plan
-- Elementor Pro for page building
-- WooCommerce for e-commerce
-- Custom memorial page templates
+**Frontend/App:**
+- Next.js 14 (App Router)
+- Tailwind CSS
+
+**Hosting:**
+- Vercel (production: app.memoriqr.com)
+- Vercel Preview for staging/test builds
+- Local dev via `npm run dev` on `localhost:3000`
 
 **Backend/Database:**
 - Supabase (PostgreSQL database)
@@ -272,7 +277,15 @@ All packages include prepaid hosting, Cloudinary image optimization, and YouTube
 **Email:**
 - SendGrid for transactional emails
 - Order confirmations, upload links, renewal reminders
-- High deliverability, tracking
+
+### Marketing Site Stack (Production)
+
+**Frontend/Public Site:**
+- WordPress on Hostinger Business Plan
+- Elementor Pro for page building
+
+- WooCommerce for e-commerce
+- Custom memorial page templates
 
 ### Why This Stack?
 
@@ -422,8 +435,7 @@ created_at TIMESTAMP DEFAULT NOW()
 1. Customer visits memoriqr.co.nz
 2. Selects hosting duration (5/10/25 years)
 3. Selects product type (NFC/QR/Both)
-4. Adds engraving text (if QR plate selected)
-5. Completes checkout via Stripe
+4. Completes checkout via Stripe
 
 **Automation Flow:**
 1. Payment success → Stripe webhook to Pipedream
@@ -438,7 +450,6 @@ created_at TIMESTAMP DEFAULT NOW()
    - Create `supplier_orders` entry for Metal Image NZ
    - Send automated email to Metal Image NZ with:
      - Order number
-     - Engraving text
      - QR code image (generated via API, points to memorial URL)
      - Shipping address
 5. **IF product_type is nfc_only:**
@@ -1059,7 +1070,6 @@ node scripts/check-code.js ABC123  # (scripts load dotenv internally)
 - [ ] Set up tax rules (15% GST in NZ)
 
 **Custom Fields for Orders:**
-- [ ] Add "Engraving Text" field (for QR plates)
 - [ ] Add "Deceased Name" field (pre-fill memorial)
 - [ ] Add "Memorial Type" field (Pet/Human)
 
@@ -1290,3 +1300,36 @@ node scripts/check-code.js ABC123  # (scripts load dotenv internally)
 4. Content marketing (SEO for long-term low-CAC growth)
 
 Start small (50-100 orders Year 1), validate product-market fit, then scale marketing spend based on proven unit economics.
+---
+
+## Session Progress Log (Auto-saved)
+
+### January 18, 2026 - Latest Session
+
+**Completed:**
+- ✅ Vercel deployment with GitHub integration (main → Production, preview-smoke → Preview)
+- ✅ Separate DEV Supabase project (pmabwrnhbkmtiusiqmjt)
+- ✅ PROD Supabase wiped clean
+- ✅ Stripe webhooks configured for Preview (disabled Vercel Auth protection)
+- ✅ Pipedream webhook URL added to Preview env
+- ✅ NEXT_PUBLIC_BASE_URL=https://dev.memoriqr.co.nz for Preview
+- ✅ Custom domains configured:
+  - memoriqr.co.nz → Production (main)
+  - dev.memoriqr.co.nz → Preview (preview-smoke)
+- ✅ Order form autofill detection fixes
+- ✅ Stripe redirect URL fix (uses request origin)
+- ✅ Species "Other" custom input + recall on activation/edit
+- ✅ Edit page theme/frame options aligned with activation form
+- ✅ Memorial created email template with QR code, links, edit URL
+- ✅ Photos/videos API routes updated
+
+**Environment Summary:**
+- PROD Supabase: gzrgrjtjgmrhdgbcsrlf (memoriqr.co.nz)
+- DEV Supabase: pmabwrnhbkmtiusiqmjt (dev.memoriqr.co.nz)
+- Stripe: Test mode, webhook → dev.memoriqr.co.nz/api/webhooks/stripe
+- Pipedream: https://eo7epxu5aypc0vj.m.pipedream.net
+
+**Pending:**
+- [ ] Stripe LIVE keys (waiting on business verification)
+- [ ] Merge preview-smoke → main after full smoke test
+- [ ] Re-enable Vercel Authentication for Preview (after testing)

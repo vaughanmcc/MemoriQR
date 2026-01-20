@@ -7,7 +7,7 @@ export async function GET(
 ) {
   try {
     const slug = params.slug
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://memoriqr.co.nz'
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://app.memoriqr.com'
     const memorialUrl = `${baseUrl}/memorial/${slug}`
 
     // Generate QR code as PNG buffer

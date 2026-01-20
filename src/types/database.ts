@@ -9,6 +9,35 @@ export type Json =
 export interface Database {
   public: {
     Tables: {
+      edit_verification_codes: {
+        Row: {
+          id: string
+          memorial_id: string
+          code: string
+          email: string
+          expires_at: string
+          used_at: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          memorial_id: string
+          code: string
+          email: string
+          expires_at: string
+          used_at?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          memorial_id?: string
+          code?: string
+          email?: string
+          expires_at?: string
+          used_at?: string | null
+          created_at?: string
+        }
+      }
       customers: {
         Row: {
           id: string
@@ -66,6 +95,8 @@ export interface Database {
           views_count: number
           last_viewed: string | null
           theme: string
+          frame: string
+          edit_token: string
           created_at: string
           updated_at: string
         }
@@ -91,6 +122,8 @@ export interface Database {
           views_count?: number
           last_viewed?: string | null
           theme?: string
+          frame?: string
+          edit_token?: string
           created_at?: string
           updated_at?: string
         }
@@ -116,6 +149,8 @@ export interface Database {
           views_count?: number
           last_viewed?: string | null
           theme?: string
+          frame?: string
+          edit_token?: string
           created_at?: string
           updated_at?: string
         }
@@ -235,7 +270,7 @@ export interface Database {
           memorial_id: string | null
           partner_id: string | null
           product_type: 'nfc_only' | 'qr_only' | 'both'
-          hosting_duration: 5 | 10 | 25
+          hosting_duration: 5 | 10 | 25 | null
           is_used: boolean
           used_at: string | null
           created_at: string
@@ -246,7 +281,7 @@ export interface Database {
           memorial_id?: string | null
           partner_id?: string | null
           product_type: 'nfc_only' | 'qr_only' | 'both'
-          hosting_duration: 5 | 10 | 25
+          hosting_duration?: 5 | 10 | 25 | null
           is_used?: boolean
           used_at?: string | null
           created_at?: string
@@ -257,7 +292,7 @@ export interface Database {
           memorial_id?: string | null
           partner_id?: string | null
           product_type?: 'nfc_only' | 'qr_only' | 'both'
-          hosting_duration?: 5 | 10 | 25
+          hosting_duration?: 5 | 10 | 25 | null
           is_used?: boolean
           used_at?: string | null
           created_at?: string
@@ -398,6 +433,214 @@ export interface Database {
           purchased_at?: string
         }
       }
+      code_batches: {
+        Row: {
+          id: string
+          partner_id: string
+          batch_number: string
+          quantity: number
+          product_type: 'nfc_only' | 'qr_only' | 'both'
+          hosting_duration: 5 | 10 | 25 | null
+          unit_cost: number
+          total_cost: number
+          status: 'pending' | 'approved' | 'generated' | 'shipped' | 'cancelled'
+          requested_at: string
+          approved_at: string | null
+          generated_at: string | null
+          shipped_at: string | null
+          notes: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          partner_id: string
+          batch_number: string
+          quantity: number
+          product_type: 'nfc_only' | 'qr_only' | 'both'
+          hosting_duration: 5 | 10 | 25 | null
+          unit_cost: number
+          total_cost: number
+          status?: 'pending' | 'approved' | 'generated' | 'shipped' | 'cancelled'
+          requested_at?: string
+          approved_at?: string | null
+          generated_at?: string | null
+          shipped_at?: string | null
+          notes?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          partner_id?: string
+          batch_number?: string
+          quantity?: number
+          product_type?: 'nfc_only' | 'qr_only' | 'both'
+          hosting_duration?: 5 | 10 | 25 | null
+          unit_cost?: number
+          total_cost?: number
+          status?: 'pending' | 'approved' | 'generated' | 'shipped' | 'cancelled'
+          requested_at?: string
+          approved_at?: string | null
+          generated_at?: string | null
+          shipped_at?: string | null
+          notes?: string | null
+          created_at?: string
+        }
+      }
+      partner_commissions: {
+        Row: {
+          id: string
+          partner_id: string
+          activation_code: string | null
+          memorial_id: string | null
+          order_value: number
+          commission_rate: number
+          commission_amount: number
+          status: 'pending' | 'approved' | 'paid' | 'cancelled'
+          payout_id: string | null
+          earned_at: string
+          approved_at: string | null
+          paid_at: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          partner_id: string
+          activation_code?: string | null
+          memorial_id?: string | null
+          order_value: number
+          commission_rate: number
+          commission_amount: number
+          status?: 'pending' | 'approved' | 'paid' | 'cancelled'
+          payout_id?: string | null
+          earned_at?: string
+          approved_at?: string | null
+          paid_at?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          partner_id?: string
+          activation_code?: string | null
+          memorial_id?: string | null
+          order_value?: number
+          commission_rate?: number
+          commission_amount?: number
+          status?: 'pending' | 'approved' | 'paid' | 'cancelled'
+          payout_id?: string | null
+          earned_at?: string
+          approved_at?: string | null
+          paid_at?: string | null
+          created_at?: string
+        }
+      }
+      partner_payouts: {
+        Row: {
+          id: string
+          partner_id: string
+          payout_number: string
+          period_start: string
+          period_end: string
+          total_activations: number
+          total_order_value: number
+          total_commission: number
+          status: 'pending' | 'processing' | 'paid' | 'failed'
+          payment_method: string | null
+          payment_reference: string | null
+          notes: string | null
+          created_at: string
+          processed_at: string | null
+          paid_at: string | null
+        }
+        Insert: {
+          id?: string
+          partner_id: string
+          payout_number: string
+          period_start: string
+          period_end: string
+          total_activations?: number
+          total_order_value?: number
+          total_commission?: number
+          status?: 'pending' | 'processing' | 'paid' | 'failed'
+          payment_method?: string | null
+          payment_reference?: string | null
+          notes?: string | null
+          created_at?: string
+          processed_at?: string | null
+          paid_at?: string | null
+        }
+        Update: {
+          id?: string
+          partner_id?: string
+          payout_number?: string
+          period_start?: string
+          period_end?: string
+          total_activations?: number
+          total_order_value?: number
+          total_commission?: number
+          status?: 'pending' | 'processing' | 'paid' | 'failed'
+          payment_method?: string | null
+          payment_reference?: string | null
+          notes?: string | null
+          created_at?: string
+          processed_at?: string | null
+          paid_at?: string | null
+        }
+      }
+      partner_sessions: {
+        Row: {
+          id: string
+          partner_id: string
+          session_token: string
+          expires_at: string
+          ip_address: string | null
+          user_agent: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          partner_id: string
+          session_token: string
+          expires_at: string
+          ip_address?: string | null
+          user_agent?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          partner_id?: string
+          session_token?: string
+          expires_at?: string
+          ip_address?: string | null
+          user_agent?: string | null
+          created_at?: string
+        }
+      }
+      partner_login_codes: {
+        Row: {
+          id: string
+          partner_id: string
+          code: string
+          expires_at: string
+          used_at: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          partner_id: string
+          code: string
+          expires_at: string
+          used_at?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          partner_id?: string
+          code?: string
+          expires_at?: string
+          used_at?: string | null
+          created_at?: string
+        }
+      }
     }
     Views: {
       current_pricing: {
@@ -406,6 +649,30 @@ export interface Database {
           product_type: 'nfc_only' | 'qr_only' | 'both'
           price: number
           currency: string
+        }
+      }
+      partner_stats: {
+        Row: {
+          partner_id: string
+          partner_name: string
+          commission_rate: number
+          total_codes: number
+          used_codes: number
+          available_codes: number
+          total_earned: number
+          pending_commission: number
+          paid_commission: number
+        }
+      }
+      monthly_commission_summary: {
+        Row: {
+          partner_id: string
+          month: string
+          activations: number
+          total_order_value: number
+          total_commission: number
+          pending: number
+          paid: number
         }
       }
     }
@@ -447,9 +714,19 @@ export type ActivityLog = Database['public']['Tables']['activity_log']['Row']
 export type Pricing = Database['public']['Tables']['pricing_history']['Row']
 export type CurrentPricing = Database['public']['Views']['current_pricing']['Row']
 export type MemorialUpgrade = Database['public']['Tables']['memorial_upgrades']['Row']
+export type CodeBatch = Database['public']['Tables']['code_batches']['Row']
+export type PartnerCommission = Database['public']['Tables']['partner_commissions']['Row']
+export type PartnerPayout = Database['public']['Tables']['partner_payouts']['Row']
+export type PartnerSession = Database['public']['Tables']['partner_sessions']['Row']
+export type PartnerLoginCode = Database['public']['Tables']['partner_login_codes']['Row']
+export type PartnerStats = Database['public']['Views']['partner_stats']['Row']
+export type MonthlyCommissionSummary = Database['public']['Views']['monthly_commission_summary']['Row']
 
 export type HostingDuration = 5 | 10 | 25
 export type ProductType = 'nfc_only' | 'qr_only' | 'both'
 export type DeceasedType = 'pet' | 'human'
 export type OrderStatus = 'pending' | 'paid' | 'processing' | 'shipped' | 'completed' | 'cancelled'
 export type UpgradeType = 'storage' | 'tier_upgrade'
+export type BatchStatus = 'pending' | 'approved' | 'generated' | 'shipped' | 'cancelled'
+export type CommissionStatus = 'pending' | 'approved' | 'paid' | 'cancelled'
+export type PayoutStatus = 'pending' | 'processing' | 'paid' | 'failed'

@@ -5,10 +5,14 @@ import { sanitizeText } from '@/lib/utils'
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { token, memorialText, theme, frame } = body
+    const { token, session, memorialText, theme, frame } = body
 
     if (!token) {
       return NextResponse.json({ error: 'Edit token is required' }, { status: 400 })
+    }
+
+    if (!session) {
+      return NextResponse.json({ error: 'Session expired. Please refresh the page and verify your email again.' }, { status: 401 })
     }
 
     const supabase = createAdminClient()
@@ -21,7 +25,21 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (lookupError || !memorial) {
-      return NextResponse.json({ error: 'Invalid edit token' }, { status: 403 })
+      return NextResponse.json({ error: 'Invalid edit token. Please use the original edit link from your email.' }, { status: 403 })
+    }
+
+    // Verify session token is valid and not expired
+    const { data: sessionData, error: sessionError } = await supabase
+      .from('edit_verification_codes')
+      .select('*')
+      .eq('memorial_id', memorial.id)
+      .eq('code', `SESSION:${session}`)
+      .is('used_at', null)
+      .gt('expires_at', new Date().toISOString())
+      .single()
+
+    if (sessionError || !sessionData) {
+      return NextResponse.json({ error: 'Session expired. Please refresh the page and verify your email again.' }, { status: 401 })
     }
 
     // Validate theme and frame against plan limits

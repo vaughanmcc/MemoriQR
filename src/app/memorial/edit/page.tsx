@@ -1,38 +1,14 @@
 'use client'
 
-import { useState, useEffect, Suspense } from 'react'
+import { useState, useEffect, Suspense, useRef, useCallback } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { Heart, Loader2, AlertCircle, Check, Palette, Image as ImageIcon, Save } from 'lucide-react'
+import { Heart, Loader2, AlertCircle, Check, Palette, Image as ImageIcon, Save, Upload, X, Star, Plus, Video, Trash2, Eye, Mail, ShieldCheck } from 'lucide-react'
 import Image from 'next/image'
 import type { HostingDuration, ProductType } from '@/types/database'
 import { MemorialPhoto, MemorialVideo } from '@/types'
-
-// Theme and frame definitions (same as upload form)
-const MEMORIAL_THEMES = [
-  { id: 'classic', name: 'Classic', colors: { bg: '#FDF8F3', accent: '#8B7355', text: '#4A4A4A' } },
-  { id: 'garden', name: 'Garden', colors: { bg: '#F5F9F5', accent: '#5A7F5A', text: '#3D3D3D' } },
-  { id: 'ocean', name: 'Ocean', colors: { bg: '#F5F8FA', accent: '#4A7C8C', text: '#3D4852' } },
-  { id: 'sunset', name: 'Sunset', colors: { bg: '#FFF9F5', accent: '#C17F59', text: '#4A3F35' } },
-  { id: 'night', name: 'Starlight', colors: { bg: '#F8F7FA', accent: '#6B5B7A', text: '#3D3852' } },
-  { id: 'rose', name: 'Rose Garden', colors: { bg: '#FDF8F9', accent: '#B5838D', text: '#4A4045' } },
-  { id: 'meadow', name: 'Meadow', colors: { bg: '#F7FAF5', accent: '#7A9E7A', text: '#3D4A3D' } },
-  { id: 'autumn', name: 'Autumn', colors: { bg: '#FAF7F2', accent: '#A67C52', text: '#4A4035' } },
-  { id: 'lavender', name: 'Lavender', colors: { bg: '#F9F7FC', accent: '#8E7CC3', text: '#3D3852' } },
-  { id: 'sky', name: 'Blue Sky', colors: { bg: '#F5FAFC', accent: '#5B9BD5', text: '#3D4852' } },
-]
-
-const MEMORIAL_FRAMES = [
-  { id: 'none', name: 'No Frame', border: 'none' },
-  { id: 'classic-gold', name: 'Classic Gold', border: '4px solid #D4AF37' },
-  { id: 'silver', name: 'Silver', border: '4px solid #C0C0C0' },
-  { id: 'bronze', name: 'Bronze', border: '4px solid #CD7F32' },
-  { id: 'wood', name: 'Wood', border: '6px solid #8B4513' },
-  { id: 'ornate-gold', name: 'Ornate Gold', border: '8px double #D4AF37' },
-  { id: 'ornate-silver', name: 'Ornate Silver', border: '8px double #A8A8A8' },
-  { id: 'vintage', name: 'Vintage', border: '6px solid #8B7355' },
-  { id: 'rose-gold', name: 'Rose Gold', border: '4px solid #B76E79' },
-  { id: 'pearl', name: 'Pearl', border: '5px solid #F5F5F5' },
-]
+import { MEMORIAL_THEMES, MEMORIAL_FRAMES, getAvailableThemes, getAvailableFrames } from '@/lib/memorial-options'
+import { TIER_LIMITS } from '@/lib/pricing'
+import { getYouTubeId } from '@/lib/utils'
 
 interface MemorialData {
   id: string
@@ -55,51 +31,667 @@ function EditPageContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const token = searchParams.get('token')
+  const sessionToken = searchParams.get('session')
+  const photoInputRef = useRef<HTMLInputElement>(null)
+  const videoInputRef = useRef<HTMLInputElement>(null)
+
+  // MFA verification state
+  const [verificationStep, setVerificationStep] = useState<'checking' | 'send' | 'verify' | 'verified'>('checking')
+  const [verificationCode, setVerificationCode] = useState('')
+  const [maskedEmail, setMaskedEmail] = useState('')
+  const [sendingCode, setSendingCode] = useState(false)
+  const [verifyingCode, setVerifyingCode] = useState(false)
 
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [uploadingPhotos, setUploadingPhotos] = useState(false)
+  const [uploadingVideo, setUploadingVideo] = useState(false)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
   const [memorial, setMemorial] = useState<MemorialData | null>(null)
+  
+  // Drag and drop state
+  const [isDraggingPhotos, setIsDraggingPhotos] = useState(false)
+  const [isDraggingVideo, setIsDraggingVideo] = useState(false)
 
   // Editable fields
   const [memorialText, setMemorialText] = useState('')
   const [selectedTheme, setSelectedTheme] = useState('classic')
-  const [selectedFrame, setSelectedFrame] = useState('classic-gold')
+  const [selectedFrame, setSelectedFrame] = useState('classic-ornate')
+  const [photos, setPhotos] = useState<MemorialPhoto[]>([])
+  const [videos, setVideos] = useState<MemorialVideo[]>([])
+  const [youtubeUrl, setYoutubeUrl] = useState('')
+
+  // Get limits based on plan
+  const photoLimit = memorial ? TIER_LIMITS[memorial.hostingDuration]?.photos || 20 : 20
+  const videoLimit = memorial ? TIER_LIMITS[memorial.hostingDuration]?.videos || 2 : 2
 
   // Get available themes/frames based on plan
-  const availableThemes = memorial?.hostingDuration === 5 ? 5 : memorial?.hostingDuration === 10 ? 10 : 25
-  const availableFrames = memorial?.hostingDuration === 5 ? 5 : memorial?.hostingDuration === 10 ? 10 : 25
+  const availableThemes = memorial ? getAvailableThemes(memorial.hostingDuration) : []
+  const availableFramesList = memorial ? getAvailableFrames(memorial.hostingDuration) : []
 
+  // Get stored session token from localStorage
+  const getStoredSession = useCallback((editToken: string): string | null => {
+    if (typeof window === 'undefined') return null
+    try {
+      const stored = localStorage.getItem(`memoriqr_edit_session_${editToken}`)
+      if (stored) {
+        const { sessionToken, expiresAt } = JSON.parse(stored)
+        // Check if session is still valid
+        if (new Date(expiresAt) > new Date()) {
+          return sessionToken
+        }
+        // Session expired, remove it
+        localStorage.removeItem(`memoriqr_edit_session_${editToken}`)
+      }
+    } catch {
+      // Ignore errors
+    }
+    return null
+  }, [])
+
+  // Store session token in localStorage
+  const storeSession = useCallback((editToken: string, sessionToken: string, expiresAt: string) => {
+    if (typeof window === 'undefined') return
+    try {
+      localStorage.setItem(`memoriqr_edit_session_${editToken}`, JSON.stringify({
+        sessionToken,
+        expiresAt
+      }))
+    } catch {
+      // Ignore errors (e.g., localStorage full)
+    }
+  }, [])
+
+  // Clear stored session
+  const clearStoredSession = useCallback((editToken: string) => {
+    if (typeof window === 'undefined') return
+    try {
+      localStorage.removeItem(`memoriqr_edit_session_${editToken}`)
+    } catch {
+      // Ignore errors
+    }
+  }, [])
+
+  // Handle MFA verification flow
   useEffect(() => {
     if (!token) {
       setError('Invalid edit link. Please use the link from your confirmation email.')
+      setVerificationStep('send')
       setLoading(false)
       return
     }
 
-    // Fetch memorial data
-    fetch(`/api/memorial/edit?token=${token}`)
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.error) {
-          setError(data.error)
-        } else {
-          setMemorial(data.memorial)
-          setMemorialText(data.memorial.memorialText || '')
-          setSelectedTheme(data.memorial.theme || 'classic')
-          setSelectedFrame(data.memorial.frame || 'classic-gold')
-        }
-        setLoading(false)
-      })
-      .catch(() => {
-        setError('Failed to load memorial data')
-        setLoading(false)
-      })
-  }, [token])
+    // Check for session token: URL param first, then localStorage
+    const effectiveSessionToken = sessionToken || getStoredSession(token)
 
-  const handleSave = async () => {
+    // If we have a session token, verify it and load memorial data
+    if (effectiveSessionToken) {
+      setVerificationStep('verified')
+      fetch(`/api/memorial/edit?token=${token}&session=${effectiveSessionToken}`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.error) {
+            // Session invalid, clear stored session and need to re-verify
+            clearStoredSession(token)
+            setError(data.error)
+            setVerificationStep('send')
+          } else {
+            setMemorial(data.memorial)
+            setMemorialText(data.memorial.memorialText || '')
+            setSelectedTheme(data.memorial.theme || 'classic')
+            setSelectedFrame(data.memorial.frame || 'classic-ornate')
+            setPhotos(data.memorial.photos || [])
+            setVideos(data.memorial.videos || [])
+          }
+          setLoading(false)
+        })
+        .catch(() => {
+          setError('Failed to load memorial data')
+          setVerificationStep('send')
+          setLoading(false)
+        })
+    } else {
+      // No session token, need to verify via email
+      setVerificationStep('send')
+      setLoading(false)
+    }
+  }, [token, sessionToken, getStoredSession, clearStoredSession])
+
+  // Send verification code to email
+  const handleSendCode = async () => {
+    if (!token) return
+    
+    setSendingCode(true)
+    setError('')
+    setVerificationCode('') // Clear any previous code
+    
+    // Clear stored session when requesting a new code
+    clearStoredSession(token)
+    
+    try {
+      const response = await fetch('/api/memorial/edit/send-code', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token }),
+      })
+      const data = await response.json()
+      
+      if (data.error) {
+        setError(data.error)
+      } else {
+        setMaskedEmail(data.email)
+        setVerificationStep('verify')
+      }
+    } catch {
+      setError('Failed to send verification code')
+    }
+    
+    setSendingCode(false)
+  }
+
+  // Verify the entered code
+  const handleVerifyCode = async () => {
+    if (!token || !verificationCode) return
+    
+    setVerifyingCode(true)
+    setError('')
+    
+    try {
+      const response = await fetch('/api/memorial/edit/verify-code', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token, code: verificationCode }),
+      })
+      const data = await response.json()
+      
+      if (data.error) {
+        setError(data.error)
+      } else {
+        // Store session in localStorage for future visits
+        storeSession(token, data.sessionToken, data.expiresAt)
+        // Redirect to same page with session token
+        router.push(`/memorial/edit?token=${token}&session=${data.sessionToken}`)
+      }
+    } catch {
+      setError('Failed to verify code')
+    }
+    
+    setVerifyingCode(false)
+  }
+
+  // Photo upload handler - works with both input change and drag-drop
+  const uploadPhotos = useCallback(async (files: File[]) => {
+    if (files.length === 0 || !token) return
+
+    // Get session token from URL or localStorage
+    const effectiveSessionToken = sessionToken || getStoredSession(token)
+    if (!effectiveSessionToken) {
+      setError('Session expired. Please refresh the page and verify your email again.')
+      return
+    }
+
+    // Client-side validation BEFORE upload
+    const MAX_PHOTO_SIZE = 10 * 1024 * 1024 // 10MB
+    const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/heic', 'image/heif']
+    
+    // Check available slots
+    const availableSlots = photoLimit - photos.length
+    if (availableSlots <= 0) {
+      setError(`Photo limit reached. Your plan allows ${photoLimit} photos and you already have ${photos.length}.`)
+      return
+    }
+    
+    if (files.length > availableSlots) {
+      setError(`You can only add ${availableSlots} more photo${availableSlots === 1 ? '' : 's'}. You selected ${files.length}. Your plan allows ${photoLimit} photos total.`)
+      return
+    }
+    
+    // Check file sizes
+    const oversizedFiles = files.filter(f => f.size > MAX_PHOTO_SIZE)
+    if (oversizedFiles.length > 0) {
+      const sizes = oversizedFiles.map(f => `${f.name} (${Math.round(f.size / (1024 * 1024))}MB)`).join(', ')
+      setError(`${oversizedFiles.length} photo(s) exceed the 10MB size limit: ${sizes}`)
+      return
+    }
+    
+    // Check file types
+    const invalidFiles = files.filter(f => !validTypes.includes(f.type))
+    if (invalidFiles.length > 0) {
+      setError(`Invalid file type: ${invalidFiles.map(f => f.name).join(', ')}. Please upload images only (JPG, PNG, GIF, WEBP).`)
+      return
+    }
+
+    setUploadingPhotos(true)
+    setError('')
+
+    const formData = new FormData()
+    formData.append('token', token)
+    formData.append('session', effectiveSessionToken)
+    files.forEach(file => formData.append('photos', file))
+
+    try {
+      const response = await fetch('/api/memorial/photos', {
+        method: 'POST',
+        body: formData,
+      })
+      const data = await response.json()
+
+      if (data.error) {
+        setError(data.error)
+      } else {
+        setPhotos(data.photos)
+        setSuccess(true)
+        setTimeout(() => setSuccess(false), 3000)
+      }
+    } catch {
+      setError('Failed to upload photos. Please try again.')
+    }
+
+    setUploadingPhotos(false)
+    if (photoInputRef.current) photoInputRef.current.value = ''
+  }, [token, sessionToken, getStoredSession, photos.length, photoLimit])
+
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || [])
+    await uploadPhotos(files)
+  }
+
+  // Photo drag and drop handlers
+  const handlePhotoDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDraggingPhotos(true)
+  }, [])
+
+  const handlePhotoDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDraggingPhotos(false)
+  }, [])
+
+  const handlePhotoDrop = useCallback(async (e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDraggingPhotos(false)
+
+    const allFiles = Array.from(e.dataTransfer.files)
+    const imageFiles = allFiles.filter(file => file.type.startsWith('image/'))
+    const nonImageFiles = allFiles.filter(file => !file.type.startsWith('image/'))
+    
+    if (nonImageFiles.length > 0 && imageFiles.length === 0) {
+      // Only non-image files were dropped
+      const hasVideo = nonImageFiles.some(file => file.type.startsWith('video/'))
+      setError(hasVideo 
+        ? 'Please drop image files here, not videos. Use the video section below for videos.'
+        : 'Invalid file type. Please drop image files (JPG, PNG, GIF, etc.)'
+      )
+      return
+    }
+    
+    if (imageFiles.length > 0) {
+      if (nonImageFiles.length > 0) {
+        // Mixed files - upload images but warn about others
+        setError(`${nonImageFiles.length} non-image file(s) were skipped.`)
+      }
+      await uploadPhotos(imageFiles)
+    }
+  }, [uploadPhotos])
+
+  // Photo delete handler
+  const handleDeletePhoto = async (photoId: string) => {
+    if (!token) return
+
+    // Get session token from URL or localStorage
+    const effectiveSessionToken = sessionToken || getStoredSession(token)
+    if (!effectiveSessionToken) {
+      setError('Session expired. Please refresh the page and verify your email again.')
+      return
+    }
+
+    setDeletingId(photoId)
+    setError('')
+
+    try {
+      const response = await fetch('/api/memorial/photos', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token, session: effectiveSessionToken, photoId }),
+      })
+      const data = await response.json()
+
+      if (data.error) {
+        setError(data.error)
+      } else {
+        setPhotos(data.photos)
+      }
+    } catch {
+      setError('Failed to delete photo')
+    }
+
+    setDeletingId(null)
+  }
+
+  // Set profile photo handler
+  const handleSetProfilePhoto = async (photoId: string) => {
+    if (!token) return
+
+    // Get session token from URL or localStorage
+    const effectiveSessionToken = sessionToken || getStoredSession(token)
+    if (!effectiveSessionToken) {
+      setError('Session expired. Please refresh the page and verify your email again.')
+      return
+    }
+
+    try {
+      const response = await fetch('/api/memorial/photos', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token, session: effectiveSessionToken, photoId }),
+      })
+      const data = await response.json()
+
+      if (data.error) {
+        setError(data.error)
+      } else {
+        setPhotos(data.photos)
+      }
+    } catch {
+      setError('Failed to set profile photo')
+    }
+  }
+
+  // Add YouTube video handler
+  const handleAddYoutubeVideo = async () => {
+    if (!token || !youtubeUrl) return
+
+    // Get session token from URL or localStorage
+    const effectiveSessionToken = sessionToken || getStoredSession(token)
+    if (!effectiveSessionToken) {
+      setError('Session expired. Please refresh the page and verify your email again.')
+      return
+    }
+
+    const ytId = getYouTubeId(youtubeUrl)
+    if (!ytId) {
+      setError('Invalid YouTube URL')
+      return
+    }
+
+    setUploadingVideo(true)
+    setError('')
+
+    try {
+      const response = await fetch('/api/memorial/videos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token, session: effectiveSessionToken, url: youtubeUrl }),
+      })
+      const data = await response.json()
+
+      if (data.error) {
+        setError(data.error)
+      } else {
+        setVideos(data.videos)
+        setYoutubeUrl('')
+        setSuccess(true)
+        setTimeout(() => setSuccess(false), 3000)
+      }
+    } catch {
+      setError('Failed to add video')
+    }
+
+    setUploadingVideo(false)
+  }
+
+  // Upload video file handler
+  // Client-side video validation helper
+  const validateVideoFile = useCallback((file: File): string | null => {
+    // Direct upload to Supabase - supports up to 50MB
+    const MAX_VIDEO_SIZE = 50 * 1024 * 1024 // 50MB
+    const validTypes = ['video/mp4', 'video/quicktime', 'video/webm', 'video/x-msvideo', 'video/x-m4v']
+    
+    // Check video limit
+    if (videos.length >= videoLimit) {
+      return `Video limit reached. Your plan allows ${videoLimit} video${videoLimit === 1 ? '' : 's'} and you already have ${videos.length}.`
+    }
+    
+    // Check file size
+    if (file.size > MAX_VIDEO_SIZE) {
+      const sizeMB = (file.size / (1024 * 1024)).toFixed(1)
+      return `Video file is too large (${sizeMB}MB). Maximum upload size is 50MB.`
+    }
+    
+    // Check file type
+    if (!validTypes.includes(file.type)) {
+      return `Invalid video format (${file.type || 'unknown'}). Please upload MP4, MOV, or WEBM files.`
+    }
+    
+    return null // Valid
+  }, [videos.length, videoLimit])
+
+  // Direct upload video to Supabase Storage (bypasses Vercel serverless limits)
+  const uploadVideoDirectly = async (file: File, effectiveSessionToken: string): Promise<boolean> => {
+    try {
+      // Step 1: Get signed upload URL from API
+      const urlResponse = await fetch('/api/memorial/videos/upload-url', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          token,
+          session: effectiveSessionToken,
+          fileName: file.name,
+          fileType: file.type,
+          fileSize: file.size,
+        }),
+      })
+
+      const urlData = await urlResponse.json()
+      if (urlData.error) {
+        setError(urlData.error)
+        return false
+      }
+
+      // Step 2: Upload directly to Supabase Storage
+      const uploadResponse = await fetch(urlData.uploadUrl, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': file.type,
+        },
+        body: file,
+      })
+
+      if (!uploadResponse.ok) {
+        setError('Failed to upload video. Please try again.')
+        return false
+      }
+
+      // Step 3: Register the video with our API
+      const registerResponse = await fetch('/api/memorial/videos/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          token,
+          session: effectiveSessionToken,
+          path: urlData.path,
+          fileName: file.name,
+        }),
+      })
+
+      const registerData = await registerResponse.json()
+      if (registerData.error) {
+        setError(registerData.error)
+        return false
+      }
+
+      setVideos(registerData.videos)
+      return true
+    } catch (err) {
+      console.error('Video upload error:', err)
+      setError('Failed to upload video. Please try again.')
+      return false
+    }
+  }
+
+  const handleVideoFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file || !token) return
+
+    // Get session token from URL or localStorage
+    const effectiveSessionToken = sessionToken || getStoredSession(token)
+    if (!effectiveSessionToken) {
+      setError('Session expired. Please refresh the page and verify your email again.')
+      if (videoInputRef.current) videoInputRef.current.value = ''
+      return
+    }
+
+    // Client-side validation BEFORE upload
+    const validationError = validateVideoFile(file)
+    if (validationError) {
+      setError(validationError)
+      if (videoInputRef.current) videoInputRef.current.value = ''
+      return
+    }
+
+    setUploadingVideo(true)
+    setError('')
+
+    const success = await uploadVideoDirectly(file, effectiveSessionToken)
+    
+    if (success) {
+      setSuccess(true)
+      setTimeout(() => setSuccess(false), 3000)
+    }
+
+    setUploadingVideo(false)
+    if (videoInputRef.current) videoInputRef.current.value = ''
+  }
+
+  // Video upload helper for drag-drop
+  const uploadVideoFile = useCallback(async (file: File) => {
+    if (!file || !token) return
+
+    // Get session token from URL or localStorage
+    const effectiveSessionToken = sessionToken || getStoredSession(token)
+    if (!effectiveSessionToken) {
+      setError('Session expired. Please refresh the page and verify your email again.')
+      return
+    }
+
+    // Client-side validation BEFORE upload
+    const validationError = validateVideoFile(file)
+    if (validationError) {
+      setError(validationError)
+      return
+    }
+
+    setUploadingVideo(true)
+    setError('')
+
+    const success = await uploadVideoDirectly(file, effectiveSessionToken)
+    
+    if (success) {
+      setSuccess(true)
+      setTimeout(() => setSuccess(false), 3000)
+    }
+
+    setUploadingVideo(false)
+    if (videoInputRef.current) videoInputRef.current.value = ''
+  }, [token, sessionToken, getStoredSession, validateVideoFile])
+
+  // Video drag and drop handlers
+  const handleVideoDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDraggingVideo(true)
+  }, [])
+
+  const handleVideoDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDraggingVideo(false)
+  }, [])
+
+  const handleVideoDrop = useCallback(async (e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDraggingVideo(false)
+
+    const allFiles = Array.from(e.dataTransfer.files)
+    const videoFiles = allFiles.filter(file => file.type.startsWith('video/'))
+    const nonVideoFiles = allFiles.filter(file => !file.type.startsWith('video/'))
+    
+    if (nonVideoFiles.length > 0 && videoFiles.length === 0) {
+      // Only non-video files were dropped
+      const hasImage = nonVideoFiles.some(file => file.type.startsWith('image/'))
+      setError(hasImage 
+        ? 'Please drop video files here, not images. Use the photos section above for images.'
+        : 'Invalid file type. Please drop a video file (MP4, MOV, etc.)'
+      )
+      return
+    }
+    
+    // Check if trying to upload too many videos
+    const availableSlots = videoLimit - videos.length
+    if (availableSlots <= 0) {
+      setError(`Video limit reached. Your plan allows ${videoLimit} video${videoLimit === 1 ? '' : 's'} and you already have ${videos.length}.`)
+      return
+    }
+    
+    if (videoFiles.length > 1) {
+      setError(`You can only upload 1 video at a time. You dropped ${videoFiles.length} videos. Please drop them one by one.`)
+      return
+    }
+    
+    if (videoFiles.length > 0) {
+      await uploadVideoFile(videoFiles[0])
+    }
+  }, [uploadVideoFile, videos.length, videoLimit])
+
+  // Delete video handler
+  const handleDeleteVideo = async (videoId: string) => {
+    if (!token) return
+
+    // Get session token from URL or localStorage
+    const effectiveSessionToken = sessionToken || getStoredSession(token)
+    if (!effectiveSessionToken) {
+      setError('Session expired. Please refresh the page and verify your email again.')
+      return
+    }
+
+    setDeletingId(videoId)
+    setError('')
+
+    try {
+      const response = await fetch('/api/memorial/videos', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token, session: effectiveSessionToken, videoId }),
+      })
+      const data = await response.json()
+
+      if (data.error) {
+        setError(data.error)
+      } else {
+        setVideos(data.videos)
+      }
+    } catch {
+      setError('Failed to delete video')
+    }
+
+    setDeletingId(null)
+  }
+
+  const handleSave = async (exitAfter: boolean = false) => {
     if (!memorial || !token) return
+
+    // Get session token from URL or localStorage
+    const effectiveSessionToken = sessionToken || getStoredSession(token)
+    if (!effectiveSessionToken) {
+      setError('Session expired. Please refresh the page and verify your email again.')
+      return
+    }
 
     setSaving(true)
     setError('')
@@ -111,6 +703,7 @@ function EditPageContent() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           token,
+          session: effectiveSessionToken,
           memorialText,
           theme: selectedTheme,
           frame: selectedFrame,
@@ -123,7 +716,54 @@ function EditPageContent() {
         setError(data.error)
       } else {
         setSuccess(true)
-        setTimeout(() => setSuccess(false), 3000)
+        if (exitAfter) {
+          // Redirect to the memorial page
+          router.push(`/memorial/${memorial.slug}`)
+        } else {
+          setTimeout(() => setSuccess(false), 3000)
+        }
+      }
+    } catch {
+      setError('Failed to save changes')
+    }
+
+    setSaving(false)
+  }
+
+  // Save and then view memorial in new tab
+  const handleSaveAndView = async () => {
+    if (!memorial || !token) return
+
+    // Get session token from URL or localStorage
+    const effectiveSessionToken = sessionToken || getStoredSession(token)
+    if (!effectiveSessionToken) {
+      setError('Session expired. Please refresh the page and verify your email again.')
+      return
+    }
+
+    setSaving(true)
+    setError('')
+
+    try {
+      const response = await fetch('/api/memorial/update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          token,
+          session: effectiveSessionToken,
+          memorialText,
+          theme: selectedTheme,
+          frame: selectedFrame,
+        }),
+      })
+
+      const data = await response.json()
+
+      if (data.error) {
+        setError(data.error)
+      } else {
+        // Open memorial in new tab
+        window.open(`/memorial/${memorial.slug}`, '_blank')
       }
     } catch {
       setError('Failed to save changes')
@@ -136,6 +776,119 @@ function EditPageContent() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-memorial-cream">
         <Loader2 className="h-8 w-8 animate-spin text-primary-600" />
+      </div>
+    )
+  }
+
+  // Show MFA verification screen
+  if (verificationStep === 'send' || verificationStep === 'verify') {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-memorial-cream p-4">
+        <div className="bg-white rounded-2xl shadow-lg p-8 max-w-md w-full">
+          <div className="text-center mb-6">
+            <ShieldCheck className="h-12 w-12 text-primary-600 mx-auto mb-4" />
+            <h1 className="text-2xl font-serif mb-2">Verify Your Identity</h1>
+            <p className="text-gray-600">
+              For your security, we need to verify your email address before you can edit this memorial.
+            </p>
+          </div>
+
+          {error && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+              <div className="flex items-center gap-2 text-red-700">
+                <AlertCircle className="h-5 w-5 flex-shrink-0" />
+                <span>{error}</span>
+              </div>
+            </div>
+          )}
+
+          {verificationStep === 'send' ? (
+            <div className="space-y-4">
+              <p className="text-sm text-gray-600 text-center">
+                Click the button below to receive a verification code at your registered email address.
+              </p>
+              <button
+                onClick={handleSendCode}
+                disabled={sendingCode || !token}
+                className="btn-primary w-full flex items-center justify-center gap-2"
+              >
+                {sendingCode ? (
+                  <>
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                    Sending...
+                  </>
+                ) : (
+                  <>
+                    <Mail className="h-5 w-5" />
+                    Send Verification Code
+                  </>
+                )}
+              </button>
+              
+              <button
+                onClick={() => setVerificationStep('verify')}
+                className="text-sm text-primary-600 hover:text-primary-700 w-full text-center"
+              >
+                I already have a code
+              </button>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <p className="text-sm text-blue-800">
+                  {maskedEmail ? (
+                    <>A verification code has been sent to <strong>{maskedEmail}</strong>.</>
+                  ) : (
+                    <>Enter the verification code from your email.</>
+                  )}
+                  {' '}The code expires in <strong>1 hour</strong>.
+                </p>
+              </div>
+              
+              <div>
+                <label className="label">Enter 6-digit code</label>
+                <input
+                  type="text"
+                  value={verificationCode}
+                  onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                  placeholder="000000"
+                  className="input text-center text-2xl tracking-widest"
+                  maxLength={6}
+                  autoFocus
+                />
+              </div>
+
+              <button
+                onClick={handleVerifyCode}
+                disabled={verifyingCode || verificationCode.length !== 6}
+                className="btn-primary w-full flex items-center justify-center gap-2"
+              >
+                {verifyingCode ? (
+                  <>
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                    Verifying...
+                  </>
+                ) : (
+                  <>
+                    <ShieldCheck className="h-5 w-5" />
+                    Verify & Continue
+                  </>
+                )}
+              </button>
+
+              <button
+                onClick={() => {
+                  setVerificationStep('send')
+                  setVerificationCode('')
+                  setError('')
+                }}
+                className="text-sm text-gray-600 hover:text-primary-600 w-full text-center"
+              >
+                Didn't receive the code? Send again
+              </button>
+            </div>
+          )}
+        </div>
       </div>
     )
   }
@@ -196,14 +949,65 @@ function EditPageContent() {
           )}
 
           <div className="space-y-8">
-            {/* Current Photos Preview */}
+            {/* Photos Section */}
             <div>
-              <label className="label">Current Photos ({memorial.photos.length})</label>
-              <div className="grid grid-cols-4 gap-3 mt-2">
-                {memorial.photos.slice(0, 8).map((photo) => (
+              <div className="flex items-center justify-between mb-2">
+                <label className="label mb-0">Photos ({photos.length}/{photoLimit})</label>
+                {photos.length < photoLimit && (
+                  <label className="btn-outline text-sm cursor-pointer flex items-center gap-2">
+                    {uploadingPhotos ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Plus className="h-4 w-4" />
+                    )}
+                    Add Photos
+                    <input
+                      ref={photoInputRef}
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      onChange={handlePhotoUpload}
+                      className="hidden"
+                      disabled={uploadingPhotos}
+                    />
+                  </label>
+                )}
+              </div>
+              
+              {/* Drag and drop zone for photos */}
+              {photos.length < photoLimit && (
+                <div
+                  onDragOver={handlePhotoDragOver}
+                  onDragLeave={handlePhotoDragLeave}
+                  onDrop={handlePhotoDrop}
+                  className={`border-2 border-dashed rounded-xl p-6 mb-4 text-center transition-all ${
+                    isDraggingPhotos
+                      ? 'border-primary-500 bg-primary-50'
+                      : 'border-gray-300 hover:border-gray-400'
+                  }`}
+                >
+                  {uploadingPhotos ? (
+                    <div className="flex flex-col items-center gap-2 text-primary-600">
+                      <Loader2 className="h-8 w-8 animate-spin" />
+                      <span>Uploading photos...</span>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center gap-2 text-gray-500">
+                      <Upload className={`h-8 w-8 ${isDraggingPhotos ? 'text-primary-500' : ''}`} />
+                      <span className={isDraggingPhotos ? 'text-primary-600 font-medium' : ''}>
+                        {isDraggingPhotos ? 'Drop photos here!' : 'Drag & drop photos here'}
+                      </span>
+                      <span className="text-xs text-gray-400">or use the Add Photos button above</span>
+                    </div>
+                  )}
+                </div>
+              )}
+              
+              <div className="grid grid-cols-4 sm:grid-cols-6 gap-3 mt-2">
+                {photos.map((photo) => (
                   <div
                     key={photo.id}
-                    className="aspect-square rounded-lg overflow-hidden bg-gray-100 relative"
+                    className="aspect-square rounded-lg overflow-hidden bg-gray-100 relative group"
                   >
                     <Image
                       src={photo.url}
@@ -212,17 +1016,152 @@ function EditPageContent() {
                       className="object-cover"
                       sizes="100px"
                     />
+                    {/* Profile badge */}
+                    {photo.isProfile && (
+                      <div className="absolute top-1 left-1 bg-primary-500 text-white rounded-full p-1">
+                        <Star className="h-3 w-3" />
+                      </div>
+                    )}
+                    {/* Hover actions */}
+                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                      {!photo.isProfile && (
+                        <button
+                          onClick={() => handleSetProfilePhoto(photo.id)}
+                          className="p-2 bg-white rounded-full text-primary-600 hover:bg-primary-50"
+                          title="Set as profile photo"
+                        >
+                          <Star className="h-4 w-4" />
+                        </button>
+                      )}
+                      {photos.length > 1 && (
+                        <button
+                          onClick={() => handleDeletePhoto(photo.id)}
+                          disabled={deletingId === photo.id}
+                          className="p-2 bg-white rounded-full text-red-600 hover:bg-red-50"
+                          title="Delete photo"
+                        >
+                          {deletingId === photo.id ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Trash2 className="h-4 w-4" />
+                          )}
+                        </button>
+                      )}
+                    </div>
                   </div>
                 ))}
-                {memorial.photos.length > 8 && (
-                  <div className="aspect-square rounded-lg bg-gray-100 flex items-center justify-center text-gray-500">
-                    +{memorial.photos.length - 8} more
-                  </div>
-                )}
               </div>
               <p className="text-xs text-gray-500 mt-2">
-                To add or remove photos, please contact support.
+                Click a photo to set as profile or delete. Profile photo shows in the memorial header.
               </p>
+            </div>
+
+            {/* Videos Section */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label className="label mb-0">Videos ({videos.length}/{videoLimit})</label>
+              </div>
+              
+              {/* Current videos */}
+              {videos.length > 0 && (
+                <div className="space-y-3 mb-4">
+                  {videos.map((video) => (
+                    <div key={video.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                      <Video className="h-5 w-5 text-gray-400" />
+                      <span className="flex-1 text-sm truncate">
+                        {video.type === 'youtube' || video.youtubeId
+                          ? `YouTube: ${video.youtubeId}`
+                          : video.title || 'Uploaded video'}
+                      </span>
+                      <button
+                        onClick={() => handleDeleteVideo(video.id)}
+                        disabled={deletingId === video.id}
+                        className="p-1 text-red-500 hover:text-red-700"
+                      >
+                        {deletingId === video.id ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <X className="h-4 w-4" />
+                        )}
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Add video */}
+              {videos.length < videoLimit && (
+                <div className="space-y-3">
+                  {/* Drag and drop zone for videos */}
+                  <div
+                    onDragOver={handleVideoDragOver}
+                    onDragLeave={handleVideoDragLeave}
+                    onDrop={handleVideoDrop}
+                    className={`border-2 border-dashed rounded-xl p-6 text-center transition-all ${
+                      isDraggingVideo
+                        ? 'border-primary-500 bg-primary-50'
+                        : 'border-gray-300 hover:border-gray-400'
+                    }`}
+                  >
+                    {uploadingVideo ? (
+                      <div className="flex flex-col items-center gap-2 text-primary-600">
+                        <Loader2 className="h-8 w-8 animate-spin" />
+                        <span>Uploading video...</span>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col items-center gap-2 text-gray-500">
+                        <Video className={`h-8 w-8 ${isDraggingVideo ? 'text-primary-500' : ''}`} />
+                        <span className={isDraggingVideo ? 'text-primary-600 font-medium' : ''}>
+                          {isDraggingVideo ? 'Drop video here!' : 'Drag & drop a video file here'}
+                        </span>
+                        <span className="text-xs text-gray-400">max 50MB</span>
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div className="text-center text-sm text-gray-500">or</div>
+                  
+                  <div className="flex gap-2">
+                    <input
+                      type="url"
+                      value={youtubeUrl}
+                      onChange={(e) => setYoutubeUrl(e.target.value)}
+                      placeholder="Paste YouTube URL..."
+                      className="input flex-1"
+                    />
+                    <button
+                      onClick={handleAddYoutubeVideo}
+                      disabled={!youtubeUrl || uploadingVideo}
+                      className="btn-primary"
+                    >
+                      {uploadingVideo ? (
+                        <Loader2 className="h-5 w-5 animate-spin" />
+                      ) : (
+                        'Add'
+                      )}
+                    </button>
+                  </div>
+                  
+                  <div className="text-center text-sm text-gray-500">or</div>
+                  
+                  <label className="btn-outline w-full cursor-pointer flex items-center justify-center gap-2">
+                    {uploadingVideo ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Upload className="h-4 w-4" />
+                    )}
+                    Browse for Video File
+                    <input
+                      ref={videoInputRef}
+                      type="file"
+                      accept="video/*"
+                      onChange={handleVideoFileUpload}
+                      className="hidden"
+                      disabled={uploadingVideo}
+                    />
+                  </label>
+                </div>
+              )}
             </div>
 
             {/* Memorial Text */}
@@ -244,11 +1183,11 @@ function EditPageContent() {
                 <label className="label mb-0">Theme</label>
               </div>
               <div className="grid grid-cols-5 gap-3">
-                {MEMORIAL_THEMES.slice(0, availableThemes).map((theme) => (
+                {availableThemes.map((theme) => (
                   <button
                     key={theme.id}
                     onClick={() => setSelectedTheme(theme.id)}
-                    className={`p-3 rounded-lg border-2 transition-all ${
+                    className={`p-3 rounded-lg border-2 transition-all relative ${
                       selectedTheme === theme.id
                         ? 'border-primary-500 ring-2 ring-primary-200'
                         : 'border-gray-200 hover:border-primary-300'
@@ -277,30 +1216,30 @@ function EditPageContent() {
                 <label className="label mb-0">Photo Frame</label>
               </div>
               <div className="grid grid-cols-5 gap-3">
-                {MEMORIAL_FRAMES.slice(0, availableFrames).map((frame) => (
+                {availableFramesList.map((frame) => (
                   <button
                     key={frame.id}
                     onClick={() => setSelectedFrame(frame.id)}
-                    className={`p-3 rounded-lg border-2 transition-all bg-white ${
+                    className={`p-3 rounded-lg border-2 transition-all bg-white relative ${
                       selectedFrame === frame.id
                         ? 'border-primary-500 ring-2 ring-primary-200'
                         : 'border-gray-200 hover:border-primary-300'
                     }`}
                   >
-                    <div
-                      className="h-12 w-full rounded bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center"
-                      style={{ border: frame.border }}
-                    >
-                      🖼️
+                    <div className="h-12 w-full rounded bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center text-2xl">
+                      {frame.preview}
                     </div>
                     <p className="text-xs font-medium text-gray-800 mt-2">{frame.name}</p>
+                    {selectedFrame === frame.id && (
+                      <Check className="absolute top-2 right-2 h-4 w-4 text-primary-500" />
+                    )}
                   </button>
                 ))}
               </div>
             </div>
 
-            {/* Save Button */}
-            <div className="flex gap-4 pt-4 border-t">
+            {/* Action Buttons */}
+            <div className="flex flex-col sm:flex-row gap-4 pt-4 border-t">
               <a
                 href={`/memorial/${memorial.slug}`}
                 className="btn-outline flex-1 text-center"
@@ -308,7 +1247,15 @@ function EditPageContent() {
                 Cancel
               </a>
               <button
-                onClick={handleSave}
+                onClick={handleSaveAndView}
+                disabled={saving}
+                className="btn-outline flex-1 flex items-center justify-center gap-2"
+              >
+                <Eye className="h-5 w-5" />
+                Save & View
+              </button>
+              <button
+                onClick={() => handleSave(true)}
                 disabled={saving}
                 className="btn-primary flex-1 flex items-center justify-center gap-2"
               >
@@ -320,7 +1267,7 @@ function EditPageContent() {
                 ) : (
                   <>
                     <Save className="h-5 w-5" />
-                    Save Changes
+                    Save & Exit
                   </>
                 )}
               </button>

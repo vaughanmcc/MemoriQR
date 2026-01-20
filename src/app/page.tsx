@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { Header } from '@/components/layout/Header'
 import { Footer } from '@/components/layout/Footer'
 import { HeroSection } from '@/components/home/HeroSection'
+import { UseCasesSection } from '@/components/home/UseCasesSection'
 import { HowItWorks } from '@/components/home/HowItWorks'
 import { PricingSection } from '@/components/home/PricingSection'
 import { FeaturesSection } from '@/components/home/FeaturesSection'
@@ -15,6 +16,7 @@ export default function HomePage() {
       <Header />
       <main>
         <HeroSection />
+        <UseCasesSection />
         <HowItWorks />
         <FeaturesSection />
         <PricingSection />

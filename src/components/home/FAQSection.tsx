@@ -18,7 +18,7 @@ const faqs = [
   },
   {
     question: 'What is Metalphoto® technology?',
-    answer: 'Metalphoto® is a premium photosensitive anodised aluminium where images are photographically developed within the aluminium surface, then sealed beneath an 8 micron sapphire-hard anodic layer. Key specs: 20+ year outdoor UV resistance, withstands temperatures over 300°C (572°F), chemical and abrasion resistant, meets military specs (MIL-STD-130N for asset marking). The sub-surface printing means the QR code cannot be scratched off – it\'s literally part of the metal. Perfect for permanent cemetery installations, outdoor memorials, and harsh environments.',
+    answer: 'Metalphoto® is a premium photosensitive anodised aluminium where images are photographically developed within the aluminium surface, then sealed beneath an 8 micron sapphire-hard anodic layer. Key specs: 20+ year outdoor UV resistance, withstands temperatures over 300°C (572°F), chemical and abrasion resistant, meets military specs (MIL-STD-130N for asset marking). The sub-surface printing means the QR code cannot be scratched off – it\'s literally part of the metal. Our plates use 3M industrial-grade adhesive (3M 45B or 3M 467) rated for outdoor use: temperature resistance up to 204°C short-term and 149°C long-term, designed for permanent mounting on stone, metal, and other hard surfaces. Perfect for cemetery installations, outdoor memorials, and harsh environments.',
   },
   {
     question: 'How long does hosting last?',
@@ -38,7 +38,7 @@ const faqs = [
   },
   {
     question: 'How do video uploads work?',
-    answer: 'You have two options for adding videos: 1) Upload directly (max 50MB per file) - great for short clips and phone videos. 2) Link a YouTube video (unlimited size, no extra cost) - perfect for longer videos or slideshows. Set your YouTube video to "unlisted" if you want to keep it private. YouTube hosting is completely free and has no size limits.',
+    answer: 'You can upload video files up to 50MB directly, or link YouTube videos for unlimited size. YouTube is recommended for longer videos as it provides better streaming quality.',
   },
   {
     question: 'Is my memorial private?',
@@ -57,8 +57,16 @@ const faqs = [
     answer: 'Yes! We ship throughout New Zealand ($10) and Australia ($15). NFC tags ship in 2-3 business days, and QR plates ship in 7-10 business days.',
   },
   {
+    question: 'How do I properly prepare the surface?',
+    answer: 'For best adhesion, ensure the surface is clean, flat, and properly prepared before attaching your NFC tag or QR plate. Remove any dust, dirt, or moisture. The surface must be free of chemicals such as oils (including wood treatments), waxes, silicones, or other contaminants that may prevent proper adhesion. For porous surfaces like untreated wood or stone, allow the surface to fully dry before application. Apply firm pressure for 30 seconds and allow 24 hours for the adhesive to fully cure before exposure to moisture or extreme temperatures.',
+  },
+  {
     question: 'Can I use this for a human memorial?',
     answer: 'Absolutely. Many families use MemoriQR for human memorials too. The plates are especially popular for cemetery markers, urns, and keepsake boxes.',
+  },
+  {
+    question: 'Are QR plates allowed at all cemeteries?',
+    answer: 'Cemetery policies vary. Some cemeteries welcome QR memorial plates, while others have restrictions on what can be attached to headstones or grave markers. We strongly recommend checking with your cemetery before purchasing to confirm their policy on memorial tags and plates. If you\'re unsure, contact us and we can help guide you through common considerations.',
   },
 ]
 

@@ -1,0 +1,78 @@
+name: Preview Smoke Test
+
+on:
+  deployment_status:
+
+jobs:
+  smoke-test:
+    if: github.event.deployment_status.state == 'success' && github.event.deployment_status.environment == 'Preview'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Get Preview URL
+        id: preview
+        run: |
+          echo "url=${{ github.event.deployment_status.target_url }}" >> $GITHUB_OUTPUT
+
+      - name: Wait for deployment to be ready
+        run: sleep 10
+
+      - name: Smoke Test - Homepage
+        run: |
+          response=$(curl -s -o /dev/null -w "%{http_code}" "${{ steps.preview.outputs.url }}")
+          if [ "$response" != "200" ]; then
+            echo "❌ Homepage returned $response"
+            exit 1
+          fi
+          echo "✅ Homepage OK (200)"
+
+      - name: Smoke Test - Order Page
+        run: |
+          response=$(curl -s -o /dev/null -w "%{http_code}" "${{ steps.preview.outputs.url }}/order")
+          if [ "$response" != "200" ]; then
+            echo "❌ Order page returned $response"
+            exit 1
+          fi
+          echo "✅ Order page OK (200)"
+
+      - name: Smoke Test - Activate Page
+        run: |
+          response=$(curl -s -o /dev/null -w "%{http_code}" "${{ steps.preview.outputs.url }}/activate")
+          if [ "$response" != "200" ]; then
+            echo "❌ Activate page returned $response"
+            exit 1
+          fi
+          echo "✅ Activate page OK (200)"
+
+      - name: Smoke Test - About Page
+        run: |
+          response=$(curl -s -o /dev/null -w "%{http_code}" "${{ steps.preview.outputs.url }}/about")
+          if [ "$response" != "200" ]; then
+            echo "❌ About page returned $response"
+            exit 1
+          fi
+          echo "✅ About page OK (200)"
+
+      - name: Smoke Test - Contact Page
+        run: |
+          response=$(curl -s -o /dev/null -w "%{http_code}" "${{ steps.preview.outputs.url }}/contact")
+          if [ "$response" != "200" ]; then
+            echo "❌ Contact page returned $response"
+            exit 1
+          fi
+          echo "✅ Contact page OK (200)"
+
+      - name: Smoke Test - API Health (Memorial Lookup)
+        run: |
+          response=$(curl -s -o /dev/null -w "%{http_code}" "${{ steps.preview.outputs.url }}/api/memorial/lookup?slug=test")
+          # 404 is acceptable for non-existent memorial, 500 would be a problem
+          if [ "$response" == "500" ]; then
+            echo "❌ API returned 500 error"
+            exit 1
+          fi
+          echo "✅ API responding (returned $response)"
+
+      - name: Summary
+        run: |
+          echo "🎉 All smoke tests passed for ${{ steps.preview.outputs.url }}"
