@@ -30,6 +30,17 @@ interface RecentBatch {
   codes: string[];
 }
 
+interface ExistingCode {
+  activation_code: string;
+  product_type: string;
+  hosting_duration: number;
+  is_used: boolean;
+  used_at: string | null;
+  created_at: string;
+  expires_at: string | null;
+  partner_id: string | null;
+}
+
 export default function AdminCodesPage() {
   const [selectedVariant, setSelectedVariant] = useState(CARD_VARIANTS[0].code);
   const [quantity, setQuantity] = useState(10);
@@ -40,14 +51,109 @@ export default function AdminCodesPage() {
   const [copySuccess, setCopySuccess] = useState(false);
   const router = useRouter();
 
+  // Code management state
+  const [activeTab, setActiveTab] = useState<'generate' | 'manage'>('generate');
+  const [existingCodes, setExistingCodes] = useState<ExistingCode[]>([]);
+  const [totalCodes, setTotalCodes] = useState(0);
+  const [isLoadingCodes, setIsLoadingCodes] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [selectedCodes, setSelectedCodes] = useState<Set<string>>(new Set());
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
+
   useEffect(() => {
     checkAuth();
   }, []);
+
+  useEffect(() => {
+    if (activeTab === 'manage') {
+      fetchExistingCodes();
+    }
+  }, [activeTab, statusFilter]);
 
   const checkAuth = async () => {
     const res = await fetch('/api/admin/session');
     if (!res.ok) {
       router.push('/admin');
+    }
+  };
+
+  const fetchExistingCodes = async () => {
+    setIsLoadingCodes(true);
+    try {
+      const params = new URLSearchParams({
+        status: statusFilter,
+        limit: '100',
+        ...(searchQuery && { search: searchQuery })
+      });
+      const res = await fetch(`/api/admin/codes?${params}`);
+      if (res.ok) {
+        const data = await res.json();
+        setExistingCodes(data.codes || []);
+        setTotalCodes(data.total || 0);
+      }
+    } catch (err) {
+      console.error('Failed to fetch codes:', err);
+    } finally {
+      setIsLoadingCodes(false);
+    }
+  };
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    fetchExistingCodes();
+  };
+
+  const toggleCodeSelection = (code: string) => {
+    const newSelected = new Set(selectedCodes);
+    if (newSelected.has(code)) {
+      newSelected.delete(code);
+    } else {
+      newSelected.add(code);
+    }
+    setSelectedCodes(newSelected);
+  };
+
+  const selectAllUnused = () => {
+    const unusedCodes = existingCodes.filter(c => !c.is_used).map(c => c.activation_code);
+    setSelectedCodes(new Set(unusedCodes));
+  };
+
+  const clearSelection = () => {
+    setSelectedCodes(new Set());
+  };
+
+  const handleDeleteSelected = async () => {
+    if (selectedCodes.size === 0) return;
+    
+    const confirmed = confirm(`Are you sure you want to permanently delete ${selectedCodes.size} activation code(s)? This cannot be undone.`);
+    if (!confirmed) return;
+
+    setIsDeleting(true);
+    setDeleteError('');
+
+    try {
+      const res = await fetch('/api/admin/codes', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ codes: Array.from(selectedCodes) })
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setDeleteError(data.error || 'Failed to delete codes');
+        return;
+      }
+
+      // Refresh the list
+      setSelectedCodes(new Set());
+      fetchExistingCodes();
+    } catch (err) {
+      setDeleteError('Failed to delete codes');
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -122,12 +228,15 @@ export default function AdminCodesPage() {
       })
     ].map(row => row.join(',')).join('\n');
 
-    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
     a.download = `memoriqr-codes-${variant || selectedVariant}-${new Date().toISOString().split('T')[0]}.csv`;
+    a.style.display = 'none';
+    document.body.appendChild(a);
     a.click();
+    document.body.removeChild(a);
     URL.revokeObjectURL(url);
   };
 
@@ -171,12 +280,39 @@ export default function AdminCodesPage() {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 py-8">
-        <div className="flex items-center gap-4 mb-8">
-          <h2 className="text-2xl font-bold text-stone-800">Retail Activation Code Generator</h2>
+        <div className="flex items-center gap-4 mb-6">
+          <h2 className="text-2xl font-bold text-stone-800">Retail Activation Codes</h2>
           <span className="bg-purple-100 text-purple-700 text-sm font-medium px-3 py-1 rounded-full">
             Scratch Cards
           </span>
         </div>
+
+        {/* Tabs */}
+        <div className="flex gap-2 mb-6">
+          <button
+            onClick={() => setActiveTab('generate')}
+            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+              activeTab === 'generate'
+                ? 'bg-purple-600 text-white'
+                : 'bg-white text-stone-600 hover:bg-stone-100'
+            }`}
+          >
+            Generate Codes
+          </button>
+          <button
+            onClick={() => setActiveTab('manage')}
+            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+              activeTab === 'manage'
+                ? 'bg-purple-600 text-white'
+                : 'bg-white text-stone-600 hover:bg-stone-100'
+            }`}
+          >
+            Manage Codes
+          </button>
+        </div>
+
+        {activeTab === 'generate' && (
+          <>
 
         {/* Generator Form */}
         <div className="bg-white rounded-xl shadow p-6 mb-8">
@@ -391,6 +527,172 @@ export default function AdminCodesPage() {
             </div>
           </div>
         </div>
+        </>
+        )}
+
+        {/* ============================================= */}
+        {/* MANAGE CODES TAB */}
+        {/* ============================================= */}
+        {activeTab === 'manage' && (
+          <>
+            {/* Search and Filter */}
+            <div className="bg-white rounded-xl shadow p-6 mb-6">
+              <div className="flex flex-col md:flex-row gap-4">
+                <form onSubmit={handleSearch} className="flex-1 flex gap-2">
+                  <input
+                    type="text"
+                    placeholder="Search by code (e.g., MQR-10B-...)"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="flex-1 px-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none"
+                  />
+                  <button
+                    type="submit"
+                    className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors"
+                  >
+                    Search
+                  </button>
+                </form>
+                <select
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                  className="px-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none"
+                >
+                  <option value="all">All Codes</option>
+                  <option value="unused">Unused Only</option>
+                  <option value="used">Used Only</option>
+                </select>
+              </div>
+              <p className="text-sm text-stone-500 mt-2">
+                Showing {existingCodes.length} of {totalCodes} codes
+              </p>
+            </div>
+
+            {/* Bulk Actions */}
+            {selectedCodes.size > 0 && (
+              <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6 flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <span className="font-medium text-red-800">
+                    {selectedCodes.size} code(s) selected
+                  </span>
+                  <button
+                    onClick={clearSelection}
+                    className="text-red-600 hover:text-red-800 text-sm underline"
+                  >
+                    Clear selection
+                  </button>
+                </div>
+                <button
+                  onClick={handleDeleteSelected}
+                  disabled={isDeleting}
+                  className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 disabled:opacity-50 transition-colors"
+                >
+                  {isDeleting ? 'Deleting...' : `Delete ${selectedCodes.size} Code(s)`}
+                </button>
+              </div>
+            )}
+
+            {deleteError && (
+              <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6">
+                <p className="text-red-600">{deleteError}</p>
+              </div>
+            )}
+
+            {/* Codes Table */}
+            <div className="bg-white rounded-xl shadow overflow-hidden">
+              <div className="px-6 py-4 border-b border-stone-200 flex items-center justify-between">
+                <h3 className="font-semibold text-stone-800">Activation Codes</h3>
+                <button
+                  onClick={selectAllUnused}
+                  className="text-sm text-purple-600 hover:text-purple-800"
+                >
+                  Select all unused
+                </button>
+              </div>
+
+              {isLoadingCodes ? (
+                <div className="p-8 text-center">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto"></div>
+                  <p className="text-stone-500 mt-2">Loading codes...</p>
+                </div>
+              ) : existingCodes.length === 0 ? (
+                <div className="p-8 text-center text-stone-500">
+                  No codes found
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-stone-50">
+                      <tr>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-stone-500 uppercase">
+                          <input
+                            type="checkbox"
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                selectAllUnused();
+                              } else {
+                                clearSelection();
+                              }
+                            }}
+                            checked={selectedCodes.size > 0 && selectedCodes.size === existingCodes.filter(c => !c.is_used).length}
+                            className="rounded"
+                          />
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-stone-500 uppercase">Code</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-stone-500 uppercase">Product</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-stone-500 uppercase">Duration</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-stone-500 uppercase">Status</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-stone-500 uppercase">Created</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-stone-200">
+                      {existingCodes.map((code) => (
+                        <tr
+                          key={code.activation_code}
+                          className={`hover:bg-stone-50 ${code.is_used ? 'bg-stone-50' : ''}`}
+                        >
+                          <td className="px-4 py-3">
+                            <input
+                              type="checkbox"
+                              checked={selectedCodes.has(code.activation_code)}
+                              onChange={() => toggleCodeSelection(code.activation_code)}
+                              disabled={code.is_used}
+                              className="rounded disabled:opacity-50"
+                            />
+                          </td>
+                          <td className="px-4 py-3">
+                            <code className="font-mono text-sm">{code.activation_code}</code>
+                          </td>
+                          <td className="px-4 py-3 text-sm text-stone-600">
+                            {code.product_type === 'nfc_only' ? 'NFC' : 
+                             code.product_type === 'qr_only' ? 'QR' : 'Both'}
+                          </td>
+                          <td className="px-4 py-3 text-sm text-stone-600">
+                            {code.hosting_duration} years
+                          </td>
+                          <td className="px-4 py-3">
+                            {code.is_used ? (
+                              <span className="inline-flex items-center px-2 py-1 text-xs font-medium bg-green-100 text-green-700 rounded-full">
+                                ✓ Used
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center px-2 py-1 text-xs font-medium bg-yellow-100 text-yellow-700 rounded-full">
+                                Available
+                              </span>
+                            )}
+                          </td>
+                          <td className="px-4 py-3 text-sm text-stone-500">
+                            {new Date(code.created_at).toLocaleDateString()}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </>
+        )}
       </main>
     </div>
   );
