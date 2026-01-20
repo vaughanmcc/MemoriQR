@@ -218,8 +218,8 @@ function AdminPartnersContent() {
                       <p className="text-sm text-stone-500">{partner.phone}</p>
                     </td>
                     <td className="px-6 py-4">
-                      <span className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${STATUS_STYLES[partner.status]}`}>
-                        {partner.status.charAt(0).toUpperCase() + partner.status.slice(1)}
+                      <span className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${STATUS_STYLES[partner.status || 'pending']}`}>
+                        {(partner.status || 'pending').charAt(0).toUpperCase() + (partner.status || 'pending').slice(1)}
                       </span>
                     </td>
                     <td className="px-6 py-4 text-sm text-stone-600">
@@ -257,8 +257,8 @@ function AdminPartnersContent() {
                   </svg>
                 </button>
               </div>
-              <span className={`inline-block mt-2 px-2 py-1 rounded-full text-xs font-medium ${STATUS_STYLES[selectedPartner.status]}`}>
-                {selectedPartner.status.charAt(0).toUpperCase() + selectedPartner.status.slice(1)}
+              <span className={`inline-block mt-2 px-2 py-1 rounded-full text-xs font-medium ${STATUS_STYLES[selectedPartner.status || 'pending']}`}>
+                {(selectedPartner.status || 'pending').charAt(0).toUpperCase() + (selectedPartner.status || 'pending').slice(1)}
               </span>
             </div>
 
