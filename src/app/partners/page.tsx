@@ -21,12 +21,12 @@ const benefits = [
   {
     icon: DollarSign,
     title: 'Earn Commission',
-    description: 'Receive 15-20% commission on every memorial activated through your referral codes or retail tags.'
+    description: 'Commission rates from 15-20% based on the volume of memorial products you sell each month.'
   },
   {
     icon: Package,
     title: 'Free Starter Kit',
-    description: 'Get 20 pre-made NFC tags, display materials, and brochures to start offering memorials immediately.'
+    description: 'Get referral cards, display materials, and brochures to start offering memorials immediately.'
   },
   {
     icon: TrendingUp,
@@ -70,7 +70,9 @@ export default function PartnersPage() {
     email: '',
     phone: '',
     businessType: '',
-    message: ''
+    message: '',
+    expectedQrSales: '',
+    expectedNfcSales: ''
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle')
@@ -99,7 +101,9 @@ export default function PartnersPage() {
           email: '',
           phone: '',
           businessType: '',
-          message: ''
+          message: '',
+          expectedQrSales: '',
+          expectedNfcSales: ''
         })
       } else {
         setSubmitStatus('error')
@@ -353,6 +357,44 @@ export default function PartnersPage() {
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                     placeholder="Tell us about your business and how you plan to offer memorial products..."
                   />
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Expected QR Plates / month
+                      <span className="text-gray-400 font-normal ml-1">(optional)</span>
+                    </label>
+                    <select
+                      value={formData.expectedQrSales}
+                      onChange={(e) => setFormData({ ...formData, expectedQrSales: e.target.value })}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    >
+                      <option value="">Select estimate</option>
+                      <option value="1-5">1-5 per month</option>
+                      <option value="6-15">6-15 per month</option>
+                      <option value="16-30">16-30 per month</option>
+                      <option value="30+">30+ per month</option>
+                    </select>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Expected NFC Tags / month
+                      <span className="text-gray-400 font-normal ml-1">(optional)</span>
+                    </label>
+                    <select
+                      value={formData.expectedNfcSales}
+                      onChange={(e) => setFormData({ ...formData, expectedNfcSales: e.target.value })}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    >
+                      <option value="">Select estimate</option>
+                      <option value="1-5">1-5 per month</option>
+                      <option value="6-15">6-15 per month</option>
+                      <option value="16-30">16-30 per month</option>
+                      <option value="30+">30+ per month</option>
+                    </select>
+                  </div>
                 </div>
 
                 {submitStatus === 'error' && (
