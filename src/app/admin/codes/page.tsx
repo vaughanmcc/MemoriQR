@@ -51,6 +51,15 @@ interface Batch {
   createdAt: string;
 }
 
+interface BatchCode {
+  activation_code: string;
+  product_type: string;
+  hosting_duration: number;
+  is_used: boolean;
+  used_at: string | null;
+  created_at: string;
+}
+
 export default function AdminCodesPage() {
   const [selectedVariant, setSelectedVariant] = useState(CARD_VARIANTS[0].code);
   const [quantity, setQuantity] = useState(10);
@@ -78,6 +87,9 @@ export default function AdminCodesPage() {
   const [selectedBatches, setSelectedBatches] = useState<Set<string>>(new Set());
   const [isDeletingBatches, setIsDeletingBatches] = useState(false);
   const [batchDeleteError, setBatchDeleteError] = useState('');
+  const [expandedBatchId, setExpandedBatchId] = useState<string | null>(null);
+  const [expandedBatchCodes, setExpandedBatchCodes] = useState<BatchCode[]>([]);
+  const [isLoadingBatchCodes, setIsLoadingBatchCodes] = useState(false);
 
   useEffect(() => {
     checkAuth();
@@ -131,6 +143,30 @@ export default function AdminCodesPage() {
       console.error('Failed to fetch batches:', err);
     } finally {
       setIsLoadingBatches(false);
+    }
+  };
+
+  const fetchBatchCodes = async (batchId: string) => {
+    if (expandedBatchId === batchId) {
+      // Collapse if already expanded
+      setExpandedBatchId(null);
+      setExpandedBatchCodes([]);
+      return;
+    }
+
+    setExpandedBatchId(batchId);
+    setIsLoadingBatchCodes(true);
+    try {
+      const res = await fetch(`/api/admin/codes/batches/${batchId}`);
+      if (res.ok) {
+        const data = await res.json();
+        setExpandedBatchCodes(data.codes || []);
+      }
+    } catch (err) {
+      console.error('Failed to fetch batch codes:', err);
+      setExpandedBatchCodes([]);
+    } finally {
+      setIsLoadingBatchCodes(false);
     }
   };
 
@@ -900,12 +936,15 @@ export default function AdminCodesPage() {
                       {batches.map((batch) => {
                         const unusedCount = batch.totalCodes - batch.usedCodes;
                         const allUsed = unusedCount === 0;
+                        const isExpanded = expandedBatchId === batch.id;
                         return (
+                          <>
                           <tr
                             key={batch.id}
-                            className={`hover:bg-stone-50 ${allUsed ? 'bg-stone-50' : ''}`}
+                            className={`hover:bg-stone-50 cursor-pointer ${allUsed ? 'bg-stone-50' : ''} ${isExpanded ? 'bg-purple-50' : ''}`}
+                            onClick={() => fetchBatchCodes(batch.id)}
                           >
-                            <td className="px-4 py-3">
+                            <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
                               <input
                                 type="checkbox"
                                 checked={selectedBatches.has(batch.id)}
@@ -915,8 +954,13 @@ export default function AdminCodesPage() {
                               />
                             </td>
                             <td className="px-4 py-3">
-                              <div className="font-medium text-stone-800">{batch.name}</div>
-                              <div className="text-xs text-stone-400 font-mono">{batch.id.slice(0, 8)}...</div>
+                              <div className="flex items-center gap-2">
+                                <span className={`transition-transform ${isExpanded ? 'rotate-90' : ''}`}>▶</span>
+                                <div>
+                                  <div className="font-medium text-stone-800">{batch.name}</div>
+                                  <div className="text-xs text-stone-400 font-mono">{batch.id.slice(0, 8)}...</div>
+                                </div>
+                              </div>
                             </td>
                             <td className="px-4 py-3 text-sm text-stone-600">
                               {batch.productType === 'nfc_only' ? 'NFC' : 
@@ -955,6 +999,55 @@ export default function AdminCodesPage() {
                               </span>
                             </td>
                           </tr>
+                          {/* Expanded codes row */}
+                          {isExpanded && (
+                            <tr key={`${batch.id}-codes`}>
+                              <td colSpan={7} className="bg-stone-50 px-6 py-4">
+                                {isLoadingBatchCodes ? (
+                                  <div className="flex items-center gap-2 text-stone-500">
+                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-purple-600"></div>
+                                    Loading codes...
+                                  </div>
+                                ) : expandedBatchCodes.length === 0 ? (
+                                  <p className="text-stone-500">No codes found in this batch</p>
+                                ) : (
+                                  <div>
+                                    <div className="flex items-center justify-between mb-3">
+                                      <span className="text-sm font-medium text-stone-700">
+                                        {expandedBatchCodes.length} codes in this batch
+                                      </span>
+                                      <button
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          const codeList = expandedBatchCodes.map(c => c.activation_code).join('\n');
+                                          navigator.clipboard.writeText(codeList);
+                                        }}
+                                        className="text-sm text-purple-600 hover:text-purple-800"
+                                      >
+                                        Copy all codes
+                                      </button>
+                                    </div>
+                                    <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2">
+                                      {expandedBatchCodes.map((code) => (
+                                        <div
+                                          key={code.activation_code}
+                                          className={`px-2 py-1 rounded text-xs font-mono ${
+                                            code.is_used 
+                                              ? 'bg-green-100 text-green-700' 
+                                              : 'bg-white border border-stone-200 text-stone-700'
+                                          }`}
+                                        >
+                                          {code.activation_code}
+                                          {code.is_used && <span className="ml-1">✓</span>}
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+                              </td>
+                            </tr>
+                          )}
+                          </>
                         );
                       })}
                     </tbody>
