@@ -13,6 +13,22 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
+  // Admin area protection (always active when ADMIN_PASSWORD is set)
+  if (process.env.ADMIN_PASSWORD && pathname.startsWith('/admin')) {
+    // Allow admin login page and API
+    if (pathname === '/admin' || pathname.startsWith('/api/admin')) {
+      return NextResponse.next()
+    }
+
+    // Check for admin session cookie
+    const adminSession = request.cookies.get('admin-session')?.value
+    if (adminSession !== process.env.ADMIN_PASSWORD) {
+      const url = request.nextUrl.clone()
+      url.pathname = '/admin'
+      return NextResponse.redirect(url)
+    }
+  }
+
   // Password protection: only in production when SITE_PASSWORD is set
   if (process.env.NODE_ENV === 'production' && process.env.SITE_PASSWORD) {
     // Allow access to:
@@ -22,6 +38,8 @@ export function middleware(request: NextRequest) {
     // - Memorial pages (live QR code destinations)
     // - QR redirect routes
     // - Password check page
+    // - Admin pages (handled above)
+    // - Partner application page
     if (
       pathname.startsWith('/api') ||
       pathname.startsWith('/_next') ||
@@ -29,7 +47,9 @@ export function middleware(request: NextRequest) {
       pathname.startsWith('/memorial/') ||
       pathname.startsWith('/qr/') ||
       pathname.startsWith('/materials') ||
-      pathname === '/password-check'
+      pathname.startsWith('/admin') ||
+      pathname === '/password-check' ||
+      pathname === '/partner/apply'
     ) {
       return NextResponse.next()
     }

@@ -4,7 +4,7 @@
  * This is the single source of truth for the Pipedream workflow code.
  * Copy this code into your Pipedream workflow's Node.js step.
  * 
- * Last updated: January 19, 2026
+ * Last updated: January 20, 2026
  * 
  * Handles the following email types:
  * - contact_form: Contact form submissions → info@memoriqr.co.nz
@@ -15,6 +15,10 @@
  * - partner_login_code: Partner portal OTP → partner email
  * - partner_code_request: Batch request notification → admin
  * - partner_codes_generated: Codes ready notification → partner email
+ * - partner_application: New partner application → admin
+ * - partner_application_received: Application confirmation → applicant
+ * - partner_approved: Approval notification → partner
+ * - partner_rejected: Rejection notification → applicant
  */
 
 export default defineComponent({
@@ -493,6 +497,180 @@ ${notes ? `<div style="background: #f9f7f4; padding: 15px; border-radius: 8px; m
 </div>
 </div>`,
         text: `Hi ${partner_name},\n\nYour batch of activation codes is ready!\n\nBatch: ${batch_number}\nCodes Generated: ${quantity}\nProduct: ${productDisplay}\nHosting: ${hosting_duration} years\n\nYOUR CODES:\n${codes_list}\n\nView all codes in the Partner Portal: ${portal_url}`
+      };
+    }
+    
+    // Partner application notification (to admin)
+    if (type === 'partner_application') {
+      const { businessName, contactName, email, phone, partnerType, website, message, partnerId, adminUrl } = body.data;
+      
+      const partnerTypeLabels = {
+        funeral_director: 'Funeral Director',
+        cemetery: 'Cemetery / Memorial Park',
+        pet_cremation: 'Pet Cremation / Veterinary',
+        retailer: 'Retail Partner',
+        other: 'Other'
+      };
+      
+      return {
+        to: body.to,
+        replyTo: email,
+        from_name: 'MemoriQR Partner Portal',
+        subject: `🆕 New Partner Application: ${businessName}`,
+        html: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+<div style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); padding: 30px; text-align: center; border-radius: 8px 8px 0 0;">
+<h1 style="color: #fff; margin: 0; font-size: 24px;">🆕 New Partner Application</h1>
+</div>
+
+<div style="padding: 30px; background: #fff; border: 1px solid #ddd; border-top: none;">
+<p style="color: #555; font-size: 16px;">A new partner application has been submitted and requires your review.</p>
+
+<table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+<tr style="background: #f9f7f4;"><td colspan="2" style="padding: 12px; font-weight: bold; border: 1px solid #ddd;">Application Details</td></tr>
+<tr><td style="padding: 10px; border: 1px solid #eee; width: 35%;">Business Name</td><td style="padding: 10px; border: 1px solid #eee; font-weight: 500;">${businessName}</td></tr>
+<tr><td style="padding: 10px; border: 1px solid #eee;">Business Type</td><td style="padding: 10px; border: 1px solid #eee;">${partnerTypeLabels[partnerType] || partnerType}</td></tr>
+<tr><td style="padding: 10px; border: 1px solid #eee;">Contact Name</td><td style="padding: 10px; border: 1px solid #eee;">${contactName}</td></tr>
+<tr><td style="padding: 10px; border: 1px solid #eee;">Email</td><td style="padding: 10px; border: 1px solid #eee;"><a href="mailto:${email}">${email}</a></td></tr>
+<tr><td style="padding: 10px; border: 1px solid #eee;">Phone</td><td style="padding: 10px; border: 1px solid #eee;">${phone}</td></tr>
+${website ? `<tr><td style="padding: 10px; border: 1px solid #eee;">Website</td><td style="padding: 10px; border: 1px solid #eee;"><a href="${website}" target="_blank">${website}</a></td></tr>` : ''}
+</table>
+
+${message ? `<div style="background: #f9f7f4; padding: 15px; border-radius: 8px; margin: 20px 0;">
+<p style="font-weight: bold; margin: 0 0 10px; color: #333;">Message from Applicant:</p>
+<p style="color: #555; margin: 0; line-height: 1.6;">${message}</p>
+</div>` : ''}
+
+<div style="text-align: center; margin: 30px 0;">
+<a href="${adminUrl}" style="display: inline-block; background: linear-gradient(135deg, #374151 0%, #1f2937 100%); color: #fff; text-decoration: none; padding: 15px 40px; border-radius: 8px; font-size: 16px;">Review in Admin Dashboard</a>
+</div>
+</div>
+
+<div style="background: #f5f5f0; padding: 20px; text-align: center; border-radius: 0 0 8px 8px;">
+<p style="color: #888; font-size: 12px; margin: 0;">MemoriQR Admin Notification</p>
+</div>
+</div>`,
+        text: `New Partner Application\n\nBusiness: ${businessName}\nType: ${partnerTypeLabels[partnerType] || partnerType}\nContact: ${contactName}\nEmail: ${email}\nPhone: ${phone}\n${website ? `Website: ${website}\n` : ''}${message ? `\nMessage: ${message}\n` : ''}\nReview at: ${adminUrl}`
+      };
+    }
+    
+    // Partner application received (confirmation to applicant)
+    if (type === 'partner_application_received') {
+      const { businessName, contactName } = body.data;
+      
+      return {
+        to: body.to,
+        replyTo: 'partners@memoriqr.co.nz',
+        from_name: 'MemoriQR',
+        subject: `Application Received - Welcome to MemoriQR`,
+        html: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+<div style="background: linear-gradient(135deg, #4BA4A4 0%, #3d8a8a 100%); padding: 30px; text-align: center; border-radius: 8px 8px 0 0;">
+<h1 style="color: #fff; margin: 0; font-size: 24px;">Application Received! ✓</h1>
+</div>
+
+<div style="padding: 30px; background: #fff; border: 1px solid #ddd; border-top: none;">
+<p style="color: #333; font-size: 16px;">Hi ${contactName},</p>
+
+<p style="color: #555; line-height: 1.6;">Thank you for your interest in becoming a MemoriQR partner! We've received your application for <strong>${businessName}</strong>.</p>
+
+<div style="background: #e8f5e9; border-left: 4px solid #4caf50; padding: 15px; margin: 20px 0;">
+<p style="margin: 0; color: #2e7d32;"><strong>What happens next?</strong></p>
+<p style="margin: 10px 0 0; color: #555;">Our team will review your application within 1-2 business days. You'll receive an email once a decision has been made.</p>
+</div>
+
+<p style="color: #555; line-height: 1.6;">In the meantime, if you have any questions about our partner program, feel free to reply to this email.</p>
+
+<p style="color: #555; line-height: 1.6;">We look forward to potentially working with you!</p>
+
+<p style="color: #555; margin-top: 30px;">Warm regards,<br><strong>The MemoriQR Team</strong></p>
+</div>
+
+<div style="background: #f5f5f0; padding: 20px; text-align: center; border-radius: 0 0 8px 8px;">
+<p style="color: #888; font-size: 12px; margin: 0;">MemoriQR Partner Program</p>
+</div>
+</div>`,
+        text: `Hi ${contactName},\n\nThank you for your interest in becoming a MemoriQR partner! We've received your application for ${businessName}.\n\nWhat happens next?\nOur team will review your application within 1-2 business days. You'll receive an email once a decision has been made.\n\nIn the meantime, if you have any questions about our partner program, feel free to reply to this email.\n\nWe look forward to potentially working with you!\n\nWarm regards,\nThe MemoriQR Team`
+      };
+    }
+    
+    // Partner approved notification
+    if (type === 'partner_approved') {
+      const { businessName, contactName, loginUrl } = body.data;
+      
+      return {
+        to: body.to,
+        replyTo: 'partners@memoriqr.co.nz',
+        from_name: 'MemoriQR',
+        subject: `🎉 Welcome to MemoriQR Partners!`,
+        html: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+<div style="background: linear-gradient(135deg, #2d5a27 0%, #3d7a35 100%); padding: 30px; text-align: center; border-radius: 8px 8px 0 0;">
+<h1 style="color: #fff; margin: 0; font-size: 24px;">🎉 You're Approved!</h1>
+</div>
+
+<div style="padding: 30px; background: #fff; border: 1px solid #ddd; border-top: none;">
+<p style="color: #333; font-size: 16px;">Hi ${contactName},</p>
+
+<p style="color: #555; line-height: 1.6;">Great news! Your partner application for <strong>${businessName}</strong> has been approved. Welcome to the MemoriQR partner family!</p>
+
+<div style="background: #e8f5e9; border-radius: 8px; padding: 20px; margin: 20px 0; text-align: center;">
+<p style="font-size: 18px; font-weight: bold; color: #2d5a27; margin: 0 0 10px;">Your Partner Portal is Ready</p>
+<p style="color: #555; margin: 0 0 20px;">Log in to access your dashboard, request activation codes, and track commissions.</p>
+<a href="${loginUrl}" style="display: inline-block; background: linear-gradient(135deg, #2d5a27 0%, #3d7a35 100%); color: #fff; text-decoration: none; padding: 15px 40px; border-radius: 8px; font-size: 16px;">Access Partner Portal</a>
+</div>
+
+<p style="font-weight: bold; color: #333; margin-top: 25px;">What you can do:</p>
+<ul style="color: #555; line-height: 1.8;">
+<li>View your dashboard with activation statistics</li>
+<li>Request batches of activation codes at wholesale prices</li>
+<li>Track commissions on customer activations</li>
+<li>Download marketing materials for your business</li>
+</ul>
+
+<p style="color: #555; line-height: 1.6; margin-top: 25px;">If you have any questions about getting started, just reply to this email and we'll be happy to help.</p>
+
+<p style="color: #555; margin-top: 30px;">Welcome aboard!<br><strong>The MemoriQR Team</strong></p>
+</div>
+
+<div style="background: #f5f5f0; padding: 20px; text-align: center; border-radius: 0 0 8px 8px;">
+<p style="color: #888; font-size: 12px; margin: 0;">MemoriQR Partner Program</p>
+</div>
+</div>`,
+        text: `Hi ${contactName},\n\nGreat news! Your partner application for ${businessName} has been approved. Welcome to the MemoriQR partner family!\n\nYour Partner Portal is Ready:\n${loginUrl}\n\nWhat you can do:\n- View your dashboard with activation statistics\n- Request batches of activation codes at wholesale prices\n- Track commissions on customer activations\n- Download marketing materials for your business\n\nIf you have any questions about getting started, just reply to this email and we'll be happy to help.\n\nWelcome aboard!\nThe MemoriQR Team`
+      };
+    }
+    
+    // Partner rejected notification
+    if (type === 'partner_rejected') {
+      const { businessName, contactName } = body.data;
+      
+      return {
+        to: body.to,
+        replyTo: 'partners@memoriqr.co.nz',
+        from_name: 'MemoriQR',
+        subject: `Update on Your MemoriQR Partner Application`,
+        html: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+<div style="background: linear-gradient(135deg, #4BA4A4 0%, #3d8a8a 100%); padding: 30px; text-align: center; border-radius: 8px 8px 0 0;">
+<h1 style="color: #fff; margin: 0; font-size: 24px;">Application Update</h1>
+</div>
+
+<div style="padding: 30px; background: #fff; border: 1px solid #ddd; border-top: none;">
+<p style="color: #333; font-size: 16px;">Hi ${contactName},</p>
+
+<p style="color: #555; line-height: 1.6;">Thank you for your interest in becoming a MemoriQR partner. After reviewing your application for <strong>${businessName}</strong>, we've decided not to proceed at this time.</p>
+
+<p style="color: #555; line-height: 1.6;">This decision may be based on factors such as market coverage, business alignment, or current partner capacity in your area.</p>
+
+<p style="color: #555; line-height: 1.6;">We appreciate you taking the time to apply, and we encourage you to reapply in the future if your circumstances change.</p>
+
+<p style="color: #555; line-height: 1.6;">If you have any questions, please don't hesitate to reach out.</p>
+
+<p style="color: #555; margin-top: 30px;">Best regards,<br><strong>The MemoriQR Team</strong></p>
+</div>
+
+<div style="background: #f5f5f0; padding: 20px; text-align: center; border-radius: 0 0 8px 8px;">
+<p style="color: #888; font-size: 12px; margin: 0;">MemoriQR Partner Program</p>
+</div>
+</div>`,
+        text: `Hi ${contactName},\n\nThank you for your interest in becoming a MemoriQR partner. After reviewing your application for ${businessName}, we've decided not to proceed at this time.\n\nThis decision may be based on factors such as market coverage, business alignment, or current partner capacity in your area.\n\nWe appreciate you taking the time to apply, and we encourage you to reapply in the future if your circumstances change.\n\nIf you have any questions, please don't hesitate to reach out.\n\nBest regards,\nThe MemoriQR Team`
       };
     }
     
