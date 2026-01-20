@@ -2,6 +2,8 @@
 
 import Link from 'next/link'
 import { useState } from 'react'
+import { Header } from '@/components/layout/Header'
+import { Footer } from '@/components/layout/Footer'
 import { 
   Handshake, 
   DollarSign, 
@@ -116,7 +118,9 @@ export default function PartnersPage() {
   }
 
   return (
-    <main className="min-h-screen">
+    <>
+      <Header />
+      <main className="min-h-screen">
       {/* Hero Section */}
       <section className="bg-gradient-to-br from-primary-600 to-primary-800 text-white py-16 md:py-24">
         <div className="container-wide">
@@ -446,5 +450,7 @@ export default function PartnersPage() {
         </div>
       </section>
     </main>
+    <Footer />
+    </>
   )
 }
