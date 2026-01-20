@@ -29,6 +29,11 @@ interface CheckoutRequest {
   fullName: string
   phone?: string
   shippingAddress: ShippingAddress
+  
+  // Referral code support
+  referralCode?: string
+  discountPercent?: number
+  freeShipping?: boolean
 }
 
 export async function POST(request: NextRequest) {
@@ -45,6 +50,7 @@ export async function POST(request: NextRequest) {
       fullName,
       phone,
       shippingAddress,
+      referralCode,
     } = body
 
     // Validate required fields
@@ -65,6 +71,35 @@ export async function POST(request: NextRequest) {
     }
 
     const supabase = createAdminClient()
+
+    // Validate referral code and calculate discount
+    let validatedReferralCode: string | null = null
+    let referralDiscount = 0
+    let referralCommissionPercent = 0
+    let applyFreeShipping = false
+    let referralCodeId: string | null = null
+
+    if (referralCode) {
+      const { data: refCode } = await supabase
+        .from('referral_codes')
+        .select('id, discount_percent, commission_percent, free_shipping, is_used, expires_at')
+        .eq('code', referralCode.toUpperCase())
+        .single()
+
+      if (refCode && !refCode.is_used) {
+        const isExpired = refCode.expires_at && new Date(refCode.expires_at) < new Date()
+        if (!isExpired) {
+          // Valid referral code
+          validatedReferralCode = referralCode.toUpperCase()
+          referralCodeId = refCode.id
+          referralDiscount = Math.round(price * (refCode.discount_percent / 100))
+          referralCommissionPercent = refCode.commission_percent
+          applyFreeShipping = refCode.free_shipping
+        }
+      }
+    }
+
+    const finalPrice = price - referralDiscount
 
     // Create or get customer
     let customerId: string
@@ -151,8 +186,10 @@ export async function POST(request: NextRequest) {
       order_type: 'online',
       product_type: productType,
       hosting_duration: hostingDuration,
-      total_amount: price,
+      total_amount: finalPrice,
       order_status: 'pending',
+      referral_code: validatedReferralCode,
+      referral_discount: referralDiscount,
     }
     
     const { error: orderError } = await supabase
@@ -226,6 +263,55 @@ export async function POST(request: NextRequest) {
     // Trim any whitespace/newlines from env vars
     const baseUrl = rawBaseUrl.trim()
 
+    // Build shipping options based on referral benefits
+    const shippingOptions = applyFreeShipping
+      ? [
+          {
+            shipping_rate_data: {
+              type: 'fixed_amount' as const,
+              fixed_amount: {
+                amount: 0,
+                currency: CURRENCY,
+              },
+              display_name: 'Free Shipping (Partner Benefit)',
+              delivery_estimate: {
+                minimum: { unit: 'business_day' as const, value: productType === 'nfc_only' ? 2 : 7 },
+                maximum: { unit: 'business_day' as const, value: productType === 'nfc_only' ? 5 : 14 },
+              },
+            },
+          },
+        ]
+      : [
+          {
+            shipping_rate_data: {
+              type: 'fixed_amount' as const,
+              fixed_amount: {
+                amount: SHIPPING_RATES.NZ,
+                currency: CURRENCY,
+              },
+              display_name: 'Standard Shipping (NZ)',
+              delivery_estimate: {
+                minimum: { unit: 'business_day' as const, value: productType === 'nfc_only' ? 2 : 7 },
+                maximum: { unit: 'business_day' as const, value: productType === 'nfc_only' ? 3 : 10 },
+              },
+            },
+          },
+          {
+            shipping_rate_data: {
+              type: 'fixed_amount' as const,
+              fixed_amount: {
+                amount: SHIPPING_RATES.AU,
+                currency: CURRENCY,
+              },
+              display_name: 'International Shipping (AU)',
+              delivery_estimate: {
+                minimum: { unit: 'business_day' as const, value: productType === 'nfc_only' ? 5 : 10 },
+                maximum: { unit: 'business_day' as const, value: productType === 'nfc_only' ? 7 : 14 },
+              },
+            },
+          },
+        ]
+
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       mode: 'payment',
@@ -236,9 +322,11 @@ export async function POST(request: NextRequest) {
             currency: CURRENCY,
             product_data: {
               name: `MemoriQR ${hostingDuration}-Year Memorial`,
-              description: `${productLabels[productType]} for ${deceasedName}`,
+              description: validatedReferralCode 
+                ? `${productLabels[productType]} for ${deceasedName} (Partner Discount Applied)`
+                : `${productLabels[productType]} for ${deceasedName}`,
             },
-            unit_amount: getPriceInCents(price),
+            unit_amount: getPriceInCents(finalPrice),
           },
           quantity: 1,
         },
@@ -246,40 +334,15 @@ export async function POST(request: NextRequest) {
       shipping_address_collection: {
         allowed_countries: ['NZ', 'AU'],
       },
-      shipping_options: [
-        {
-          shipping_rate_data: {
-            type: 'fixed_amount',
-            fixed_amount: {
-              amount: SHIPPING_RATES.NZ,
-              currency: CURRENCY,
-            },
-            display_name: 'Standard Shipping (NZ)',
-            delivery_estimate: {
-              minimum: { unit: 'business_day', value: productType === 'nfc_only' ? 2 : 7 },
-              maximum: { unit: 'business_day', value: productType === 'nfc_only' ? 3 : 10 },
-            },
-          },
-        },
-        {
-          shipping_rate_data: {
-            type: 'fixed_amount',
-            fixed_amount: {
-              amount: SHIPPING_RATES.AU,
-              currency: CURRENCY,
-            },
-            display_name: 'International Shipping (AU)',
-            delivery_estimate: {
-              minimum: { unit: 'business_day', value: productType === 'nfc_only' ? 5 : 10 },
-              maximum: { unit: 'business_day', value: productType === 'nfc_only' ? 7 : 14 },
-            },
-          },
-        },
-      ],
+      shipping_options: shippingOptions,
       metadata: {
         order_number: orderNumber,
         memorial_id: memorial.id,
         customer_id: customerId,
+        referral_code: validatedReferralCode || '',
+        referral_code_id: referralCodeId || '',
+        referral_discount: referralDiscount.toString(),
+        referral_commission_percent: referralCommissionPercent.toString(),
       },
       success_url: `${baseUrl}/order/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${baseUrl}/order?cancelled=true`,

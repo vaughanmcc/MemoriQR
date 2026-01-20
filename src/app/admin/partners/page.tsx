@@ -52,6 +52,22 @@ function AdminPartnersContent() {
   const [error, setError] = useState('');
   const [selectedPartner, setSelectedPartner] = useState<Partner | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [createLoading, setCreateLoading] = useState(false);
+  const [createError, setCreateError] = useState('');
+  const [createForm, setCreateForm] = useState({
+    businessName: '',
+    contactName: '',
+    email: '',
+    phone: '',
+    partnerType: 'funeral_director',
+    website: '',
+    commissionRate: 15,
+    status: 'active' as 'active' | 'pending' | 'suspended' | 'rejected',
+    defaultDiscountPercent: 10,
+    defaultCommissionPercent: 15,
+    defaultFreeShipping: false,
+  });
   const router = useRouter();
   const searchParams = useSearchParams();
   const statusFilter = searchParams.get('status') || 'all';
@@ -111,6 +127,57 @@ function AdminPartnersContent() {
     router.push('/admin');
   };
 
+  const handleCreatePartner = async () => {
+    setCreateLoading(true);
+    setCreateError('');
+
+    try {
+      const res = await fetch('/api/admin/partners', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          businessName: createForm.businessName,
+          contactName: createForm.contactName,
+          email: createForm.email,
+          phone: createForm.phone,
+          partnerType: createForm.partnerType,
+          website: createForm.website || null,
+          commissionRate: createForm.commissionRate,
+          status: createForm.status,
+          defaultDiscountPercent: createForm.defaultDiscountPercent,
+          defaultCommissionPercent: createForm.defaultCommissionPercent,
+          defaultFreeShipping: createForm.defaultFreeShipping,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to create partner');
+      }
+
+      setShowCreateModal(false);
+      setCreateForm({
+        businessName: '',
+        contactName: '',
+        email: '',
+        phone: '',
+        partnerType: 'funeral_director',
+        website: '',
+        commissionRate: 15,
+        status: 'active',
+        defaultDiscountPercent: 10,
+        defaultCommissionPercent: 15,
+        defaultFreeShipping: false,
+      });
+      await fetchPartners();
+    } catch (err) {
+      setCreateError(err instanceof Error ? err.message : 'Failed to create partner');
+    } finally {
+      setCreateLoading(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-stone-100 flex items-center justify-center">
@@ -151,6 +218,12 @@ function AdminPartnersContent() {
       <main className="max-w-7xl mx-auto px-4 py-8">
         <div className="flex items-center justify-between mb-8">
           <h2 className="text-2xl font-bold text-stone-800">Partner Management</h2>
+          <button
+            onClick={() => setShowCreateModal(true)}
+            className="bg-stone-800 text-white px-4 py-2 rounded-lg hover:bg-stone-700"
+          >
+            Add Partner
+          </button>
         </div>
 
         {error && (
@@ -349,6 +422,169 @@ function AdminPartnersContent() {
                 className="bg-stone-200 text-stone-700 px-4 py-2 rounded-lg hover:bg-stone-300"
               >
                 Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showCreateModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl shadow-xl max-w-xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b flex items-center justify-between">
+              <h3 className="text-xl font-bold text-stone-800">Create Partner</h3>
+              <button
+                onClick={() => setShowCreateModal(false)}
+                className="text-stone-400 hover:text-stone-600"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4">
+              {createError && (
+                <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+                  {createError}
+                </div>
+              )}
+
+              <div>
+                <label className="text-sm text-stone-500">Business Name *</label>
+                <input
+                  className="mt-1 w-full border border-stone-300 rounded-lg px-3 py-2"
+                  value={createForm.businessName}
+                  onChange={(e) => setCreateForm({ ...createForm, businessName: e.target.value })}
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm text-stone-500">Contact Name *</label>
+                  <input
+                    className="mt-1 w-full border border-stone-300 rounded-lg px-3 py-2"
+                    value={createForm.contactName}
+                    onChange={(e) => setCreateForm({ ...createForm, contactName: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label className="text-sm text-stone-500">Email *</label>
+                  <input
+                    type="email"
+                    className="mt-1 w-full border border-stone-300 rounded-lg px-3 py-2"
+                    value={createForm.email}
+                    onChange={(e) => setCreateForm({ ...createForm, email: e.target.value })}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm text-stone-500">Phone *</label>
+                  <input
+                    className="mt-1 w-full border border-stone-300 rounded-lg px-3 py-2"
+                    value={createForm.phone}
+                    onChange={(e) => setCreateForm({ ...createForm, phone: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label className="text-sm text-stone-500">Partner Type *</label>
+                  <select
+                    className="mt-1 w-full border border-stone-300 rounded-lg px-3 py-2"
+                    value={createForm.partnerType}
+                    onChange={(e) => setCreateForm({ ...createForm, partnerType: e.target.value })}
+                  >
+                    {Object.entries(PARTNER_TYPE_LABELS).map(([value, label]) => (
+                      <option key={value} value={value}>{label}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="text-sm text-stone-500">Website</label>
+                <input
+                  className="mt-1 w-full border border-stone-300 rounded-lg px-3 py-2"
+                  value={createForm.website}
+                  onChange={(e) => setCreateForm({ ...createForm, website: e.target.value })}
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label className="text-sm text-stone-500">Commission Rate %</label>
+                  <input
+                    type="number"
+                    min={0}
+                    max={100}
+                    className="mt-1 w-full border border-stone-300 rounded-lg px-3 py-2"
+                    value={createForm.commissionRate}
+                    onChange={(e) => setCreateForm({ ...createForm, commissionRate: Number(e.target.value) })}
+                  />
+                </div>
+                <div>
+                  <label className="text-sm text-stone-500">Status</label>
+                  <select
+                    className="mt-1 w-full border border-stone-300 rounded-lg px-3 py-2"
+                    value={createForm.status}
+                    onChange={(e) => setCreateForm({ ...createForm, status: e.target.value as 'active' | 'pending' | 'suspended' | 'rejected' })}
+                  >
+                    <option value="active">Active</option>
+                    <option value="pending">Pending</option>
+                    <option value="suspended">Suspended</option>
+                    <option value="rejected">Rejected</option>
+                  </select>
+                </div>
+                <div className="flex items-center gap-2 mt-6">
+                  <input
+                    type="checkbox"
+                    checked={createForm.defaultFreeShipping}
+                    onChange={(e) => setCreateForm({ ...createForm, defaultFreeShipping: e.target.checked })}
+                  />
+                  <span className="text-sm text-stone-600">Free Shipping</span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm text-stone-500">Default Discount %</label>
+                  <input
+                    type="number"
+                    min={0}
+                    max={100}
+                    className="mt-1 w-full border border-stone-300 rounded-lg px-3 py-2"
+                    value={createForm.defaultDiscountPercent}
+                    onChange={(e) => setCreateForm({ ...createForm, defaultDiscountPercent: Number(e.target.value) })}
+                  />
+                </div>
+                <div>
+                  <label className="text-sm text-stone-500">Default Commission %</label>
+                  <input
+                    type="number"
+                    min={0}
+                    max={100}
+                    className="mt-1 w-full border border-stone-300 rounded-lg px-3 py-2"
+                    value={createForm.defaultCommissionPercent}
+                    onChange={(e) => setCreateForm({ ...createForm, defaultCommissionPercent: Number(e.target.value) })}
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="p-6 border-t bg-stone-50 flex justify-end gap-3">
+              <button
+                onClick={() => setShowCreateModal(false)}
+                className="bg-stone-200 text-stone-700 px-4 py-2 rounded-lg hover:bg-stone-300"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleCreatePartner}
+                disabled={createLoading}
+                className="bg-stone-800 text-white px-4 py-2 rounded-lg hover:bg-stone-700 disabled:opacity-50"
+              >
+                {createLoading ? 'Creating...' : 'Create Partner'}
               </button>
             </div>
           </div>

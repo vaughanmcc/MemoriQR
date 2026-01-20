@@ -60,6 +60,78 @@ export async function POST(request: NextRequest) {
         console.error('Failed to update order:', orderError)
       }
 
+      // Handle referral commission if this order used a referral code
+      const referralCodeId = session.metadata?.referral_code_id
+      const referralCode = session.metadata?.referral_code
+      const referralDiscount = parseFloat(session.metadata?.referral_discount || '0')
+      const referralCommissionPercent = parseFloat(session.metadata?.referral_commission_percent || '0')
+
+      if (referralCodeId && referralCode) {
+        // Get the referral code details to find the partner
+        const { data: refCodeData } = await supabase
+          .from('referral_codes')
+          .select('partner_id')
+          .eq('id', referralCodeId)
+          .single()
+
+        if (refCodeData) {
+          // Get the order ID for the commission record
+          const { data: orderData } = await supabase
+            .from('orders')
+            .select('id')
+            .eq('order_number', orderNumber)
+            .single()
+
+          if (orderData) {
+            const orderTotal = session.amount_total ? session.amount_total / 100 : 0
+            const commissionAmount = Math.round((orderTotal + referralDiscount) * (referralCommissionPercent / 100) * 100) / 100
+
+            // Create commission record (includes both old activation-style and new referral-style fields)
+            const { data: commission, error: commissionError } = await supabase
+              .from('partner_commissions')
+              .insert({
+                partner_id: refCodeData.partner_id,
+                // New referral-based fields
+                order_id: orderData.id,
+                referral_code_id: referralCodeId,
+                order_total: orderTotal + referralDiscount, // Original price before discount
+                discount_amount: referralDiscount,
+                commission_percent: referralCommissionPercent,
+                // Old activation-based fields (for backward compatibility)
+                order_value: orderTotal + referralDiscount,
+                commission_rate: referralCommissionPercent,
+                // Common fields
+                commission_amount: commissionAmount,
+                status: 'pending',
+              })
+              .select('id')
+              .single()
+
+            if (commissionError) {
+              console.error('Failed to create commission record:', commissionError)
+            } else if (commission) {
+              // Update order with commission ID
+              await supabase
+                .from('orders')
+                .update({ partner_commission_id: commission.id })
+                .eq('id', orderData.id)
+
+              // Mark referral code as used
+              await supabase
+                .from('referral_codes')
+                .update({
+                  is_used: true,
+                  used_at: new Date().toISOString(),
+                  order_id: orderData.id,
+                })
+                .eq('id', referralCodeId)
+
+              console.log(`Commission of $${commissionAmount} recorded for partner ${refCodeData.partner_id}`)
+            }
+          }
+        }
+      }
+
       // Update customer shipping address if provided
       if (session.shipping_details?.address && customerId) {
         await supabase

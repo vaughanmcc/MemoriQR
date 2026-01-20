@@ -13,7 +13,8 @@ import {
   Package,
   CheckCircle,
   Clock,
-  ChevronRight
+  ChevronRight,
+  Tag
 } from 'lucide-react'
 
 interface DashboardData {
@@ -170,7 +171,7 @@ export default function PartnerDashboardPage() {
         </div>
 
         {/* Quick Actions */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <Link
             href="/partner/codes"
             className="bg-white rounded-xl shadow-sm p-6 hover:shadow-md transition-shadow flex items-center justify-between"
@@ -181,7 +182,23 @@ export default function PartnerDashboardPage() {
               </div>
               <div>
                 <h3 className="font-medium text-gray-900">Activation Codes</h3>
-                <p className="text-sm text-gray-500">View & request codes</p>
+                <p className="text-sm text-gray-500">Pre-paid codes</p>
+              </div>
+            </div>
+            <ChevronRight className="h-5 w-5 text-gray-400" />
+          </Link>
+
+          <Link
+            href="/partner/referrals"
+            className="bg-white rounded-xl shadow-sm p-6 hover:shadow-md transition-shadow flex items-center justify-between"
+          >
+            <div className="flex items-center gap-4">
+              <div className="bg-purple-100 rounded-lg p-3">
+                <Tag className="h-6 w-6 text-purple-600" />
+              </div>
+              <div>
+                <h3 className="font-medium text-gray-900">Lead Gen Cards</h3>
+                <p className="text-sm text-gray-500">Referral codes</p>
               </div>
             </div>
             <ChevronRight className="h-5 w-5 text-gray-400" />
@@ -197,7 +214,7 @@ export default function PartnerDashboardPage() {
               </div>
               <div>
                 <h3 className="font-medium text-gray-900">Commissions</h3>
-                <p className="text-sm text-gray-500">View earnings & payouts</p>
+                <p className="text-sm text-gray-500">Earnings & payouts</p>
               </div>
             </div>
             <ChevronRight className="h-5 w-5 text-gray-400" />
@@ -212,8 +229,8 @@ export default function PartnerDashboardPage() {
                 <Download className="h-6 w-6 text-blue-600" />
               </div>
               <div>
-                <h3 className="font-medium text-gray-900">Marketing Materials</h3>
-                <p className="text-sm text-gray-500">Download brochures & assets</p>
+                <h3 className="font-medium text-gray-900">Materials</h3>
+                <p className="text-sm text-gray-500">Download assets</p>
               </div>
             </div>
             <ChevronRight className="h-5 w-5 text-gray-400" />

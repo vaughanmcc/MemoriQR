@@ -76,7 +76,10 @@ export default function AdminDashboardPage() {
                 Dashboard
               </Link>
               <Link href="/admin/codes" className="text-white/70 hover:text-white px-3 py-1 rounded hover:bg-white/10">
-                Generate Codes
+                Activation Codes
+              </Link>
+              <Link href="/admin/referrals" className="text-white/70 hover:text-white px-3 py-1 rounded hover:bg-white/10">
+                Referral Codes
               </Link>
               <Link href="/admin/partners" className="text-white/70 hover:text-white px-3 py-1 rounded hover:bg-white/10">
                 Partners
