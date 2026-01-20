@@ -2,6 +2,14 @@ import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { createAdminClient } from '@/lib/supabase/server'
 
+// Check admin authentication
+async function checkAdminAuth(): Promise<boolean> {
+  const cookieStore = await cookies()
+  const session = cookieStore.get('admin-session')?.value
+  const correctPassword = process.env.ADMIN_PASSWORD
+  return !!correctPassword && session === correctPassword
+}
+
 // Card variant configuration
 const CARD_VARIANTS: Record<string, { duration: 5 | 10 | 25; product: 'nfc_only' | 'qr_only' | 'both'; price: number }> = {
   '5N':  { duration: 5,  product: 'nfc_only', price: 89 },
@@ -33,10 +41,7 @@ function generateActivationCode(variant: string): string {
 export async function POST(request: NextRequest) {
   try {
     // Check admin session
-    const cookieStore = await cookies()
-    const adminSession = cookieStore.get('admin_session')
-    
-    if (!adminSession || adminSession.value !== process.env.ADMIN_SESSION_TOKEN) {
+    if (!await checkAdminAuth()) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
