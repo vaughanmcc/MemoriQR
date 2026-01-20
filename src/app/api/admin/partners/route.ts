@@ -29,7 +29,12 @@ export async function GET(request: Request) {
       .order('created_at', { ascending: false });
 
     if (status && status !== 'all') {
-      query = query.eq('status', status);
+      // Treat null status as 'pending' when filtering
+      if (status === 'pending') {
+        query = query.or('status.eq.pending,status.is.null');
+      } else {
+        query = query.eq('status', status);
+      }
     }
 
     const { data: partners, error } = await query;
