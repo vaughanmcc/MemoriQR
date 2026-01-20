@@ -1304,6 +1304,19 @@ Start small (50-100 orders Year 1), validate product-market fit, then scale mark
 
 ## Session Progress Log (Auto-saved)
 
+### January 20, 2026 - Latest Session
+
+**Completed:**
+- ✅ Admin code generator page with tabs (Generate / Manage / Batches)
+- ✅ Admin code management (search, filters, bulk delete unused)
+- ✅ Batch tracking for admin-generated codes (migration 009)
+- ✅ Generate API now stores batch ID + batch name
+- ✅ Batches API endpoints (list + delete unused in batch)
+- ✅ Batches tab UI with expand-to-view codes and copy-all
+
+**Pending:**
+- [ ] Apply migration 009 to Supabase (generation_batch_id + generation_batch_name)
+
 ### January 18, 2026 - Latest Session
 
 **Completed:**
