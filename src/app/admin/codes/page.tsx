@@ -41,6 +41,16 @@ interface ExistingCode {
   partner_id: string | null;
 }
 
+interface Batch {
+  id: string;
+  name: string;
+  productType: string;
+  hostingDuration: number;
+  totalCodes: number;
+  usedCodes: number;
+  createdAt: string;
+}
+
 export default function AdminCodesPage() {
   const [selectedVariant, setSelectedVariant] = useState(CARD_VARIANTS[0].code);
   const [quantity, setQuantity] = useState(10);
@@ -52,7 +62,7 @@ export default function AdminCodesPage() {
   const router = useRouter();
 
   // Code management state
-  const [activeTab, setActiveTab] = useState<'generate' | 'manage'>('generate');
+  const [activeTab, setActiveTab] = useState<'generate' | 'manage' | 'batches'>('generate');
   const [existingCodes, setExistingCodes] = useState<ExistingCode[]>([]);
   const [totalCodes, setTotalCodes] = useState(0);
   const [isLoadingCodes, setIsLoadingCodes] = useState(false);
@@ -62,6 +72,13 @@ export default function AdminCodesPage() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState('');
 
+  // Batch management state
+  const [batches, setBatches] = useState<Batch[]>([]);
+  const [isLoadingBatches, setIsLoadingBatches] = useState(false);
+  const [selectedBatches, setSelectedBatches] = useState<Set<string>>(new Set());
+  const [isDeletingBatches, setIsDeletingBatches] = useState(false);
+  const [batchDeleteError, setBatchDeleteError] = useState('');
+
   useEffect(() => {
     checkAuth();
   }, []);
@@ -69,6 +86,8 @@ export default function AdminCodesPage() {
   useEffect(() => {
     if (activeTab === 'manage') {
       fetchExistingCodes();
+    } else if (activeTab === 'batches') {
+      fetchBatches();
     }
   }, [activeTab, statusFilter]);
 
@@ -97,6 +116,86 @@ export default function AdminCodesPage() {
       console.error('Failed to fetch codes:', err);
     } finally {
       setIsLoadingCodes(false);
+    }
+  };
+
+  const fetchBatches = async () => {
+    setIsLoadingBatches(true);
+    try {
+      const res = await fetch('/api/admin/codes/batches');
+      if (res.ok) {
+        const data = await res.json();
+        setBatches(data.batches || []);
+      }
+    } catch (err) {
+      console.error('Failed to fetch batches:', err);
+    } finally {
+      setIsLoadingBatches(false);
+    }
+  };
+
+  const toggleBatchSelection = (batchId: string) => {
+    const newSelected = new Set(selectedBatches);
+    if (newSelected.has(batchId)) {
+      newSelected.delete(batchId);
+    } else {
+      newSelected.add(batchId);
+    }
+    setSelectedBatches(newSelected);
+  };
+
+  const clearBatchSelection = () => {
+    setSelectedBatches(new Set());
+  };
+
+  const handleDeleteSelectedBatches = async () => {
+    if (selectedBatches.size === 0) return;
+    
+    const batchesToDelete = batches.filter(b => selectedBatches.has(b.id));
+    const totalCodesToDelete = batchesToDelete.reduce((sum, b) => sum + (b.totalCodes - b.usedCodes), 0);
+    const usedCodesProtected = batchesToDelete.reduce((sum, b) => sum + b.usedCodes, 0);
+    
+    let message = `Are you sure you want to delete ${totalCodesToDelete} unused code(s) from ${selectedBatches.size} batch(es)?`;
+    if (usedCodesProtected > 0) {
+      message += ` ${usedCodesProtected} used code(s) will be preserved.`;
+    }
+    
+    const confirmed = confirm(message);
+    if (!confirmed) return;
+
+    setIsDeletingBatches(true);
+    setBatchDeleteError('');
+
+    try {
+      let deleted = 0;
+      let preserved = 0;
+      
+      const batchIds = Array.from(selectedBatches);
+      for (const batchId of batchIds) {
+        const res = await fetch('/api/admin/codes/batches', {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ batchId })
+        });
+
+        const data = await res.json();
+        if (res.ok) {
+          deleted += data.deleted || 0;
+          preserved += data.preserved || 0;
+        }
+      }
+
+      // Refresh the list
+      setSelectedBatches(new Set());
+      fetchBatches();
+      
+      if (preserved > 0) {
+        alert(`Deleted ${deleted} unused codes. ${preserved} used codes were preserved.`);
+      }
+    } catch (err) {
+      setBatchDeleteError('Failed to delete batches');
+    } finally {
+      setIsDeletingBatches(false);
     }
   };
 
@@ -308,6 +407,16 @@ export default function AdminCodesPage() {
             }`}
           >
             Manage Codes
+          </button>
+          <button
+            onClick={() => setActiveTab('batches')}
+            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+              activeTab === 'batches'
+                ? 'bg-purple-600 text-white'
+                : 'bg-white text-stone-600 hover:bg-stone-100'
+            }`}
+          >
+            Batches
           </button>
         </div>
 
@@ -690,6 +799,179 @@ export default function AdminCodesPage() {
                   </table>
                 </div>
               )}
+            </div>
+          </>
+        )}
+
+        {/* ============================================= */}
+        {/* BATCHES TAB */}
+        {/* ============================================= */}
+        {activeTab === 'batches' && (
+          <>
+            <div className="bg-white rounded-xl shadow p-6 mb-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="font-semibold text-stone-800">Generated Batches</h3>
+                  <p className="text-sm text-stone-500 mt-1">
+                    View and manage batches of activation codes generated together
+                  </p>
+                </div>
+                <button
+                  onClick={fetchBatches}
+                  className="text-purple-600 hover:text-purple-800 text-sm"
+                >
+                  Refresh
+                </button>
+              </div>
+            </div>
+
+            {/* Bulk Actions */}
+            {selectedBatches.size > 0 && (
+              <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6 flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <span className="font-medium text-red-800">
+                    {selectedBatches.size} batch(es) selected
+                  </span>
+                  <button
+                    onClick={clearBatchSelection}
+                    className="text-red-600 hover:text-red-800 text-sm underline"
+                  >
+                    Clear selection
+                  </button>
+                </div>
+                <button
+                  onClick={handleDeleteSelectedBatches}
+                  disabled={isDeletingBatches}
+                  className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 disabled:opacity-50 transition-colors"
+                >
+                  {isDeletingBatches ? 'Deleting...' : `Delete Selected Batches`}
+                </button>
+              </div>
+            )}
+
+            {batchDeleteError && (
+              <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6">
+                <p className="text-red-600">{batchDeleteError}</p>
+              </div>
+            )}
+
+            {/* Batches List */}
+            {isLoadingBatches ? (
+              <div className="bg-white rounded-xl shadow p-8 text-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto"></div>
+                <p className="text-stone-500 mt-2">Loading batches...</p>
+              </div>
+            ) : batches.length === 0 ? (
+              <div className="bg-white rounded-xl shadow p-8 text-center">
+                <p className="text-stone-500">No batches found</p>
+                <p className="text-sm text-stone-400 mt-1">
+                  Batches will appear here after you generate codes with batch tracking enabled.
+                </p>
+              </div>
+            ) : (
+              <div className="bg-white rounded-xl shadow overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-stone-50">
+                      <tr>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-stone-500 uppercase">
+                          <input
+                            type="checkbox"
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setSelectedBatches(new Set(batches.filter(b => b.totalCodes > b.usedCodes).map(b => b.id)));
+                              } else {
+                                clearBatchSelection();
+                              }
+                            }}
+                            checked={selectedBatches.size > 0}
+                            className="rounded"
+                          />
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-stone-500 uppercase">Batch</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-stone-500 uppercase">Product</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-stone-500 uppercase">Duration</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-stone-500 uppercase">Codes</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-stone-500 uppercase">Status</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-stone-500 uppercase">Created</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-stone-200">
+                      {batches.map((batch) => {
+                        const unusedCount = batch.totalCodes - batch.usedCodes;
+                        const allUsed = unusedCount === 0;
+                        return (
+                          <tr
+                            key={batch.id}
+                            className={`hover:bg-stone-50 ${allUsed ? 'bg-stone-50' : ''}`}
+                          >
+                            <td className="px-4 py-3">
+                              <input
+                                type="checkbox"
+                                checked={selectedBatches.has(batch.id)}
+                                onChange={() => toggleBatchSelection(batch.id)}
+                                disabled={allUsed}
+                                className="rounded disabled:opacity-50"
+                              />
+                            </td>
+                            <td className="px-4 py-3">
+                              <div className="font-medium text-stone-800">{batch.name}</div>
+                              <div className="text-xs text-stone-400 font-mono">{batch.id.slice(0, 8)}...</div>
+                            </td>
+                            <td className="px-4 py-3 text-sm text-stone-600">
+                              {batch.productType === 'nfc_only' ? 'NFC' : 
+                               batch.productType === 'qr_only' ? 'QR' : 'Both'}
+                            </td>
+                            <td className="px-4 py-3 text-sm text-stone-600">
+                              {batch.hostingDuration} years
+                            </td>
+                            <td className="px-4 py-3">
+                              <span className="text-sm text-stone-800 font-medium">{batch.totalCodes}</span>
+                              {batch.usedCodes > 0 && (
+                                <span className="text-xs text-green-600 ml-2">
+                                  ({batch.usedCodes} used)
+                                </span>
+                              )}
+                            </td>
+                            <td className="px-4 py-3">
+                              {allUsed ? (
+                                <span className="inline-flex items-center px-2 py-1 text-xs font-medium bg-green-100 text-green-700 rounded-full">
+                                  All Used
+                                </span>
+                              ) : batch.usedCodes > 0 ? (
+                                <span className="inline-flex items-center px-2 py-1 text-xs font-medium bg-blue-100 text-blue-700 rounded-full">
+                                  {unusedCount} Available
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center px-2 py-1 text-xs font-medium bg-yellow-100 text-yellow-700 rounded-full">
+                                  Unused
+                                </span>
+                              )}
+                            </td>
+                            <td className="px-4 py-3 text-sm text-stone-500">
+                              {new Date(batch.createdAt).toLocaleDateString()}
+                              <span className="text-xs ml-1">
+                                {new Date(batch.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                              </span>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {/* Info Card */}
+            <div className="mt-6 bg-stone-50 rounded-xl p-6">
+              <h4 className="font-semibold text-stone-800 mb-2">About Batches</h4>
+              <ul className="text-sm text-stone-600 space-y-1">
+                <li>• Each batch represents codes generated together in a single operation</li>
+                <li>• You can select and delete entire batches at once</li>
+                <li>• Used codes within a batch are protected and cannot be deleted</li>
+                <li>• Batch names include the variant, quantity, and generation date/time</li>
+              </ul>
             </div>
           </>
         )}

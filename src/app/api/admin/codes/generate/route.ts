@@ -69,6 +69,11 @@ export async function POST(request: NextRequest) {
     const variantConfig = CARD_VARIANTS[variant]
     const supabase = createAdminClient()
 
+    // Generate batch identifiers
+    const batchId = crypto.randomUUID()
+    const now = new Date()
+    const batchName = `${variant} × ${quantity} - ${now.toLocaleDateString('en-NZ', { month: 'short', day: 'numeric' })} ${now.toLocaleTimeString('en-NZ', { hour: '2-digit', minute: '2-digit' })}`
+
     // Generate unique codes
     const codes: string[] = []
     const expiresAt = new Date()
@@ -100,7 +105,7 @@ export async function POST(request: NextRequest) {
         continue
       }
 
-      // Insert code into database
+      // Insert code into database with batch info
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { error: insertError } = await (supabase as any)
         .from('retail_activation_codes')
@@ -110,6 +115,8 @@ export async function POST(request: NextRequest) {
           hosting_duration: variantConfig.duration,
           is_used: false,
           expires_at: expiresAt.toISOString(),
+          generation_batch_id: batchId,
+          generation_batch_name: batchName,
         })
 
       if (insertError) {
@@ -127,13 +134,15 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    console.log(`Generated ${codes.length} retail activation codes for variant ${variant}`)
+    console.log(`Generated ${codes.length} retail activation codes for variant ${variant} (batch: ${batchId})`)
 
     return NextResponse.json({
       success: true,
       variant,
       quantity: codes.length,
       codes,
+      batchId,
+      batchName,
       expiresAt: expiresAt.toISOString(),
       productType: variantConfig.product,
       hostingDuration: variantConfig.duration,
