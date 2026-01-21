@@ -36,7 +36,7 @@ export async function POST(request: Request) {
     }
 
     // Validate partner type
-    const validTypes = ['vet', 'funeral_director', 'cemetery', 'pet_cremation', 'retailer', 'other'];
+    const validTypes = ['vet', 'funeral_director', 'funeral_home', 'cemetery', 'crematorium', 'pet_cremation', 'pet_store', 'retailer', 'groomer', 'other'];
     if (!validTypes.includes(resolvedPartnerType)) {
       return NextResponse.json(
         { error: 'Invalid partner type' },

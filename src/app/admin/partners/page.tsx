@@ -27,6 +27,7 @@ const PARTNER_TYPE_LABELS: Record<string, string> = {
   pet_cremation: 'Pet Cremation',
   pet_store: 'Pet Store',
   retailer: 'Retailer',
+  groomer: 'Pet Groomer',
   other: 'Other',
 };
 
