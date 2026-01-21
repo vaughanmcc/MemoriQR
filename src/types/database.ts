@@ -255,6 +255,8 @@ export interface Database {
           application_message: Json | null
           approved_at: string | null
           rejected_at: string | null
+          suspended_reason: string | null
+          suspended_at: string | null
           default_discount_percent: number | null
           default_commission_percent: number | null
           default_free_shipping: boolean | null
@@ -279,6 +281,8 @@ export interface Database {
           application_message?: Json | null
           approved_at?: string | null
           rejected_at?: string | null
+          suspended_reason?: string | null
+          suspended_at?: string | null
           default_discount_percent?: number | null
           default_commission_percent?: number | null
           default_free_shipping?: boolean | null
@@ -303,6 +307,8 @@ export interface Database {
           application_message?: Json | null
           approved_at?: string | null
           rejected_at?: string | null
+          suspended_reason?: string | null
+          suspended_at?: string | null
           default_discount_percent?: number | null
           default_commission_percent?: number | null
           default_free_shipping?: boolean | null

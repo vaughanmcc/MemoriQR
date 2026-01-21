@@ -87,11 +87,11 @@ export async function PATCH(
             return NextResponse.json({ error: 'Suspension reason is required' }, { status: 400 });
           }
           newStatus = 'suspended';
-          updateData = { status: 'suspended', is_active: false };
+          updateData = { status: 'suspended', is_active: false, suspended_reason: reason, suspended_at: new Date().toISOString() };
           break;
         case 'activate':
           newStatus = 'active';
-          updateData = { status: 'active', is_active: true };
+          updateData = { status: 'active', is_active: true, suspended_reason: null, suspended_at: null };
           break;
         default:
           return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
@@ -116,7 +116,7 @@ export async function PATCH(
 
     // Send notification emails
     // Note: Use correct DB columns: contact_email, partner_name
-    const partnerEmail = partner.contact_email;
+      const partnerEmail = partner.contact_email;
     const businessName = partner.partner_name || partner.business_name;
     // Extract contact name from "Business Name (Contact Name)" format
     const contactNameMatch = partner.partner_name?.match(/\(([^)]+)\)/);

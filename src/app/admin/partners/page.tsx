@@ -13,6 +13,8 @@ interface Partner {
   partner_type: string;
   commission_rate: number;
   status: 'pending' | 'active' | 'suspended' | 'rejected';
+  suspended_reason?: string | null;
+  suspended_at?: string | null;
   website?: string;
   application_message?: string;
   created_at: string;
@@ -386,6 +388,11 @@ function AdminPartnersContent() {
                       <span className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${STATUS_STYLES[partner.status || 'pending']}`}>
                         {(partner.status || 'pending').charAt(0).toUpperCase() + (partner.status || 'pending').slice(1)}
                       </span>
+                      {partner.status === 'suspended' && partner.suspended_reason && (
+                        <p className="text-xs text-stone-500 mt-2">
+                          Reason: {partner.suspended_reason}
+                        </p>
+                      )}
                     </td>
                     <td className="px-6 py-4 text-sm text-stone-600">
                       {partner.commission_rate}%
@@ -453,6 +460,14 @@ function AdminPartnersContent() {
                   <label className="text-sm text-stone-500">Application Message</label>
                   <p className="text-stone-700 bg-stone-50 p-3 rounded-lg mt-1">
                     {selectedPartner.application_message}
+                  </p>
+                </div>
+              )}
+              {selectedPartner.status === 'suspended' && selectedPartner.suspended_reason && (
+                <div>
+                  <label className="text-sm text-stone-500">Suspension Reason</label>
+                  <p className="text-stone-700 bg-red-50 p-3 rounded-lg mt-1 border border-red-100">
+                    {selectedPartner.suspended_reason}
                   </p>
                 </div>
               )}
