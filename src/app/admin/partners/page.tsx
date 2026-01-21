@@ -19,9 +19,13 @@ interface Partner {
 }
 
 const PARTNER_TYPE_LABELS: Record<string, string> = {
+  vet: 'Vet',
   funeral_director: 'Funeral Director',
+  funeral_home: 'Funeral Home',
+  crematorium: 'Crematorium',
   cemetery: 'Cemetery',
   pet_cremation: 'Pet Cremation',
+  pet_store: 'Pet Store',
   retailer: 'Retailer',
   other: 'Other',
 };
@@ -261,7 +265,7 @@ function AdminPartnersContent() {
           <table className="w-full">
             <thead className="bg-stone-50 border-b">
               <tr>
-                <th className="text-left px-6 py-4 text-sm font-medium text-stone-500">Business</th>
+                <th className="text-left px-6 py-4 text-sm font-medium text-stone-500">Business Name</th>
                 <th className="text-left px-6 py-4 text-sm font-medium text-stone-500">Type</th>
                 <th className="text-left px-6 py-4 text-sm font-medium text-stone-500">Contact</th>
                 <th className="text-left px-6 py-4 text-sm font-medium text-stone-500">Status</th>
@@ -284,7 +288,7 @@ function AdminPartnersContent() {
                       <p className="text-sm text-stone-500">{partner.email}</p>
                     </td>
                     <td className="px-6 py-4 text-sm text-stone-600">
-                      {PARTNER_TYPE_LABELS[partner.partner_type] || partner.partner_type}
+                      {PARTNER_TYPE_LABELS[partner.partner_type] || (partner.partner_type ? partner.partner_type.charAt(0).toUpperCase() + partner.partner_type.slice(1).replace(/_/g, ' ') : 'Unknown')}
                     </td>
                     <td className="px-6 py-4">
                       <p className="text-sm text-stone-800">{partner.contact_name}</p>

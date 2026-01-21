@@ -44,7 +44,16 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Failed to fetch partners' }, { status: 500 });
     }
 
-    return NextResponse.json({ partners });
+    // Map database columns to frontend expected names
+    const mappedPartners = (partners || []).map(p => ({
+      ...p,
+      business_name: p.partner_name || p.business_name,
+      contact_name: p.partner_name?.match(/\(([^)]+)\)/)?.[1] || p.contact_name || '',
+      email: p.contact_email || p.email,
+      phone: p.contact_phone || p.phone,
+    }));
+
+    return NextResponse.json({ partners: mappedPartners });
   } catch (error) {
     console.error('Admin partners error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
@@ -86,7 +95,7 @@ export async function POST(request: Request) {
     const { data: existing } = await supabase
       .from('partners')
       .select('id')
-      .eq('email', normalizedEmail)
+      .eq('contact_email', normalizedEmail)
       .single();
 
     if (existing) {
@@ -95,13 +104,13 @@ export async function POST(request: Request) {
 
     const approvedAt = status === 'active' ? new Date().toISOString() : null;
 
+    // Use correct database column names: partner_name, contact_email, contact_phone
     const { data: partner, error } = await supabase
       .from('partners')
       .insert({
-        business_name: businessName,
-        contact_name: contactName,
-        email: normalizedEmail,
-        phone,
+        partner_name: `${businessName} (${contactName})`,
+        contact_email: normalizedEmail,
+        contact_phone: phone,
         partner_type: partnerType,
         website: website || null,
         commission_rate: commissionRate,
