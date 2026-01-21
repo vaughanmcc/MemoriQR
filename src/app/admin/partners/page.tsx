@@ -38,6 +38,16 @@ const STATUS_STYLES: Record<string, string> = {
   rejected: 'bg-stone-100 text-stone-600',
 };
 
+const SUSPEND_REASONS = [
+  'Unverified business information',
+  'Policy or terms violation',
+  'Suspicious or fraudulent activity',
+  'Repeated customer complaints',
+  'Abuse of partner pricing or codes',
+  'Requested by partner',
+  'Other (manual review)',
+];
+
 // Wrapper component to handle Suspense for useSearchParams
 export default function AdminPartnersPage() {
   return (
@@ -58,6 +68,9 @@ function AdminPartnersContent() {
   const [selectedPartner, setSelectedPartner] = useState<Partner | null>(null);
   const [editingPartner, setEditingPartner] = useState<Partner | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
+  const [showSuspendModal, setShowSuspendModal] = useState(false);
+  const [suspendPartner, setSuspendPartner] = useState<Partner | null>(null);
+  const [suspendReason, setSuspendReason] = useState('');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [createLoading, setCreateLoading] = useState(false);
   const [createError, setCreateError] = useState('');
@@ -114,13 +127,13 @@ function AdminPartnersContent() {
     fetchPartners();
   }, [fetchPartners]);
 
-  const handleAction = async (partnerId: string, action: 'approve' | 'reject' | 'suspend' | 'activate') => {
+  const handleAction = async (partnerId: string, action: 'approve' | 'reject' | 'suspend' | 'activate', reason?: string) => {
     setActionLoading(true);
     try {
       const res = await fetch(`/api/admin/partners/${partnerId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action }),
+        body: JSON.stringify({ action, reason }),
       });
 
       if (!res.ok) {
@@ -135,6 +148,20 @@ function AdminPartnersContent() {
     } finally {
       setActionLoading(false);
     }
+  };
+
+  const openSuspendModal = (partner: Partner) => {
+    setSuspendPartner(partner);
+    setSuspendReason('');
+    setShowSuspendModal(true);
+  };
+
+  const confirmSuspend = async () => {
+    if (!suspendPartner || !suspendReason) return;
+    await handleAction(suspendPartner.id, 'suspend', suspendReason);
+    setShowSuspendModal(false);
+    setSuspendPartner(null);
+    setSuspendReason('');
   };
 
   const handleLogout = async () => {
@@ -466,7 +493,7 @@ function AdminPartnersContent() {
               )}
               {selectedPartner.status === 'active' && (
                 <button
-                  onClick={() => handleAction(selectedPartner.id, 'suspend')}
+                  onClick={() => openSuspendModal(selectedPartner)}
                   disabled={actionLoading}
                   className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 disabled:opacity-50"
                 >
@@ -615,6 +642,65 @@ function AdminPartnersContent() {
                 className="bg-primary text-white px-6 py-2 rounded-lg hover:bg-primary/90 disabled:opacity-50"
               >
                 {actionLoading ? 'Saving...' : 'Save Changes'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showSuspendModal && suspendPartner && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl shadow-xl max-w-lg w-full">
+            <div className="p-6 border-b flex items-center justify-between">
+              <h3 className="text-xl font-bold text-stone-800">Suspend Partner</h3>
+              <button
+                onClick={() => {
+                  setShowSuspendModal(false);
+                  setSuspendPartner(null);
+                  setSuspendReason('');
+                }}
+                className="text-stone-400 hover:text-stone-600"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="p-6 space-y-4">
+              <p className="text-stone-600">
+                Choose a reason for suspending <strong>{suspendPartner.business_name || suspendPartner.contact_name || 'this partner'}</strong>.
+              </p>
+              <div>
+                <label className="block text-sm font-medium text-stone-700 mb-1">Suspension Reason</label>
+                <select
+                  value={suspendReason}
+                  onChange={(e) => setSuspendReason(e.target.value)}
+                  className="w-full rounded-lg border border-stone-300 p-2"
+                >
+                  <option value="">Select a reason</option>
+                  {SUSPEND_REASONS.map((reason) => (
+                    <option key={reason} value={reason}>{reason}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            <div className="p-6 border-t bg-stone-50 flex gap-3 justify-end">
+              <button
+                onClick={() => {
+                  setShowSuspendModal(false);
+                  setSuspendPartner(null);
+                  setSuspendReason('');
+                }}
+                className="px-4 py-2 rounded-lg bg-stone-200 text-stone-700 hover:bg-stone-300"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmSuspend}
+                disabled={!suspendReason || actionLoading}
+                className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 disabled:opacity-50"
+              >
+                {actionLoading ? 'Suspending...' : 'Suspend Partner'}
               </button>
             </div>
           </div>

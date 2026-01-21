@@ -54,7 +54,7 @@ export async function PATCH(
   try {
     const { id } = await params;
     const body = await request.json();
-    const { action, commission_rate } = body;
+    const { action, commission_rate, reason } = body;
 
     // Get current partner data
     const { data: partner, error: fetchError } = await supabase
@@ -83,6 +83,9 @@ export async function PATCH(
           updateData = { status: 'rejected', rejected_at: new Date().toISOString(), is_active: false };
           break;
         case 'suspend':
+          if (!reason || typeof reason !== 'string') {
+            return NextResponse.json({ error: 'Suspension reason is required' }, { status: 400 });
+          }
           newStatus = 'suspended';
           updateData = { status: 'suspended', is_active: false };
           break;
@@ -113,7 +116,7 @@ export async function PATCH(
 
     // Send notification emails
     // Note: Use correct DB columns: contact_email, partner_name
-    const partnerEmail = partner.contact_email || partner.email;
+    const partnerEmail = partner.contact_email;
     const businessName = partner.partner_name || partner.business_name;
     // Extract contact name from "Business Name (Contact Name)" format
     const contactNameMatch = partner.partner_name?.match(/\(([^)]+)\)/);
@@ -144,6 +147,20 @@ export async function PATCH(
             data: {
               businessName: businessName,
               contactName: contactName,
+            },
+          }),
+        }).catch(console.error);
+      } else if (action === 'suspend') {
+        await fetch(PIPEDREAM_WEBHOOK_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: 'partner_suspended',
+            to: partnerEmail,
+            data: {
+              businessName: businessName,
+              contactName: contactName,
+              reason: reason,
             },
           }),
         }).catch(console.error);

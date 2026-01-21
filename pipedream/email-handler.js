@@ -20,6 +20,7 @@
  * - partner_application_received: Application confirmation → applicant
  * - partner_approved: Approval notification → partner
  * - partner_rejected: Rejection notification → applicant
+ * - partner_suspended: Suspension notification → partner
  */
 
 export default defineComponent({
@@ -806,6 +807,42 @@ ${message ? `<div style="background: #f9f7f4; padding: 15px; border-radius: 8px;
 </div>
 </div>`,
         text: `Hi ${contactName},\n\nThank you for your interest in becoming a MemoriQR partner. After reviewing your application for ${businessName}, we've decided not to proceed at this time.\n\nThis decision may be based on factors such as market coverage, business alignment, or current partner capacity in your area.\n\nWe appreciate you taking the time to apply, and we encourage you to reapply in the future if your circumstances change.\n\nIf you have any questions, please don't hesitate to reach out.\n\nBest regards,\nThe MemoriQR Team`
+      };
+    }
+
+    // Partner suspended notification
+    if (type === 'partner_suspended') {
+      const { businessName, contactName, reason } = body.data;
+
+      return {
+        to: body.to,
+        replyTo: 'partners@memoriqr.co.nz',
+        from_name: 'MemoriQR',
+        subject: `Your MemoriQR Partner Account Has Been Suspended`,
+        html: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+<div style="background: linear-gradient(135deg, #8b0000 0%, #b22222 100%); padding: 30px; text-align: center; border-radius: 8px 8px 0 0;">
+<h1 style="color: #fff; margin: 0; font-size: 22px;">⚠️ Partner Account Suspended</h1>
+</div>
+
+<div style="padding: 30px; background: #fff; border: 1px solid #ddd; border-top: none;">
+<p style="color: #333; font-size: 16px;">Hi ${contactName},</p>
+
+<p style="color: #555; line-height: 1.6;">Your MemoriQR partner account for <strong>${businessName}</strong> has been suspended.</p>
+
+<div style="background: #fff3cd; border-left: 4px solid #f0ad4e; padding: 15px; border-radius: 4px; margin: 20px 0;">
+<strong>Reason:</strong> ${reason}
+</div>
+
+<p style="color: #555; line-height: 1.6;">If you believe this is a mistake or would like to discuss this suspension, please reply to this email.</p>
+
+<p style="color: #555; margin-top: 25px;">Regards,<br><strong>The MemoriQR Team</strong></p>
+</div>
+
+<div style="background: #f5f5f0; padding: 20px; text-align: center; border-radius: 0 0 8px 8px;">
+<p style="color: #888; font-size: 12px; margin: 0;">MemoriQR Partner Program</p>
+</div>
+</div>`,
+        text: `Hi ${contactName},\n\nYour MemoriQR partner account for ${businessName} has been suspended.\n\nReason: ${reason}\n\nIf you believe this is a mistake or would like to discuss this suspension, please reply to this email.\n\nRegards,\nThe MemoriQR Team`
       };
     }
     
