@@ -67,13 +67,13 @@ export async function POST(request: Request) {
 
     // Create partner with pending status
     // Note: expected_qr_sales and expected_nfc_sales stored in application_message until migration 011 is applied
+    // Column mapping: partner_name (business), contact_email, contact_phone match original schema
     const { data: partner, error: insertError } = await supabase
       .from('partners')
       .insert({
-        business_name: businessName,
-        contact_name: contactName,
-        email: email.toLowerCase(),
-        phone: phone || null,
+        partner_name: `${businessName} (${contactName})`,
+        contact_email: email.toLowerCase(),
+        contact_phone: phone || null,
         partner_type: resolvedPartnerType,
         website: website || null,
         application_message: [message, expectedQrSales ? `Expected QR: ${expectedQrSales}` : '', expectedNfcSales ? `Expected NFC: ${expectedNfcSales}` : ''].filter(Boolean).join(' | ') || null,
