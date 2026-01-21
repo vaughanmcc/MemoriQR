@@ -71,23 +71,24 @@ export async function PATCH(
     let updateData: Record<string, unknown> = {};
 
     // Handle status actions
+    // DB statuses: pending, active, suspended, rejected (see migration 012)
     if (action) {
       switch (action) {
         case 'approve':
           newStatus = 'active';
-          updateData = { status: 'active', approved_at: new Date().toISOString() };
+          updateData = { status: 'active', approved_at: new Date().toISOString(), is_active: true };
           break;
         case 'reject':
           newStatus = 'rejected';
-          updateData = { status: 'rejected' };
+          updateData = { status: 'rejected', rejected_at: new Date().toISOString(), is_active: false };
           break;
         case 'suspend':
           newStatus = 'suspended';
-          updateData = { status: 'suspended' };
+          updateData = { status: 'suspended', is_active: false };
           break;
         case 'activate':
           newStatus = 'active';
-          updateData = { status: 'active' };
+          updateData = { status: 'active', is_active: true };
           break;
         default:
           return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
@@ -111,18 +112,23 @@ export async function PATCH(
     }
 
     // Send notification emails
-    if (PIPEDREAM_WEBHOOK_URL && action) {
+    // Note: Use correct DB columns: contact_email, partner_name
+    const partnerEmail = partner.contact_email || partner.email;
+    const businessName = partner.partner_name || partner.business_name;
+    const contactName = partner.partner_name?.match(/\\(([^)]+)\\)/)?.[1] || partner.contact_name || '';
+    
+    if (PIPEDREAM_WEBHOOK_URL && action && partnerEmail) {
       if (action === 'approve') {
         await fetch(PIPEDREAM_WEBHOOK_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             type: 'partner_approved',
-            to: partner.email,
+            to: partnerEmail,
             data: {
-              businessName: partner.business_name,
-              contactName: partner.contact_name,
-              loginUrl: `${process.env.NEXT_PUBLIC_SITE_URL}/partner`,
+              businessName: businessName,
+              contactName: contactName,
+              loginUrl: `${process.env.NEXT_PUBLIC_BASE_URL || 'https://memoriqr.co.nz'}/partner`,
             },
           }),
         }).catch(console.error);
@@ -132,10 +138,10 @@ export async function PATCH(
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             type: 'partner_rejected',
-            to: partner.email,
+            to: partnerEmail,
             data: {
-              businessName: partner.business_name,
-              contactName: partner.contact_name,
+              businessName: businessName,
+              contactName: contactName,
             },
           }),
         }).catch(console.error);
