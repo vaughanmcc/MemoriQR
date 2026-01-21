@@ -78,22 +78,31 @@ export default function PartnersPage() {
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle')
+  const [errorMessage, setErrorMessage] = useState('')
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsSubmitting(true)
     setSubmitStatus('idle')
+    setErrorMessage('')
 
     try {
-      const response = await fetch('/api/contact', {
+      const response = await fetch('/api/partner/apply', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          ...formData,
-          subject: `Partner Application: ${formData.businessName}`,
-          type: 'partner_application'
+          businessName: formData.businessName,
+          contactName: formData.contactName,
+          email: formData.email,
+          phone: formData.phone,
+          businessType: formData.businessType,
+          message: formData.message,
+          expectedQrSales: formData.expectedQrSales,
+          expectedNfcSales: formData.expectedNfcSales
         })
       })
+
+      const data = await response.json()
 
       if (response.ok) {
         setSubmitStatus('success')
@@ -109,9 +118,11 @@ export default function PartnersPage() {
         })
       } else {
         setSubmitStatus('error')
+        setErrorMessage(data.error || 'Failed to submit application')
       }
     } catch {
       setSubmitStatus('error')
+      setErrorMessage('Something went wrong. Please try again.')
     } finally {
       setIsSubmitting(false)
     }
@@ -403,7 +414,7 @@ export default function PartnersPage() {
 
                 {submitStatus === 'error' && (
                   <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700 text-sm">
-                    Something went wrong. Please try again or email us at{' '}
+                    {errorMessage || 'Something went wrong.'} Please try again or email us at{' '}
                     <a href="mailto:partners@memoriqr.co.nz" className="underline">
                       partners@memoriqr.co.nz
                     </a>

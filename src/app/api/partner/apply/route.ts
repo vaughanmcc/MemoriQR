@@ -11,10 +11,24 @@ const PIPEDREAM_WEBHOOK_URL = process.env.PIPEDREAM_WEBHOOK_URL;
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { businessName, contactName, email, phone, partnerType, website, message } = body;
+    const { 
+      businessName, 
+      contactName, 
+      email, 
+      phone, 
+      partnerType,
+      businessType, // Alternative field name from /partners form
+      website, 
+      message,
+      expectedQrSales,
+      expectedNfcSales
+    } = body;
+
+    // Accept either partnerType or businessType
+    const resolvedPartnerType = partnerType || businessType;
 
     // Validate required fields
-    if (!businessName || !contactName || !email || !phone || !partnerType) {
+    if (!businessName || !contactName || !email || !resolvedPartnerType) {
       return NextResponse.json(
         { error: 'Missing required fields' },
         { status: 400 }
@@ -22,8 +36,8 @@ export async function POST(request: Request) {
     }
 
     // Validate partner type
-    const validTypes = ['funeral_director', 'cemetery', 'pet_cremation', 'retailer', 'other'];
-    if (!validTypes.includes(partnerType)) {
+    const validTypes = ['vet', 'funeral_director', 'cemetery', 'pet_cremation', 'retailer', 'other'];
+    if (!validTypes.includes(resolvedPartnerType)) {
       return NextResponse.json(
         { error: 'Invalid partner type' },
         { status: 400 }
@@ -58,10 +72,12 @@ export async function POST(request: Request) {
         business_name: businessName,
         contact_name: contactName,
         email: email.toLowerCase(),
-        phone,
-        partner_type: partnerType,
+        phone: phone || null,
+        partner_type: resolvedPartnerType,
         website: website || null,
         application_message: message || null,
+        expected_qr_sales: expectedQrSales || null,
+        expected_nfc_sales: expectedNfcSales || null,
         commission_rate: 15.00, // Default commission rate
         status: 'pending',
       })
@@ -84,18 +100,15 @@ export async function POST(request: Request) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           type: 'partner_application',
-          to: process.env.ADMIN_EMAIL || 'admin@memoriqr.co.nz',
-          data: {
-            businessName,
-            contactName,
-            email,
-            phone,
-            partnerType,
-            website,
-            message,
-            partnerId: partner.id,
-            adminUrl: `${process.env.NEXT_PUBLIC_SITE_URL}/admin/partners`,
-          },
+          businessName,
+          contactName,
+          email,
+          phone: phone || '',
+          businessType: resolvedPartnerType,
+          message: message || '',
+          expectedQrSales: expectedQrSales || 'Not specified',
+          expectedNfcSales: expectedNfcSales || 'Not specified',
+          partnerId: partner.id,
         }),
       }).catch(console.error);
 
