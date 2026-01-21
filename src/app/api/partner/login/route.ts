@@ -92,9 +92,16 @@ export async function POST(request: NextRequest) {
 
     // Send login code via Pipedream webhook
     const webhookUrl = process.env.PIPEDREAM_WEBHOOK_URL
+    if (!webhookUrl) {
+      console.error('PIPEDREAM_WEBHOOK_URL is not configured')
+      return NextResponse.json(
+        { error: 'Email service is not configured. Please contact support.' },
+        { status: 500 }
+      )
+    }
     if (webhookUrl) {
       try {
-        await fetch(webhookUrl, {
+        const response = await fetch(webhookUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
