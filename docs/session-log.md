@@ -7,6 +7,12 @@
 ## January 21, 2026 - Lead Generation Cards System
 
 **Completed:**
+- ✅ **Partner Application Flow Fixed:**
+  - /partners page now uses /api/partner/apply (creates DB record)
+  - Fixed column names to match schema (partner_name, contact_email, contact_phone)
+  - Added Partners link to main Header navigation
+  - Migration 011 applied: expected_qr_sales, expected_nfc_sales columns
+
 - ✅ **Lead Generation Cards / Referral System** - Full implementation for partner referral cards:
   - Migration 010: referral_codes table, partner_commissions updates, partner default rates
   - REF-XXXXX code format (distinct from MQR-XXX-XXXXXX activation codes)

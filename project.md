@@ -63,6 +63,7 @@ NEXT_PUBLIC_BASE_URL=
 
 - [ ] 009: generation_batch_id columns
 - [ ] 010: referral_codes + partner_commissions
+- [x] 011: expected_qr_sales, expected_nfc_sales (applied Jan 21)
 
 ## Current Branch
 
