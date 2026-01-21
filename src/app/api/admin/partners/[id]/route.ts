@@ -115,7 +115,9 @@ export async function PATCH(
     // Note: Use correct DB columns: contact_email, partner_name
     const partnerEmail = partner.contact_email || partner.email;
     const businessName = partner.partner_name || partner.business_name;
-    const contactName = partner.partner_name?.match(/\\(([^)]+)\\)/)?.[1] || partner.contact_name || '';
+    // Extract contact name from "Business Name (Contact Name)" format
+    const contactNameMatch = partner.partner_name?.match(/\(([^)]+)\)/);
+    const contactName = contactNameMatch?.[1] || partner.contact_name || '';
     
     if (PIPEDREAM_WEBHOOK_URL && action && partnerEmail) {
       if (action === 'approve') {
