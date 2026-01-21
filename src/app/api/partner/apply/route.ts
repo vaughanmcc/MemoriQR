@@ -66,6 +66,7 @@ export async function POST(request: Request) {
     }
 
     // Create partner with pending status
+    // Note: expected_qr_sales and expected_nfc_sales stored in application_message until migration 011 is applied
     const { data: partner, error: insertError } = await supabase
       .from('partners')
       .insert({
@@ -75,9 +76,7 @@ export async function POST(request: Request) {
         phone: phone || null,
         partner_type: resolvedPartnerType,
         website: website || null,
-        application_message: message || null,
-        expected_qr_sales: expectedQrSales || null,
-        expected_nfc_sales: expectedNfcSales || null,
+        application_message: [message, expectedQrSales ? `Expected QR: ${expectedQrSales}` : '', expectedNfcSales ? `Expected NFC: ${expectedNfcSales}` : ''].filter(Boolean).join(' | ') || null,
         commission_rate: 15.00, // Default commission rate
         status: 'pending',
       })
