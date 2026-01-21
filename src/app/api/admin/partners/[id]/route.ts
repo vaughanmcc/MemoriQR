@@ -154,3 +154,65 @@ export async function PATCH(
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
+
+// PUT - Full update of partner details
+export async function PUT(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  if (!await checkAdminAuth()) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  try {
+    const { id } = await params;
+    const body = await request.json();
+    const {
+      businessName,
+      contactName,
+      email,
+      phone,
+      partnerType,
+      website,
+      commissionRate,
+    } = body;
+
+    if (!businessName || !email) {
+      return NextResponse.json({ error: 'Business name and email are required' }, { status: 400 });
+    }
+
+    // Check if partner exists
+    const { data: existing, error: fetchError } = await supabase
+      .from('partners')
+      .select('id')
+      .eq('id', id)
+      .single();
+
+    if (fetchError || !existing) {
+      return NextResponse.json({ error: 'Partner not found' }, { status: 404 });
+    }
+
+    // Update partner with correct column names
+    const { error: updateError } = await supabase
+      .from('partners')
+      .update({
+        partner_name: contactName ? `${businessName} (${contactName})` : businessName,
+        contact_email: email.toLowerCase(),
+        contact_phone: phone || null,
+        partner_type: partnerType,
+        website: website || null,
+        commission_rate: commissionRate,
+      })
+      .eq('id', id);
+
+    if (updateError) {
+      console.error('Error updating partner:', updateError);
+      return NextResponse.json({ error: 'Failed to update partner' }, { status: 500 });
+    }
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error('PUT partner error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}

@@ -38,6 +38,27 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Also check status - must be 'active' or 'approved' (not 'pending' or 'rejected')
+    const { data: fullPartner } = await supabase
+      .from('partners')
+      .select('status')
+      .eq('id', partner.id)
+      .single()
+    
+    if (fullPartner?.status === 'pending') {
+      return NextResponse.json(
+        { error: 'Your partner application is still being reviewed. You will receive an email when approved.' },
+        { status: 403 }
+      )
+    }
+
+    if (fullPartner?.status === 'rejected') {
+      return NextResponse.json(
+        { error: 'This partner application was not approved. Please contact support for more information.' },
+        { status: 403 }
+      )
+    }
+
     // Generate 6-digit login code
     const loginCode = Math.floor(100000 + Math.random() * 900000).toString()
     const expiresAt = new Date(Date.now() + 15 * 60 * 1000) // 15 minutes

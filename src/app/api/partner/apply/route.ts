@@ -67,6 +67,7 @@ export async function POST(request: Request) {
 
     // Create partner with pending status
     // Column mapping: partner_name (business), contact_email, contact_phone match original schema
+    // is_active defaults to false until admin approves
     const { data: partner, error: insertError } = await supabase
       .from('partners')
       .insert({
@@ -80,6 +81,7 @@ export async function POST(request: Request) {
         expected_nfc_sales: expectedNfcSales || null,
         commission_rate: 15.00, // Default commission rate
         status: 'pending',
+        is_active: false,  // Must be approved by admin before access
       })
       .select()
       .single();

@@ -55,10 +55,20 @@ function AdminPartnersContent() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [selectedPartner, setSelectedPartner] = useState<Partner | null>(null);
+  const [editingPartner, setEditingPartner] = useState<Partner | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [createLoading, setCreateLoading] = useState(false);
   const [createError, setCreateError] = useState('');
+  const [editForm, setEditForm] = useState({
+    businessName: '',
+    contactName: '',
+    email: '',
+    phone: '',
+    partnerType: '',
+    website: '',
+    commissionRate: 15,
+  });
   const [createForm, setCreateForm] = useState({
     businessName: '',
     contactName: '',
@@ -179,6 +189,56 @@ function AdminPartnersContent() {
       setCreateError(err instanceof Error ? err.message : 'Failed to create partner');
     } finally {
       setCreateLoading(false);
+    }
+  };
+
+  const openEditModal = (partner: Partner) => {
+    setEditForm({
+      businessName: partner.business_name?.replace(/\s*\([^)]*\)$/, '') || '',
+      contactName: partner.contact_name || '',
+      email: partner.email || '',
+      phone: partner.phone || '',
+      partnerType: partner.partner_type || 'other',
+      website: partner.website || '',
+      commissionRate: partner.commission_rate || 15,
+    });
+    setEditingPartner(partner);
+    setSelectedPartner(null);
+  };
+
+  const handleUpdatePartner = async () => {
+    if (!editingPartner) return;
+    
+    setActionLoading(true);
+    setError('');
+
+    try {
+      const res = await fetch(`/api/admin/partners/${editingPartner.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          businessName: editForm.businessName,
+          contactName: editForm.contactName,
+          email: editForm.email,
+          phone: editForm.phone,
+          partnerType: editForm.partnerType,
+          website: editForm.website || null,
+          commissionRate: editForm.commissionRate,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to update partner');
+      }
+
+      setEditingPartner(null);
+      await fetchPartners();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update partner');
+    } finally {
+      setActionLoading(false);
     }
   };
 
@@ -422,10 +482,138 @@ function AdminPartnersContent() {
                 </button>
               )}
               <button
+                onClick={() => openEditModal(selectedPartner)}
+                className="bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary/90"
+              >
+                Edit
+              </button>
+              <button
                 onClick={() => setSelectedPartner(null)}
                 className="bg-stone-200 text-stone-700 px-4 py-2 rounded-lg hover:bg-stone-300"
               >
                 Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Partner Modal */}
+      {editingPartner && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl shadow-xl max-w-xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b flex items-center justify-between">
+              <h3 className="text-xl font-bold text-stone-800">Edit Partner</h3>
+              <button
+                onClick={() => setEditingPartner(null)}
+                className="text-stone-400 hover:text-stone-600"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-stone-700 mb-1">Business Name *</label>
+                  <input
+                    type="text"
+                    value={editForm.businessName}
+                    onChange={(e) => setEditForm({ ...editForm, businessName: e.target.value })}
+                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-stone-700 mb-1">Contact Name *</label>
+                  <input
+                    type="text"
+                    value={editForm.contactName}
+                    onChange={(e) => setEditForm({ ...editForm, contactName: e.target.value })}
+                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-stone-700 mb-1">Email *</label>
+                  <input
+                    type="email"
+                    value={editForm.email}
+                    onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-stone-700 mb-1">Phone *</label>
+                  <input
+                    type="tel"
+                    value={editForm.phone}
+                    onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
+                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-stone-700 mb-1">Partner Type</label>
+                  <select
+                    value={editForm.partnerType}
+                    onChange={(e) => setEditForm({ ...editForm, partnerType: e.target.value })}
+                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                  >
+                    <option value="vet">Vet</option>
+                    <option value="funeral_director">Funeral Director</option>
+                    <option value="funeral_home">Funeral Home</option>
+                    <option value="crematorium">Crematorium</option>
+                    <option value="cemetery">Cemetery</option>
+                    <option value="pet_cremation">Pet Cremation</option>
+                    <option value="pet_store">Pet Store</option>
+                    <option value="retailer">Retailer</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-stone-700 mb-1">Commission Rate (%)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="50"
+                    value={editForm.commissionRate}
+                    onChange={(e) => setEditForm({ ...editForm, commissionRate: parseFloat(e.target.value) || 0 })}
+                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-stone-700 mb-1">Website</label>
+                <input
+                  type="url"
+                  value={editForm.website}
+                  onChange={(e) => setEditForm({ ...editForm, website: e.target.value })}
+                  placeholder="https://"
+                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                />
+              </div>
+            </div>
+
+            <div className="p-6 border-t bg-stone-50 flex justify-end gap-3">
+              <button
+                onClick={() => setEditingPartner(null)}
+                className="px-4 py-2 text-stone-700 hover:bg-stone-200 rounded-lg"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleUpdatePartner}
+                disabled={actionLoading || !editForm.businessName || !editForm.email}
+                className="bg-primary text-white px-6 py-2 rounded-lg hover:bg-primary/90 disabled:opacity-50"
+              >
+                {actionLoading ? 'Saving...' : 'Save Changes'}
               </button>
             </div>
           </div>
