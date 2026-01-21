@@ -3,14 +3,39 @@ import { NextRequest, NextResponse } from 'next/server'
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { name, email, subject, message } = body
+    const { 
+      name, 
+      email, 
+      subject, 
+      message, 
+      type,
+      // Partner application fields
+      businessName,
+      contactName,
+      phone,
+      businessType,
+      expectedQrSales,
+      expectedNfcSales
+    } = body
 
-    // Validate required fields
-    if (!name || !email || !message) {
-      return NextResponse.json(
-        { error: 'Name, email, and message are required' },
-        { status: 400 }
-      )
+    // Determine if this is a partner application
+    const isPartnerApplication = type === 'partner_application'
+
+    // Validate required fields based on form type
+    if (isPartnerApplication) {
+      if (!businessName || !contactName || !email || !businessType) {
+        return NextResponse.json(
+          { error: 'Business name, contact name, email, and business type are required' },
+          { status: 400 }
+        )
+      }
+    } else {
+      if (!name || !email || !message) {
+        return NextResponse.json(
+          { error: 'Name, email, and message are required' },
+          { status: 400 }
+        )
+      }
     }
 
     // Basic email validation
@@ -33,20 +58,35 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Build webhook payload based on form type
+    const webhookPayload = isPartnerApplication ? {
+      type: 'partner_application',
+      businessName,
+      contactName,
+      email,
+      phone: phone || '',
+      businessType,
+      message: message || '',
+      expectedQrSales: expectedQrSales || 'Not specified',
+      expectedNfcSales: expectedNfcSales || 'Not specified',
+      submitted_at: new Date().toISOString(),
+      source: 'memoriqr.co.nz/partners',
+    } : {
+      type: 'contact_form',
+      name,
+      email,
+      subject: subject || 'General Inquiry',
+      message,
+      submitted_at: new Date().toISOString(),
+      source: 'memoriqr.co.nz',
+    }
+
     const webhookResponse = await fetch(webhookUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        type: 'contact_form',
-        name,
-        email,
-        subject: subject || 'General Inquiry',
-        message,
-        submitted_at: new Date().toISOString(),
-        source: 'memoriqr.co.nz',
-      }),
+      body: JSON.stringify(webhookPayload),
     })
 
     if (!webhookResponse.ok) {
@@ -59,7 +99,9 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ 
       success: true,
-      message: 'Your message has been sent successfully' 
+      message: isPartnerApplication 
+        ? 'Your partner application has been submitted successfully' 
+        : 'Your message has been sent successfully'
     })
 
   } catch (error) {
