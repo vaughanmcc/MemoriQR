@@ -4,7 +4,7 @@
  * This is the single source of truth for the Pipedream workflow code.
  * Copy this code into your Pipedream workflow's Node.js step.
  * 
- * Last updated: January 20, 2026
+ * Last updated: January 21, 2026
  * 
  * Handles the following email types:
  * - contact_form: Contact form submissions → info@memoriqr.co.nz
@@ -625,19 +625,21 @@ ${notes ? `<div style="background: #f9f7f4; padding: 15px; border-radius: 8px; m
     }
     
     // Partner application notification (to admin)
+    // Note: Data comes at root level (body.X), not nested (body.data.X)
     if (type === 'partner_application') {
-      const { businessName, contactName, email, phone, partnerType, website, message, partnerId, adminUrl } = body.data;
+      const { businessName, contactName, email, phone, businessType, message, expectedQrSales, expectedNfcSales } = body;
       
-      const partnerTypeLabels = {
+      const businessTypeLabels = {
+        vet: 'Veterinary Clinic',
+        pet_cremation: 'Pet Cremation Service',
         funeral_director: 'Funeral Director',
         cemetery: 'Cemetery / Memorial Park',
-        pet_cremation: 'Pet Cremation / Veterinary',
-        retailer: 'Retail Partner',
+        retailer: 'Retail Store',
         other: 'Other'
       };
       
       return {
-        to: body.to,
+        to: 'memoriqr.global@gmail.com',
         replyTo: email,
         from_name: 'MemoriQR Partner Portal',
         subject: `🆕 New Partner Application: ${businessName}`,
@@ -652,11 +654,16 @@ ${notes ? `<div style="background: #f9f7f4; padding: 15px; border-radius: 8px; m
 <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
 <tr style="background: #f9f7f4;"><td colspan="2" style="padding: 12px; font-weight: bold; border: 1px solid #ddd;">Application Details</td></tr>
 <tr><td style="padding: 10px; border: 1px solid #eee; width: 35%;">Business Name</td><td style="padding: 10px; border: 1px solid #eee; font-weight: 500;">${businessName}</td></tr>
-<tr><td style="padding: 10px; border: 1px solid #eee;">Business Type</td><td style="padding: 10px; border: 1px solid #eee;">${partnerTypeLabels[partnerType] || partnerType}</td></tr>
+<tr><td style="padding: 10px; border: 1px solid #eee;">Business Type</td><td style="padding: 10px; border: 1px solid #eee;">${businessTypeLabels[businessType] || businessType}</td></tr>
 <tr><td style="padding: 10px; border: 1px solid #eee;">Contact Name</td><td style="padding: 10px; border: 1px solid #eee;">${contactName}</td></tr>
 <tr><td style="padding: 10px; border: 1px solid #eee;">Email</td><td style="padding: 10px; border: 1px solid #eee;"><a href="mailto:${email}">${email}</a></td></tr>
-<tr><td style="padding: 10px; border: 1px solid #eee;">Phone</td><td style="padding: 10px; border: 1px solid #eee;">${phone}</td></tr>
-${website ? `<tr><td style="padding: 10px; border: 1px solid #eee;">Website</td><td style="padding: 10px; border: 1px solid #eee;"><a href="${website}" target="_blank">${website}</a></td></tr>` : ''}
+<tr><td style="padding: 10px; border: 1px solid #eee;">Phone</td><td style="padding: 10px; border: 1px solid #eee;">${phone || 'Not provided'}</td></tr>
+</table>
+
+<table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+<tr style="background: #e8f5e9;"><td colspan="2" style="padding: 12px; font-weight: bold; border: 1px solid #ddd;">📊 Expected Monthly Sales</td></tr>
+<tr><td style="padding: 10px; border: 1px solid #eee; width: 50%;">QR Memorial Plates</td><td style="padding: 10px; border: 1px solid #eee; font-weight: 500;">${expectedQrSales || 'Not specified'}</td></tr>
+<tr><td style="padding: 10px; border: 1px solid #eee;">NFC Tags</td><td style="padding: 10px; border: 1px solid #eee; font-weight: 500;">${expectedNfcSales || 'Not specified'}</td></tr>
 </table>
 
 ${message ? `<div style="background: #f9f7f4; padding: 15px; border-radius: 8px; margin: 20px 0;">
@@ -664,16 +671,20 @@ ${message ? `<div style="background: #f9f7f4; padding: 15px; border-radius: 8px;
 <p style="color: #555; margin: 0; line-height: 1.6;">${message}</p>
 </div>` : ''}
 
-<div style="text-align: center; margin: 30px 0;">
-<a href="${adminUrl}" style="display: inline-block; background: linear-gradient(135deg, #374151 0%, #1f2937 100%); color: #fff; text-decoration: none; padding: 15px 40px; border-radius: 8px; font-size: 16px;">Review in Admin Dashboard</a>
+<div style="background: #f0f8ff; border: 1px solid #b8d4f0; padding: 15px; border-radius: 8px; margin-top: 20px;">
+<strong>📋 Next Steps:</strong>
+<p style="margin: 10px 0 5px;">1. Review the application details above</p>
+<p style="margin: 5px 0;">2. Contact applicant if more info needed</p>
+<p style="margin: 5px 0 0;">3. Create partner account in admin dashboard if approved</p>
 </div>
+
 </div>
 
 <div style="background: #f5f5f0; padding: 20px; text-align: center; border-radius: 0 0 8px 8px;">
 <p style="color: #888; font-size: 12px; margin: 0;">MemoriQR Admin Notification</p>
 </div>
 </div>`,
-        text: `New Partner Application\n\nBusiness: ${businessName}\nType: ${partnerTypeLabels[partnerType] || partnerType}\nContact: ${contactName}\nEmail: ${email}\nPhone: ${phone}\n${website ? `Website: ${website}\n` : ''}${message ? `\nMessage: ${message}\n` : ''}\nReview at: ${adminUrl}`
+        text: `New Partner Application\n\nBusiness: ${businessName}\nType: ${businessTypeLabels[businessType] || businessType}\nContact: ${contactName}\nEmail: ${email}\nPhone: ${phone || 'Not provided'}\n\nExpected Monthly Sales:\n- QR Plates: ${expectedQrSales || 'Not specified'}\n- NFC Tags: ${expectedNfcSales || 'Not specified'}\n${message ? `\nMessage: ${message}\n` : ''}`
       };
     }
     
