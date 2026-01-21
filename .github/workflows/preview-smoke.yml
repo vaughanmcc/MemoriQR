@@ -1,5 +1,10 @@
 name: Preview Smoke Test
 
+# ADDED: This block cancels older runs if a new deployment status is received
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.deployment_status.target_url }}
+  cancel-in-progress: true
+
 on:
   deployment_status:
 
@@ -7,7 +12,8 @@ jobs:
   smoke-test:
     if: github.event.deployment_status.state == 'success' && github.event.deployment_status.environment == 'Preview'
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    # REDUCED: Lowered from 5 to 3 minutes to save on potential hanging costs
+    timeout-minutes: 3
 
     steps:
       - name: Get Preview URL
@@ -15,64 +21,40 @@ jobs:
         run: |
           echo "url=${{ github.event.deployment_status.target_url }}" >> $GITHUB_OUTPUT
 
+      # REDUCED: Lowered wait time from 10s to 5s for faster feedback
       - name: Wait for deployment to be ready
-        run: sleep 10
+        run: sleep 5
 
-      - name: Smoke Test - Homepage
+      - name: Run Smoke Tests
         run: |
-          response=$(curl -s -o /dev/null -w "%{http_code}" "${{ steps.preview.outputs.url }}")
-          if [ "$response" != "200" ]; then
-            echo "❌ Homepage returned $response"
-            exit 1
-          fi
-          echo "✅ Homepage OK (200)"
+          URL="${{ steps.preview.outputs.url }}"
+          
+          # Function to check pages quickly
+          check_page() {
+            local path=$1
+            echo "Testing $URL$path..."
+            response=$(curl -s -o /dev/null -w "%{http_code}" "$URL$path")
+            if [ "$response" != "200" ]; then
+              echo "❌ $path returned $response"
+              exit 1
+            fi
+            echo "✅ $path OK (200)"
+          }
 
-      - name: Smoke Test - Order Page
-        run: |
-          response=$(curl -s -o /dev/null -w "%{http_code}" "${{ steps.preview.outputs.url }}/order")
-          if [ "$response" != "200" ]; then
-            echo "❌ Order page returned $response"
-            exit 1
-          fi
-          echo "✅ Order page OK (200)"
-
-      - name: Smoke Test - Activate Page
-        run: |
-          response=$(curl -s -o /dev/null -w "%{http_code}" "${{ steps.preview.outputs.url }}/activate")
-          if [ "$response" != "200" ]; then
-            echo "❌ Activate page returned $response"
-            exit 1
-          fi
-          echo "✅ Activate page OK (200)"
-
-      - name: Smoke Test - About Page
-        run: |
-          response=$(curl -s -o /dev/null -w "%{http_code}" "${{ steps.preview.outputs.url }}/about")
-          if [ "$response" != "200" ]; then
-            echo "❌ About page returned $response"
-            exit 1
-          fi
-          echo "✅ About page OK (200)"
-
-      - name: Smoke Test - Contact Page
-        run: |
-          response=$(curl -s -o /dev/null -w "%{http_code}" "${{ steps.preview.outputs.url }}/contact")
-          if [ "$response" != "200" ]; then
-            echo "❌ Contact page returned $response"
-            exit 1
-          fi
-          echo "✅ Contact page OK (200)"
-
-      - name: Smoke Test - API Health (Memorial Lookup)
-        run: |
-          response=$(curl -s -o /dev/null -w "%{http_code}" "${{ steps.preview.outputs.url }}/api/memorial/lookup?slug=test")
-          # 404 is acceptable for non-existent memorial, 500 would be a problem
-          if [ "$response" == "500" ]; then
+          check_page ""
+          check_page "/order"
+          check_page "/activate"
+          check_page "/about"
+          check_page "/contact"
+          
+          # API Check
+          echo "Testing API Health..."
+          api_res=$(curl -s -o /dev/null -w "%{http_code}" "$URL/api/memorial/lookup?slug=test")
+          if [ "$api_res" == "500" ]; then
             echo "❌ API returned 500 error"
             exit 1
           fi
-          echo "✅ API responding (returned $response)"
+          echo "✅ API responding (returned $api_res)"
 
       - name: Summary
-        run: |
-          echo "🎉 All smoke tests passed for ${{ steps.preview.outputs.url }}"
+        run: echo "🎉 All smoke tests passed for ${{ steps.preview.outputs.url }}"
