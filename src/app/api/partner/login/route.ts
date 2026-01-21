@@ -6,8 +6,9 @@ import crypto from 'crypto'
 export async function POST(request: NextRequest) {
   try {
     const { email } = await request.json()
+    const normalizedEmail = String(email || '').trim().toLowerCase()
 
-    if (!email) {
+    if (!normalizedEmail) {
       return NextResponse.json(
         { error: 'Email is required' },
         { status: 400 }
@@ -17,11 +18,14 @@ export async function POST(request: NextRequest) {
     const supabase = createAdminClient()
 
     // Find partner by email
-    const { data: partner, error: partnerError } = await supabase
+    const { data: partners, error: partnerError } = await supabase
       .from('partners')
-      .select('id, partner_name, contact_email, is_active')
-      .eq('contact_email', email.toLowerCase())
-      .single()
+      .select('id, partner_name, contact_email, email, is_active, created_at')
+      .or(`contact_email.ilike.${normalizedEmail},email.ilike.${normalizedEmail}`)
+      .order('created_at', { ascending: false })
+      .limit(1)
+
+    const partner = partners?.[0]
 
     if (partnerError || !partner) {
       // Don't reveal if partner exists or not for security
@@ -95,7 +99,7 @@ export async function POST(request: NextRequest) {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             type: 'partner_login_code',
-            partner_email: partner.contact_email,
+            partner_email: partner.contact_email || partner.email,
             partner_name: partner.partner_name,
             login_code: loginCode,
             expires_in: '15 minutes',
@@ -104,6 +108,10 @@ export async function POST(request: NextRequest) {
             reply_to: 'partners@memoriqr.co.nz'
           })
         })
+        if (!response.ok) {
+          const errorText = await response.text().catch(() => 'unknown error')
+          console.error('Login code webhook failed:', response.status, errorText)
+        }
       } catch (emailError) {
         console.error('Failed to send login code email:', emailError)
       }
