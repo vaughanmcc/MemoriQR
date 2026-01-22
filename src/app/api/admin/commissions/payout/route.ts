@@ -9,8 +9,12 @@ const PIPEDREAM_WEBHOOK_URL = process.env.PIPEDREAM_WEBHOOK_URL || 'https://eo7e
 // Helper to check admin session
 async function checkAdminSession() {
   const cookieStore = cookies()
-  const adminSession = cookieStore.get('admin_session')?.value
-  return adminSession === 'authenticated'
+  const session = cookieStore.get('admin-session')?.value
+  const correctPassword = process.env.ADMIN_PASSWORD
+  if (!correctPassword || !session) {
+    return false
+  }
+  return session === correctPassword
 }
 
 // Helper to generate payout number

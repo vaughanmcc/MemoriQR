@@ -1,10 +1,8 @@
-import { NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
+import { NextRequest, NextResponse } from 'next/server';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    const cookieStore = await cookies();
-    const session = cookieStore.get('admin-session')?.value;
+    const session = request.cookies.get('admin-session')?.value;
     const correctPassword = process.env.ADMIN_PASSWORD;
 
     if (!correctPassword || session !== correctPassword) {
@@ -19,9 +17,15 @@ export async function GET() {
 
 export async function DELETE() {
   try {
-    const cookieStore = await cookies();
-    cookieStore.delete('admin-session', { path: '/' });
-    return NextResponse.json({ success: true });
+    const response = NextResponse.json({ success: true });
+    response.cookies.set('admin-session', '', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      path: '/',
+      maxAge: 0, // Expire immediately
+    });
+    return response;
   } catch {
     return NextResponse.json({ error: 'Failed to logout' }, { status: 500 });
   }
