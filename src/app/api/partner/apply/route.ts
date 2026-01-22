@@ -44,53 +44,47 @@ export async function POST(request: Request) {
       );
     }
 
-    // Check if email already exists (case-insensitive)
-    const { data: existingByEmail } = await supabase
+    const normalizedEmail = email.trim().toLowerCase()
+    const normalizedBusinessName = businessName.trim().toLowerCase()
+
+    // Check for exact duplicate: same email + business name + business type
+    // This prevents the same person from applying twice with identical info
+    const { data: exactDuplicates } = await supabase
       .from('partners')
-      .select('id, status, partner_name')
-      .ilike('contact_email', email.trim().toLowerCase())
-      .limit(1)
+      .select('id, status, partner_name, partner_type')
+      .ilike('contact_email', normalizedEmail)
 
-    const existing = existingByEmail?.[0]
+    const exactDuplicate = exactDuplicates?.find(p => {
+      const existingName = (p.partner_name || '').toLowerCase()
+      const existingType = p.partner_type
+      // Check if business name contains the submitted name (or vice versa) AND same type
+      const nameMatches = existingName.includes(normalizedBusinessName) || 
+                          normalizedBusinessName.includes(existingName.split('(')[0].trim())
+      return nameMatches && existingType === resolvedPartnerType
+    })
 
-    if (existing) {
-      if (existing.status === 'pending') {
+    if (exactDuplicate) {
+      if (exactDuplicate.status === 'pending') {
         return NextResponse.json(
-          { error: 'An application with this email is already pending review' },
+          { error: 'An identical application is already pending review. Please wait for our response.' },
           { status: 400 }
         );
-      } else if (existing.status === 'active' || existing.status === 'approved') {
+      } else if (exactDuplicate.status === 'active' || exactDuplicate.status === 'approved') {
         return NextResponse.json(
-          { error: 'This email is already registered as a partner. Please log in instead.' },
+          { error: 'This business is already registered as a partner. Please log in instead.' },
           { status: 400 }
         );
-      } else if (existing.status === 'rejected') {
+      } else if (exactDuplicate.status === 'rejected') {
         return NextResponse.json(
-          { error: 'A previous application with this email was not approved. Please contact support.' },
+          { error: 'A previous application for this business was not approved. Please contact support if you believe this is an error.' },
           { status: 400 }
         );
-      } else if (existing.status === 'suspended') {
+      } else if (exactDuplicate.status === 'suspended') {
         return NextResponse.json(
           { error: 'This partner account has been suspended. Please contact support.' },
           { status: 400 }
         );
       }
-    }
-
-    // Check if business name already exists (case-insensitive partial match)
-    const { data: existingByName } = await supabase
-      .from('partners')
-      .select('id, status, contact_email')
-      .ilike('partner_name', `%${businessName.trim()}%`)
-      .limit(1)
-
-    const existingName = existingByName?.[0]
-
-    if (existingName && existingName.status !== 'rejected') {
-      return NextResponse.json(
-        { error: 'A partner with a similar business name already exists. If this is your business, please contact support.' },
-        { status: 400 }
-      );
     }
 
     // Create partner with pending status

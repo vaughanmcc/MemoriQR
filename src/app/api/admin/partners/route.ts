@@ -91,15 +91,25 @@ export async function POST(request: Request) {
     }
 
     const normalizedEmail = String(email).toLowerCase().trim();
+    const normalizedBusinessName = String(businessName).toLowerCase().trim();
 
-    const { data: existing } = await supabase
+    // Check for exact duplicate: same email + business name + type
+    const { data: existingPartners } = await supabase
       .from('partners')
-      .select('id')
-      .eq('contact_email', normalizedEmail)
-      .single();
+      .select('id, partner_name, partner_type, status')
+      .ilike('contact_email', normalizedEmail);
 
-    if (existing) {
-      return NextResponse.json({ error: 'A partner with this email already exists' }, { status: 400 });
+    const exactDuplicate = existingPartners?.find(p => {
+      const existingName = (p.partner_name || '').toLowerCase()
+      const nameMatches = existingName.includes(normalizedBusinessName) || 
+                          normalizedBusinessName.includes(existingName.split('(')[0].trim())
+      return nameMatches && p.partner_type === partnerType
+    });
+
+    if (exactDuplicate) {
+      return NextResponse.json({ 
+        error: `A partner with this email, business name, and type already exists (status: ${exactDuplicate.status})` 
+      }, { status: 400 });
     }
 
     const approvedAt = status === 'active' ? new Date().toISOString() : null;
