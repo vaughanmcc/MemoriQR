@@ -21,6 +21,7 @@
  * - partner_approved: Approval notification → partner
  * - partner_rejected: Rejection notification → applicant
  * - partner_suspended: Suspension notification → partner
+ * - commission_payout_statement: Payout confirmation → partner
  */
 
 export default defineComponent({
@@ -807,6 +808,79 @@ ${message ? `<div style="background: #f9f7f4; padding: 15px; border-radius: 8px;
 </div>
 </div>`,
         text: `Hi ${contactName},\n\nThank you for your interest in becoming a MemoriQR partner. After reviewing your application for ${businessName}, we've decided not to proceed at this time.\n\nThis decision may be based on factors such as market coverage, business alignment, or current partner capacity in your area.\n\nWe appreciate you taking the time to apply, and we encourage you to reapply in the future if your circumstances change.\n\nIf you have any questions, please don't hesitate to reach out.\n\nBest regards,\nThe MemoriQR Team`
+      };
+    }
+
+    // Commission payout statement notification
+    if (type === 'commission_payout_statement') {
+      const { 
+        partner_name, 
+        partner_email, 
+        payout_number, 
+        period_start, 
+        period_end, 
+        total_commissions, 
+        total_amount, 
+        payment_reference,
+        bank_name,
+        bank_account_last4
+      } = body;
+
+      return {
+        to: partner_email,
+        replyTo: 'partners@memoriqr.co.nz',
+        from_name: 'MemoriQR',
+        subject: `💰 Your MemoriQR Commission Payout - ${payout_number}`,
+        html: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+<div style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); padding: 30px; text-align: center; border-radius: 8px 8px 0 0;">
+<h1 style="color: #fff; margin: 0; font-size: 22px;">💰 Commission Payout Processed</h1>
+</div>
+
+<div style="padding: 30px; background: #fff; border: 1px solid #ddd; border-top: none;">
+<p style="color: #333; font-size: 16px;">Hi ${partner_name},</p>
+
+<p style="color: #555; line-height: 1.6;">Great news! Your commission payout has been processed and the funds are on their way to you.</p>
+
+<div style="background: #ecfdf5; border: 2px solid #10b981; padding: 20px; border-radius: 8px; margin: 20px 0; text-align: center;">
+<p style="color: #059669; font-size: 14px; margin: 0 0 5px 0;">PAYOUT AMOUNT</p>
+<p style="color: #047857; font-size: 32px; font-weight: bold; margin: 0;">$${total_amount} NZD</p>
+</div>
+
+<table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+<tr>
+<td style="padding: 10px; border-bottom: 1px solid #eee; color: #666;">Payout Reference</td>
+<td style="padding: 10px; border-bottom: 1px solid #eee; color: #333; text-align: right; font-weight: bold;">${payout_number}</td>
+</tr>
+<tr>
+<td style="padding: 10px; border-bottom: 1px solid #eee; color: #666;">Period</td>
+<td style="padding: 10px; border-bottom: 1px solid #eee; color: #333; text-align: right;">${period_start} to ${period_end}</td>
+</tr>
+<tr>
+<td style="padding: 10px; border-bottom: 1px solid #eee; color: #666;">Commissions Included</td>
+<td style="padding: 10px; border-bottom: 1px solid #eee; color: #333; text-align: right;">${total_commissions}</td>
+</tr>
+<tr>
+<td style="padding: 10px; border-bottom: 1px solid #eee; color: #666;">Bank Transfer Ref</td>
+<td style="padding: 10px; border-bottom: 1px solid #eee; color: #333; text-align: right;">${payment_reference}</td>
+</tr>
+<tr>
+<td style="padding: 10px; color: #666;">Paid To</td>
+<td style="padding: 10px; color: #333; text-align: right;">${bank_name} ****${bank_account_last4}</td>
+</tr>
+</table>
+
+<p style="color: #555; line-height: 1.6;">Funds typically arrive within 1-2 business days. You can view your full commission history in your <a href="https://memoriqr.co.nz/partner/commissions" style="color: #059669;">Partner Portal</a>.</p>
+
+<p style="color: #555; margin-top: 25px;">Thank you for being a valued MemoriQR partner! 🙏</p>
+
+<p style="color: #555;">Regards,<br><strong>The MemoriQR Team</strong></p>
+</div>
+
+<div style="background: #f5f5f0; padding: 20px; text-align: center; border-radius: 0 0 8px 8px;">
+<p style="color: #888; font-size: 12px; margin: 0;">MemoriQR Partner Program | Questions? Reply to this email</p>
+</div>
+</div>`,
+        text: `Hi ${partner_name},\n\nGreat news! Your commission payout has been processed.\n\nPAYOUT DETAILS:\n- Payout Reference: ${payout_number}\n- Amount: $${total_amount} NZD\n- Period: ${period_start} to ${period_end}\n- Commissions: ${total_commissions}\n- Bank Transfer Ref: ${payment_reference}\n- Paid To: ${bank_name} ****${bank_account_last4}\n\nFunds typically arrive within 1-2 business days.\n\nView your commission history: https://memoriqr.co.nz/partner/commissions\n\nThank you for being a valued MemoriQR partner!\n\nRegards,\nThe MemoriQR Team`
       };
     }
 

@@ -84,6 +84,9 @@ export default function AdminDashboardPage() {
               <Link href="/admin/partners" className="text-white/70 hover:text-white px-3 py-1 rounded hover:bg-white/10">
                 Partners
               </Link>
+              <Link href="/admin/commissions" className="text-white/70 hover:text-white px-3 py-1 rounded hover:bg-white/10">
+                Commissions
+              </Link>
               <Link href="/admin/orders" className="text-white/70 hover:text-white px-3 py-1 rounded hover:bg-white/10">
                 Orders
               </Link>
@@ -161,6 +164,12 @@ export default function AdminDashboardPage() {
               Review Applications
             </Link>
             <Link
+              href="/admin/commissions?status=pending"
+              className="bg-emerald-600 text-white px-4 py-2 rounded-lg hover:bg-emerald-700 transition-colors"
+            >
+              Review Commissions
+            </Link>
+            <Link
               href="/admin/codes"
               className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors"
             >
@@ -193,6 +202,9 @@ export default function AdminDashboardPage() {
             </Link>
             <Link href="/admin/partners" className="block px-4 py-2 hover:bg-stone-50 rounded-lg text-stone-600">
               Partners
+            </Link>
+            <Link href="/admin/commissions" className="block px-4 py-2 hover:bg-stone-50 rounded-lg text-stone-600">
+              Commissions
             </Link>
             <Link href="/admin/orders" className="block px-4 py-2 hover:bg-stone-50 rounded-lg text-stone-600">
               Orders

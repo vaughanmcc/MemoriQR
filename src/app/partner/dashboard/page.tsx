@@ -14,7 +14,8 @@ import {
   CheckCircle,
   Clock,
   ChevronRight,
-  Tag
+  Tag,
+  Settings
 } from 'lucide-react'
 
 interface DashboardData {
@@ -231,6 +232,22 @@ export default function PartnerDashboardPage() {
               <div>
                 <h3 className="font-medium text-gray-900">Materials</h3>
                 <p className="text-sm text-gray-500">Download assets</p>
+              </div>
+            </div>
+            <ChevronRight className="h-5 w-5 text-gray-400" />
+          </Link>
+
+          <Link
+            href="/partner/settings"
+            className="bg-white rounded-xl shadow-sm p-6 hover:shadow-md transition-shadow flex items-center justify-between"
+          >
+            <div className="flex items-center gap-4">
+              <div className="bg-gray-100 rounded-lg p-3">
+                <Settings className="h-6 w-6 text-gray-600" />
+              </div>
+              <div>
+                <h3 className="font-medium text-gray-900">Settings</h3>
+                <p className="text-sm text-gray-500">Banking & payouts</p>
               </div>
             </div>
             <ChevronRight className="h-5 w-5 text-gray-400" />

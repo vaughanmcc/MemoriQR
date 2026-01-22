@@ -260,6 +260,10 @@ export interface Database {
           default_discount_percent: number | null
           default_commission_percent: number | null
           default_free_shipping: boolean | null
+          bank_account_name: string | null
+          bank_account_number: string | null
+          bank_name: string | null
+          payout_email: string | null
           created_at: string
         }
         Insert: {
@@ -286,6 +290,10 @@ export interface Database {
           default_discount_percent?: number | null
           default_commission_percent?: number | null
           default_free_shipping?: boolean | null
+          bank_account_name?: string | null
+          bank_account_number?: string | null
+          bank_name?: string | null
+          payout_email?: string | null
           created_at?: string
         }
         Update: {
@@ -312,6 +320,10 @@ export interface Database {
           default_discount_percent?: number | null
           default_commission_percent?: number | null
           default_free_shipping?: boolean | null
+          bank_account_name?: string | null
+          bank_account_number?: string | null
+          bank_name?: string | null
+          payout_email?: string | null
           created_at?: string
         }
       }
