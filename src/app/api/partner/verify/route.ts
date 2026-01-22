@@ -19,11 +19,12 @@ export async function POST(request: NextRequest) {
 
     const supabase = createAdminClient()
 
-    // Find partner by email (case-insensitive)
+    // Find partner by email (case-insensitive) - use same ordering as login route
     const { data: partners, error: partnerError } = await supabase
       .from('partners')
       .select('id, partner_name, contact_email, is_active')
       .ilike('contact_email', normalizedEmail)
+      .order('created_at', { ascending: false })
       .limit(1)
 
     const partner = partners?.[0]
