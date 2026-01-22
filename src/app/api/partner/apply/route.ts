@@ -44,12 +44,14 @@ export async function POST(request: Request) {
       );
     }
 
-    // Check if email already exists
-    const { data: existing } = await supabase
+    // Check if email already exists (case-insensitive)
+    const { data: existingByEmail } = await supabase
       .from('partners')
-      .select('id, status')
-      .eq('email', email.toLowerCase())
-      .single();
+      .select('id, status, partner_name')
+      .ilike('contact_email', email.trim().toLowerCase())
+      .limit(1)
+
+    const existing = existingByEmail?.[0]
 
     if (existing) {
       if (existing.status === 'pending') {
@@ -57,12 +59,38 @@ export async function POST(request: Request) {
           { error: 'An application with this email is already pending review' },
           { status: 400 }
         );
-      } else if (existing.status === 'active') {
+      } else if (existing.status === 'active' || existing.status === 'approved') {
         return NextResponse.json(
           { error: 'This email is already registered as a partner. Please log in instead.' },
           { status: 400 }
         );
+      } else if (existing.status === 'rejected') {
+        return NextResponse.json(
+          { error: 'A previous application with this email was not approved. Please contact support.' },
+          { status: 400 }
+        );
+      } else if (existing.status === 'suspended') {
+        return NextResponse.json(
+          { error: 'This partner account has been suspended. Please contact support.' },
+          { status: 400 }
+        );
       }
+    }
+
+    // Check if business name already exists (case-insensitive partial match)
+    const { data: existingByName } = await supabase
+      .from('partners')
+      .select('id, status, contact_email')
+      .ilike('partner_name', `%${businessName.trim()}%`)
+      .limit(1)
+
+    const existingName = existingByName?.[0]
+
+    if (existingName && existingName.status !== 'rejected') {
+      return NextResponse.json(
+        { error: 'A partner with a similar business name already exists. If this is your business, please contact support.' },
+        { status: 400 }
+      );
     }
 
     // Create partner with pending status
