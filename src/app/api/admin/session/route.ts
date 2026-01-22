@@ -20,7 +20,7 @@ export async function GET() {
 export async function DELETE() {
   try {
     const cookieStore = await cookies();
-    cookieStore.delete('admin-session');
+    cookieStore.delete('admin-session', { path: '/' });
     return NextResponse.json({ success: true });
   } catch {
     return NextResponse.json({ error: 'Failed to logout' }, { status: 500 });
