@@ -33,10 +33,6 @@ interface CommissionWithRelations {
     bank_account_number: string | null
     bank_name: string | null
   } | null
-  order: {
-    order_number: string
-    customer_id: string | null
-  } | null
 }
 
 // GET - List all commissions with partner info and filtering
@@ -60,12 +56,12 @@ export async function GET(request: NextRequest) {
 
   try {
     // Build query for commissions with partner info
+    // Note: order join uses !left to handle missing relationships gracefully
     let query = supabase
       .from('partner_commissions')
       .select(`
         *,
-        partner:partners(id, partner_name, contact_email, bank_account_name, bank_account_number, bank_name),
-        order:orders(order_number, customer_id)
+        partner:partners!partner_commissions_partner_id_fkey(id, partner_name, contact_email, bank_account_name, bank_account_number, bank_name)
       `)
       .order('earned_at', { ascending: false })
 

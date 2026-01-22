@@ -14,16 +14,22 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    const normalizedEmail = String(email).trim().toLowerCase()
+    const normalizedCode = String(code).trim()
+
     const supabase = createAdminClient()
 
-    // Find partner by email
-    const { data: partner, error: partnerError } = await supabase
+    // Find partner by email (case-insensitive)
+    const { data: partners, error: partnerError } = await supabase
       .from('partners')
       .select('id, partner_name, contact_email, is_active')
-      .eq('contact_email', email.toLowerCase())
-      .single()
+      .ilike('contact_email', normalizedEmail)
+      .limit(1)
+
+    const partner = partners?.[0]
 
     if (partnerError || !partner) {
+      console.log('Partner lookup failed:', { normalizedEmail, partnerError })
       return NextResponse.json(
         { error: 'Invalid email or code' },
         { status: 401 }
@@ -42,7 +48,7 @@ export async function POST(request: NextRequest) {
       .from('partner_login_codes')
       .select('*')
       .eq('partner_id', partner.id)
-      .eq('code', code)
+      .eq('code', normalizedCode)
       .is('used_at', null)
       .single()
 
