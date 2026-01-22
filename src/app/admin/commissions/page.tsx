@@ -109,7 +109,14 @@ function AdminCommissionsContent() {
           router.push('/admin');
           return;
         }
-        throw new Error('Failed to fetch commissions');
+        let message = 'Failed to fetch commissions';
+        try {
+          const data = await res.json();
+          if (data?.error) message = data.error;
+        } catch {
+          // ignore JSON parse errors
+        }
+        throw new Error(message);
       }
 
       const data = await res.json();

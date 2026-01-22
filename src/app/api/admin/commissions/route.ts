@@ -47,6 +47,13 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    return NextResponse.json(
+      { error: 'Supabase admin environment variables are not configured' },
+      { status: 500 }
+    )
+  }
+
   const supabase = createAdminClient()
   const { searchParams } = new URL(request.url)
   const status = searchParams.get('status') // 'all', 'pending', 'approved', 'paid', 'cancelled'
