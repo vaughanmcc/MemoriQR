@@ -67,20 +67,30 @@ export async function POST(request: NextRequest) {
     const loginCode = Math.floor(100000 + Math.random() * 900000).toString()
     const expiresAt = new Date(Date.now() + 15 * 60 * 1000) // 15 minutes
 
+    console.log('Generating login code for partner:', partner.id, 'code:', loginCode)
+
     // Delete any existing codes for this partner
-    await supabase
+    const { error: deleteError } = await supabase
       .from('partner_login_codes')
       .delete()
       .eq('partner_id', partner.id)
 
+    if (deleteError) {
+      console.error('Error deleting old codes:', deleteError)
+    }
+
     // Insert new login code
-    const { error: codeError } = await supabase
+    const { data: insertedCode, error: codeError } = await supabase
       .from('partner_login_codes')
       .insert({
         partner_id: partner.id,
         code: loginCode,
         expires_at: expiresAt.toISOString()
       })
+      .select()
+      .single()
+
+    console.log('Insert result:', { insertedCode, codeError: codeError?.message })
 
     if (codeError) {
       console.error('Error creating login code:', codeError)
