@@ -52,7 +52,24 @@ export async function POST(request: NextRequest) {
       .is('used_at', null)
       .single()
 
+    console.log('Login code lookup:', { 
+      partnerId: partner.id, 
+      codeEntered: normalizedCode,
+      codeError: codeError?.message,
+      codeFound: !!loginCode 
+    })
+
     if (codeError || !loginCode) {
+      // Check if there's ANY code for this partner to help debug
+      const { data: allCodes } = await supabase
+        .from('partner_login_codes')
+        .select('code, expires_at, used_at, created_at')
+        .eq('partner_id', partner.id)
+        .order('created_at', { ascending: false })
+        .limit(3)
+      
+      console.log('Recent codes for partner:', allCodes)
+      
       return NextResponse.json(
         { error: 'Invalid or expired code' },
         { status: 401 }
