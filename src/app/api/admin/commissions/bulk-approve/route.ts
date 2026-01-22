@@ -1,14 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { cookies } from 'next/headers'
 import { createAdminClient } from '@/lib/supabase/server'
 
 // Pipedream webhook URL for emails
 const PIPEDREAM_WEBHOOK_URL = process.env.PIPEDREAM_WEBHOOK_URL || 'https://eo7epxu5aypc0vj.m.pipedream.net'
 
-// Helper to check admin session
-async function checkAdminSession() {
-  const cookieStore = cookies()
-  const session = cookieStore.get('admin-session')?.value
+// Helper to check admin session from request
+function checkAdminSession(request: NextRequest): boolean {
+  const session = request.cookies.get('admin-session')?.value
   const correctPassword = process.env.ADMIN_PASSWORD
   if (!correctPassword || !session) {
     return false
@@ -18,7 +16,7 @@ async function checkAdminSession() {
 
 // POST - Bulk approve commissions
 export async function POST(request: NextRequest) {
-  if (!await checkAdminSession()) {
+  if (!checkAdminSession(request)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
