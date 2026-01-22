@@ -11,10 +11,13 @@ interface Partner {
   id: string
   partner_name: string | null
   contact_email: string | null
+  contact_phone: string | null
   payout_email: string | null
   bank_name: string | null
   bank_account_name: string | null
   bank_account_number: string | null
+  website: string | null
+  address: Record<string, string> | null
   is_active: boolean
 }
 
@@ -44,7 +47,7 @@ async function getAuthenticatedPartner(): Promise<Partner | null> {
 
   const { data: partnerData } = await supabase
     .from('partners')
-    .select('id, partner_name, contact_email, payout_email, bank_name, bank_account_name, bank_account_number, is_active')
+    .select('id, partner_name, contact_email, contact_phone, payout_email, bank_name, bank_account_name, bank_account_number, website, address, is_active')
     .eq('id', session.partner_id)
     .eq('is_active', true)
     .single()
@@ -60,15 +63,26 @@ export async function GET() {
     return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
   }
 
+  // Parse partner name to extract business name and contact name
+  const partnerName = partner.partner_name || ''
+  const contactNameMatch = partnerName.match(/\(([^)]+)\)/)
+  const contactName = contactNameMatch?.[1] || ''
+  const businessName = partnerName.replace(/\s*\([^)]+\)\s*$/, '')
+
   return NextResponse.json({
     settings: {
       id: partner.id,
       partner_name: partner.partner_name,
+      business_name: businessName,
+      contact_name: contactName,
       contact_email: partner.contact_email,
+      contact_phone: partner.contact_phone,
       payout_email: partner.payout_email,
       bank_name: partner.bank_name,
       bank_account_name: partner.bank_account_name,
       bank_account_number: partner.bank_account_number,
+      website: partner.website,
+      address: partner.address,
     },
   })
 }
@@ -83,7 +97,17 @@ export async function PUT(request: NextRequest) {
 
   try {
     const body = await request.json()
-    const { payout_email, bank_name, bank_account_name, bank_account_number } = body
+    const { 
+      business_name,
+      contact_name,
+      contact_phone,
+      payout_email, 
+      bank_name, 
+      bank_account_name, 
+      bank_account_number,
+      website,
+      address
+    } = body
 
     // Basic validation for bank account number (NZ format)
     if (bank_account_number) {
@@ -99,9 +123,19 @@ export async function PUT(request: NextRequest) {
 
     const supabase = createAdminClient()
 
-    const updateData: Record<string, string | null> = {}
+    const updateData: Record<string, unknown> = {}
     
+    // Update partner name if business or contact name changed
+    if (business_name !== undefined || contact_name !== undefined) {
+      const newBusinessName = business_name ?? partner.partner_name?.replace(/\s*\([^)]+\)\s*$/, '') ?? ''
+      const newContactName = contact_name ?? partner.partner_name?.match(/\(([^)]+)\)/)?.[1] ?? ''
+      updateData.partner_name = newContactName ? `${newBusinessName} (${newContactName})` : newBusinessName
+    }
+
     // Only update fields that were provided
+    if (contact_phone !== undefined) {
+      updateData.contact_phone = contact_phone || null
+    }
     if (payout_email !== undefined) {
       updateData.payout_email = payout_email || null
     }
@@ -114,6 +148,16 @@ export async function PUT(request: NextRequest) {
     if (bank_account_number !== undefined) {
       // Store the formatted version
       updateData.bank_account_number = bank_account_number || null
+    }
+    if (website !== undefined) {
+      updateData.website = website || null
+    }
+    if (address !== undefined) {
+      updateData.address = address || null
+    }
+
+    if (Object.keys(updateData).length === 0) {
+      return NextResponse.json({ success: true, message: 'No changes to save' })
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

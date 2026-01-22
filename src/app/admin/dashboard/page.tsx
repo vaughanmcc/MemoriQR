@@ -159,31 +159,31 @@ export default function AdminDashboardPage() {
           <div className="flex flex-wrap gap-4">
             <Link
               href="/admin/partners?status=pending"
-              className="bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary/90 transition-colors"
+              className="bg-black text-white px-5 py-2.5 rounded-lg hover:bg-black/90 transition-colors shadow-md font-semibold"
             >
               Review Applications
             </Link>
             <Link
               href="/admin/commissions?status=pending"
-              className="bg-emerald-600 text-white px-4 py-2 rounded-lg hover:bg-emerald-700 transition-colors"
+              className="bg-emerald-700 text-white px-5 py-2.5 rounded-lg hover:bg-emerald-800 transition-colors shadow-md font-semibold"
             >
               Review Commissions
             </Link>
             <Link
               href="/admin/codes"
-              className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors"
+              className="bg-purple-700 text-white px-5 py-2.5 rounded-lg hover:bg-purple-800 transition-colors shadow-md font-semibold"
             >
               Generate Retail Codes
             </Link>
             <Link
               href="/admin/partners"
-              className="bg-stone-100 text-stone-700 px-4 py-2 rounded-lg hover:bg-stone-200 transition-colors"
+              className="bg-stone-800 text-white px-5 py-2.5 rounded-lg hover:bg-stone-900 transition-colors shadow-md font-semibold"
             >
               Manage Partners
             </Link>
             <Link
               href="/admin/orders"
-              className="bg-stone-100 text-stone-700 px-4 py-2 rounded-lg hover:bg-stone-200 transition-colors"
+              className="bg-stone-700 text-white px-5 py-2.5 rounded-lg hover:bg-stone-800 transition-colors shadow-md font-semibold"
             >
               View Orders
             </Link>

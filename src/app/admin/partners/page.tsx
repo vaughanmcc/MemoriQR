@@ -12,11 +12,21 @@ interface Partner {
   phone: string;
   partner_type: string;
   commission_rate: number;
+  default_discount_percent?: number;
+  default_commission_percent?: number;
+  default_free_shipping?: boolean;
   status: 'pending' | 'active' | 'suspended' | 'rejected';
   suspended_reason?: string | null;
   suspended_at?: string | null;
   website?: string;
   application_message?: string;
+  address?: {
+    street?: string;
+    city?: string;
+    region?: string;
+    postcode?: string;
+    country?: string;
+  } | null;
   created_at: string;
 }
 
@@ -84,6 +94,16 @@ function AdminPartnersContent() {
     partnerType: '',
     website: '',
     commissionRate: 15,
+    defaultDiscountPercent: 10,
+    defaultCommissionPercent: 15,
+    defaultFreeShipping: false,
+    address: {
+      street: '',
+      city: '',
+      region: '',
+      postcode: '',
+      country: 'New Zealand',
+    },
   });
   const [createForm, setCreateForm] = useState({
     businessName: '',
@@ -231,6 +251,16 @@ function AdminPartnersContent() {
       partnerType: partner.partner_type || 'other',
       website: partner.website || '',
       commissionRate: partner.commission_rate || 15,
+      defaultDiscountPercent: partner.default_discount_percent ?? 10,
+      defaultCommissionPercent: partner.default_commission_percent ?? 15,
+      defaultFreeShipping: partner.default_free_shipping ?? false,
+      address: {
+        street: partner.address?.street || '',
+        city: partner.address?.city || '',
+        region: partner.address?.region || '',
+        postcode: partner.address?.postcode || '',
+        country: partner.address?.country || 'New Zealand',
+      },
     });
     setEditingPartner(partner);
     setSelectedPartner(null);
@@ -254,6 +284,10 @@ function AdminPartnersContent() {
           partnerType: editForm.partnerType,
           website: editForm.website || null,
           commissionRate: editForm.commissionRate,
+          defaultDiscountPercent: editForm.defaultDiscountPercent,
+          defaultCommissionPercent: editForm.defaultCommissionPercent,
+          defaultFreeShipping: editForm.defaultFreeShipping,
+          address: editForm.address,
         }),
       });
 
@@ -420,14 +454,23 @@ function AdminPartnersContent() {
             <div className="p-6 border-b">
               <div className="flex items-center justify-between">
                 <h3 className="text-xl font-bold text-stone-800">{selectedPartner.business_name}</h3>
-                <button
-                  onClick={() => setSelectedPartner(null)}
-                  className="text-stone-400 hover:text-stone-600"
-                >
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => openEditModal(selectedPartner)}
+                    className="bg-black text-white px-4 py-2 rounded-lg hover:bg-black/90 shadow-md font-semibold"
+                  >
+                    Edit Details
+                  </button>
+                  <button
+                    onClick={() => setSelectedPartner(null)}
+                    className="text-stone-400 hover:text-stone-600"
+                    aria-label="Close"
+                  >
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
               </div>
               <span className={`inline-block mt-2 px-2 py-1 rounded-full text-xs font-medium ${STATUS_STYLES[selectedPartner.status || 'pending']}`}>
                 {(selectedPartner.status || 'pending').charAt(0).toUpperCase() + (selectedPartner.status || 'pending').slice(1)}
@@ -526,7 +569,7 @@ function AdminPartnersContent() {
               )}
               <button
                 onClick={() => openEditModal(selectedPartner)}
-                className="bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary/90"
+                className="bg-black text-white px-5 py-2.5 rounded-lg hover:bg-black/90 shadow-md font-semibold ring-1 ring-black/20"
               >
                 Edit
               </button>
@@ -620,27 +663,110 @@ function AdminPartnersContent() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-stone-700 mb-1">Commission Rate (%)</label>
+                  <label className="block text-sm font-medium text-stone-700 mb-1">Website</label>
                   <input
-                    type="number"
-                    min="0"
-                    max="50"
-                    value={editForm.commissionRate}
-                    onChange={(e) => setEditForm({ ...editForm, commissionRate: parseFloat(e.target.value) || 0 })}
+                    type="url"
+                    value={editForm.website}
+                    onChange={(e) => setEditForm({ ...editForm, website: e.target.value })}
+                    placeholder="https://"
                     className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary"
                   />
                 </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-stone-700 mb-1">Website</label>
-                <input
-                  type="url"
-                  value={editForm.website}
-                  onChange={(e) => setEditForm({ ...editForm, website: e.target.value })}
-                  placeholder="https://"
-                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary"
-                />
+              {/* Discount & Commission Settings */}
+              <div className="border-t pt-4 mt-4">
+                <h4 className="font-medium text-stone-800 mb-3">Discount & Commission Settings</h4>
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-stone-700 mb-1">Default Discount (%)</label>
+                    <input
+                      type="number"
+                      min="0"
+                      max="100"
+                      value={editForm.defaultDiscountPercent}
+                      onChange={(e) => setEditForm({ ...editForm, defaultDiscountPercent: parseFloat(e.target.value) || 0 })}
+                      className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-stone-700 mb-1">Commission Rate (%)</label>
+                    <input
+                      type="number"
+                      min="0"
+                      max="50"
+                      value={editForm.defaultCommissionPercent}
+                      onChange={(e) => setEditForm({ ...editForm, defaultCommissionPercent: parseFloat(e.target.value) || 0 })}
+                      className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                    />
+                  </div>
+                  <div className="flex items-center pt-6">
+                    <input
+                      type="checkbox"
+                      id="editFreeShipping"
+                      checked={editForm.defaultFreeShipping}
+                      onChange={(e) => setEditForm({ ...editForm, defaultFreeShipping: e.target.checked })}
+                      className="h-4 w-4 text-primary border-stone-300 rounded"
+                    />
+                    <label htmlFor="editFreeShipping" className="ml-2 text-sm text-stone-700">Free Shipping</label>
+                  </div>
+                </div>
+              </div>
+
+              {/* Address */}
+              <div className="border-t pt-4 mt-4">
+                <h4 className="font-medium text-stone-800 mb-3">Business Address</h4>
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-sm font-medium text-stone-700 mb-1">Street Address</label>
+                    <input
+                      type="text"
+                      value={editForm.address.street}
+                      onChange={(e) => setEditForm({ ...editForm, address: { ...editForm.address, street: e.target.value } })}
+                      className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-stone-700 mb-1">City</label>
+                      <input
+                        type="text"
+                        value={editForm.address.city}
+                        onChange={(e) => setEditForm({ ...editForm, address: { ...editForm.address, city: e.target.value } })}
+                        className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-stone-700 mb-1">Region</label>
+                      <input
+                        type="text"
+                        value={editForm.address.region}
+                        onChange={(e) => setEditForm({ ...editForm, address: { ...editForm.address, region: e.target.value } })}
+                        className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                      />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-stone-700 mb-1">Postcode</label>
+                      <input
+                        type="text"
+                        value={editForm.address.postcode}
+                        onChange={(e) => setEditForm({ ...editForm, address: { ...editForm.address, postcode: e.target.value } })}
+                        className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-stone-700 mb-1">Country</label>
+                      <input
+                        type="text"
+                        value={editForm.address.country}
+                        onChange={(e) => setEditForm({ ...editForm, address: { ...editForm.address, country: e.target.value } })}
+                        className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                      />
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
 

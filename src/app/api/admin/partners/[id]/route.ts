@@ -194,6 +194,10 @@ export async function PUT(
       partnerType,
       website,
       commissionRate,
+      defaultDiscountPercent,
+      defaultCommissionPercent,
+      defaultFreeShipping,
+      address,
     } = body;
 
     if (!businessName || !email) {
@@ -211,17 +215,36 @@ export async function PUT(
       return NextResponse.json({ error: 'Partner not found' }, { status: 404 });
     }
 
-    // Update partner with correct column names
+    // Build update object
+    const updateData: Record<string, unknown> = {
+      partner_name: contactName ? `${businessName} (${contactName})` : businessName,
+      contact_email: email.toLowerCase(),
+      contact_phone: phone || null,
+      partner_type: partnerType,
+      website: website || null,
+    };
+
+    // Only update these if provided
+    if (commissionRate !== undefined) {
+      updateData.commission_rate = commissionRate;
+    }
+    if (defaultDiscountPercent !== undefined) {
+      updateData.default_discount_percent = defaultDiscountPercent;
+    }
+    if (defaultCommissionPercent !== undefined) {
+      updateData.default_commission_percent = defaultCommissionPercent;
+    }
+    if (defaultFreeShipping !== undefined) {
+      updateData.default_free_shipping = defaultFreeShipping;
+    }
+    if (address !== undefined) {
+      updateData.address = address;
+    }
+
+    // Update partner
     const { error: updateError } = await supabase
       .from('partners')
-      .update({
-        partner_name: contactName ? `${businessName} (${contactName})` : businessName,
-        contact_email: email.toLowerCase(),
-        contact_phone: phone || null,
-        partner_type: partnerType,
-        website: website || null,
-        commission_rate: commissionRate,
-      })
+      .update(updateData)
       .eq('id', id);
 
     if (updateError) {

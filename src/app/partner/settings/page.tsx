@@ -3,12 +3,25 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { LogOut, ArrowLeft, Save, Building, CreditCard, AlertCircle, CheckCircle } from 'lucide-react'
+import { LogOut, ArrowLeft, Save, Building, CreditCard, AlertCircle, CheckCircle, User, MapPin } from 'lucide-react'
+
+interface PartnerAddress {
+  street?: string
+  city?: string
+  region?: string
+  postcode?: string
+  country?: string
+}
 
 interface PartnerSettings {
   id: string
   partner_name: string | null
+  business_name: string | null
+  contact_name: string | null
   contact_email: string | null
+  contact_phone: string | null
+  website: string | null
+  address: PartnerAddress | null
   payout_email: string | null
   bank_account_name: string | null
   bank_account_number: string | null
@@ -23,6 +36,19 @@ export default function PartnerSettingsPage() {
   const [success, setSuccess] = useState('')
   const [settings, setSettings] = useState<PartnerSettings | null>(null)
   const [formData, setFormData] = useState({
+    // Business info
+    business_name: '',
+    contact_name: '',
+    contact_phone: '',
+    website: '',
+    address: {
+      street: '',
+      city: '',
+      region: '',
+      postcode: '',
+      country: 'New Zealand',
+    },
+    // Payout info
     payout_email: '',
     bank_name: '',
     bank_account_name: '',
@@ -48,7 +74,19 @@ export default function PartnerSettingsPage() {
 
       const data = await response.json()
       setSettings(data.settings)
+      const addr = data.settings.address || {}
       setFormData({
+        business_name: data.settings.business_name || '',
+        contact_name: data.settings.contact_name || '',
+        contact_phone: data.settings.contact_phone || '',
+        website: data.settings.website || '',
+        address: {
+          street: addr.street || '',
+          city: addr.city || '',
+          region: addr.region || '',
+          postcode: addr.postcode || '',
+          country: addr.country || 'New Zealand',
+        },
         payout_email: data.settings.payout_email || '',
         bank_name: data.settings.bank_name || '',
         bank_account_name: data.settings.bank_account_name || '',
@@ -161,8 +199,138 @@ export default function PartnerSettingsPage() {
           )}
 
           <form onSubmit={handleSubmit} className="p-6 space-y-6">
-            {/* Payout Email */}
+            {/* Business Info Section */}
             <div>
+              <div className="flex items-center gap-2 mb-4">
+                <User className="h-5 w-5 text-gray-600" />
+                <h2 className="text-lg font-medium text-gray-900">Business Information</h2>
+              </div>
+              
+              <div className="grid gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Business Name *
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.business_name}
+                      onChange={(e) => setFormData({ ...formData, business_name: e.target.value })}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Contact Name *
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.contact_name}
+                      onChange={(e) => setFormData({ ...formData, contact_name: e.target.value })}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Phone Number
+                    </label>
+                    <input
+                      type="tel"
+                      value={formData.contact_phone}
+                      onChange={(e) => setFormData({ ...formData, contact_phone: e.target.value })}
+                      placeholder="e.g. 021 123 4567"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Website
+                    </label>
+                    <input
+                      type="url"
+                      value={formData.website}
+                      onChange={(e) => setFormData({ ...formData, website: e.target.value })}
+                      placeholder="https://"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Business Address Section */}
+            <div className="border-t border-gray-200 pt-6">
+              <div className="flex items-center gap-2 mb-4">
+                <MapPin className="h-5 w-5 text-gray-600" />
+                <h2 className="text-lg font-medium text-gray-900">Business Address</h2>
+              </div>
+              
+              <div className="grid gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Street Address
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.address.street}
+                    onChange={(e) => setFormData({ ...formData, address: { ...formData.address, street: e.target.value } })}
+                    placeholder="123 Main Street"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                  />
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">City</label>
+                    <input
+                      type="text"
+                      value={formData.address.city}
+                      onChange={(e) => setFormData({ ...formData, address: { ...formData.address, city: e.target.value } })}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Region</label>
+                    <input
+                      type="text"
+                      value={formData.address.region}
+                      onChange={(e) => setFormData({ ...formData, address: { ...formData.address, region: e.target.value } })}
+                      placeholder="e.g. Auckland"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                    />
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Postcode</label>
+                    <input
+                      type="text"
+                      value={formData.address.postcode}
+                      onChange={(e) => setFormData({ ...formData, address: { ...formData.address, postcode: e.target.value } })}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Country</label>
+                    <input
+                      type="text"
+                      value={formData.address.country}
+                      onChange={(e) => setFormData({ ...formData, address: { ...formData.address, country: e.target.value } })}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Payout Email */}
+            <div className="border-t border-gray-200 pt-6">
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Payout Notification Email
               </label>
