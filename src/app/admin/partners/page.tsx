@@ -18,6 +18,8 @@ interface Partner {
   status: 'pending' | 'active' | 'suspended' | 'rejected';
   suspended_reason?: string | null;
   suspended_at?: string | null;
+  rejected_reason?: string | null;
+  rejected_at?: string | null;
   website?: string;
   application_message?: string;
   address?: {
@@ -60,6 +62,16 @@ const SUSPEND_REASONS = [
   'Other (manual review)',
 ];
 
+const REJECT_REASONS = [
+  'Unverified business information',
+  'Business does not meet partner criteria',
+  'Duplicate application',
+  'Insufficient information provided',
+  'Unable to verify business legitimacy',
+  'Outside service area',
+  'Other (manual review)',
+];
+
 // Wrapper component to handle Suspense for useSearchParams
 export default function AdminPartnersPage() {
   return (
@@ -83,6 +95,9 @@ function AdminPartnersContent() {
   const [showSuspendModal, setShowSuspendModal] = useState(false);
   const [suspendPartner, setSuspendPartner] = useState<Partner | null>(null);
   const [suspendReason, setSuspendReason] = useState('');
+  const [showRejectModal, setShowRejectModal] = useState(false);
+  const [rejectPartner, setRejectPartner] = useState<Partner | null>(null);
+  const [rejectReason, setRejectReason] = useState('');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [createLoading, setCreateLoading] = useState(false);
   const [createError, setCreateError] = useState('');
@@ -184,6 +199,20 @@ function AdminPartnersContent() {
     setShowSuspendModal(false);
     setSuspendPartner(null);
     setSuspendReason('');
+  };
+
+  const openRejectModal = (partner: Partner) => {
+    setRejectPartner(partner);
+    setRejectReason('');
+    setShowRejectModal(true);
+  };
+
+  const confirmReject = async () => {
+    if (!rejectPartner || !rejectReason) return;
+    await handleAction(rejectPartner.id, 'reject', rejectReason);
+    setShowRejectModal(false);
+    setRejectPartner(null);
+    setRejectReason('');
   };
 
   const handleLogout = async () => {
@@ -428,6 +457,11 @@ function AdminPartnersContent() {
                           Reason: {partner.suspended_reason}
                         </p>
                       )}
+                      {partner.status === 'rejected' && partner.rejected_reason && (
+                        <p className="text-xs text-stone-500 mt-2">
+                          Reason: {partner.rejected_reason}
+                        </p>
+                      )}
                     </td>
                     <td className="px-6 py-4 text-sm text-stone-600">
                       {partner.default_discount_percent ?? 0}%
@@ -510,6 +544,14 @@ function AdminPartnersContent() {
                   </p>
                 </div>
               )}
+              {selectedPartner.status === 'rejected' && selectedPartner.rejected_reason && (
+                <div>
+                  <label className="text-sm text-stone-500">Rejection Reason</label>
+                  <p className="text-stone-700 bg-stone-100 p-3 rounded-lg mt-1 border border-stone-200">
+                    {selectedPartner.rejected_reason}
+                  </p>
+                </div>
+              )}
               <div>
                 <label className="text-sm text-stone-500">Commission Rate</label>
                 <p className="font-medium">{selectedPartner.commission_rate}%</p>
@@ -537,11 +579,22 @@ function AdminPartnersContent() {
                     {actionLoading ? 'Processing...' : 'Approve'}
                   </button>
                   <button
-                    onClick={() => handleAction(selectedPartner.id, 'reject')}
+                    onClick={() => openRejectModal(selectedPartner)}
                     disabled={actionLoading}
                     className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 disabled:opacity-50"
                   >
                     Reject
+                  </button>
+                </>
+              )}
+              {selectedPartner.status === 'rejected' && (
+                <>
+                  <button
+                    onClick={() => handleAction(selectedPartner.id, 'approve')}
+                    disabled={actionLoading}
+                    className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 disabled:opacity-50"
+                  >
+                    {actionLoading ? 'Processing...' : 'Approve'}
                   </button>
                 </>
               )}
@@ -838,6 +891,65 @@ function AdminPartnersContent() {
                 className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 disabled:opacity-50"
               >
                 {actionLoading ? 'Suspending...' : 'Suspend Partner'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showRejectModal && rejectPartner && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl shadow-xl max-w-lg w-full">
+            <div className="p-6 border-b flex items-center justify-between">
+              <h3 className="text-xl font-bold text-stone-800">Reject Partner Application</h3>
+              <button
+                onClick={() => {
+                  setShowRejectModal(false);
+                  setRejectPartner(null);
+                  setRejectReason('');
+                }}
+                className="text-stone-400 hover:text-stone-600"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="p-6 space-y-4">
+              <p className="text-stone-600">
+                Choose a reason for rejecting <strong>{rejectPartner.business_name || rejectPartner.contact_name || 'this partner'}</strong>.
+              </p>
+              <div>
+                <label className="block text-sm font-medium text-stone-700 mb-1">Rejection Reason</label>
+                <select
+                  value={rejectReason}
+                  onChange={(e) => setRejectReason(e.target.value)}
+                  className="w-full rounded-lg border border-stone-300 p-2"
+                >
+                  <option value="">Select a reason</option>
+                  {REJECT_REASONS.map((reason) => (
+                    <option key={reason} value={reason}>{reason}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            <div className="p-6 border-t bg-stone-50 flex gap-3 justify-end">
+              <button
+                onClick={() => {
+                  setShowRejectModal(false);
+                  setRejectPartner(null);
+                  setRejectReason('');
+                }}
+                className="px-4 py-2 rounded-lg bg-stone-200 text-stone-700 hover:bg-stone-300"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmReject}
+                disabled={!rejectReason || actionLoading}
+                className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 disabled:opacity-50"
+              >
+                {actionLoading ? 'Rejecting...' : 'Reject Application'}
               </button>
             </div>
           </div>

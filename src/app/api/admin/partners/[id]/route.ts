@@ -80,7 +80,12 @@ export async function PATCH(
           break;
         case 'reject':
           newStatus = 'rejected';
-          updateData = { status: 'rejected', rejected_at: new Date().toISOString(), is_active: false };
+          updateData = { 
+            status: 'rejected', 
+            rejected_at: new Date().toISOString(), 
+            is_active: false,
+            rejected_reason: reason || null 
+          };
           break;
         case 'suspend':
           if (!reason || typeof reason !== 'string') {
@@ -276,8 +281,8 @@ export async function PUT(
       return NextResponse.json({ error: 'Partner not found' }, { status: 404 });
     }
 
-    // Check if this is a pending partner being edited (implies approval)
-    const wasPending = existing.status === 'pending';
+    // Check if this is a pending or rejected partner being edited (implies approval)
+    const wasPendingOrRejected = existing.status === 'pending' || existing.status === 'rejected';
 
     // Build update object
     const updateData: Record<string, unknown> = {
@@ -288,11 +293,12 @@ export async function PUT(
       website: website || null,
     };
 
-    // Auto-approve pending partners when edited (editing implies approval)
-    if (wasPending) {
+    // Auto-approve pending/rejected partners when edited (editing implies approval)
+    if (wasPendingOrRejected) {
       updateData.status = 'active';
       updateData.is_active = true;
       updateData.approved_at = new Date().toISOString();
+      updateData.rejected_reason = null;  // Clear rejection reason on approval
     }
 
     // Only update these if provided
@@ -324,7 +330,7 @@ export async function PUT(
     }
 
     // Send approval email if partner was auto-approved
-    if (wasPending && PIPEDREAM_WEBHOOK_URL) {
+    if (wasPendingOrRejected && PIPEDREAM_WEBHOOK_URL) {
       const partnerEmail = email.toLowerCase();
       const contactNameMatch = (contactName ? `${businessName} (${contactName})` : businessName).match(/\(([^)]+)\)/);
       const extractedContactName = contactNameMatch?.[1] || contactName || '';
@@ -344,7 +350,7 @@ export async function PUT(
       }).catch(console.error);
     }
 
-    return NextResponse.json({ success: true, autoApproved: wasPending });
+    return NextResponse.json({ success: true, autoApproved: wasPendingOrRejected });
   } catch (error) {
     console.error('PUT partner error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
