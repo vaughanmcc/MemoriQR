@@ -765,14 +765,14 @@ function AdminPartnersContent() {
             <div className="p-6 border-t bg-stone-50 flex justify-end gap-3">
               <button
                 onClick={() => setEditingPartner(null)}
-                className="px-4 py-2 text-stone-700 hover:bg-stone-200 rounded-lg"
+                className="px-4 py-2 text-stone-700 bg-stone-200 hover:bg-stone-300 rounded-lg font-medium"
               >
                 Cancel
               </button>
               <button
                 onClick={handleUpdatePartner}
                 disabled={actionLoading || !editForm.businessName || !editForm.email}
-                className="bg-primary text-white px-6 py-2 rounded-lg hover:bg-primary/90 disabled:opacity-50"
+                className="bg-black text-white px-6 py-2.5 rounded-lg hover:bg-black/90 disabled:opacity-50 font-semibold shadow-md"
               >
                 {actionLoading ? 'Saving...' : 'Save Changes'}
               </button>
