@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 
@@ -12,6 +12,41 @@ export default function PartnerLoginPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
+  const [trustDevice, setTrustDevice] = useState(false)
+  const [showTrustWarning, setShowTrustWarning] = useState(false)
+  const [warningAcknowledged, setWarningAcknowledged] = useState(false)
+  const [dontShowAgain, setDontShowAgain] = useState(false)
+
+  // Check if user has previously acknowledged the warning
+  useEffect(() => {
+    const acknowledged = localStorage.getItem('partner_trust_warning_ack')
+    if (acknowledged === 'true') {
+      setWarningAcknowledged(true)
+    }
+  }, [])
+
+  const handleTrustDeviceChange = (checked: boolean) => {
+    if (checked && !warningAcknowledged) {
+      setShowTrustWarning(true)
+    } else {
+      setTrustDevice(checked)
+    }
+  }
+
+  const confirmTrustDevice = () => {
+    if (dontShowAgain) {
+      localStorage.setItem('partner_trust_warning_ack', 'true')
+      setWarningAcknowledged(true)
+    }
+    setTrustDevice(true)
+    setShowTrustWarning(false)
+  }
+
+  const cancelTrustDevice = () => {
+    setTrustDevice(false)
+    setShowTrustWarning(false)
+    setDontShowAgain(false)
+  }
 
   const handleRequestCode = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -50,7 +85,7 @@ export default function PartnerLoginPage() {
       const response = await fetch('/api/partner/verify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, code })
+        body: JSON.stringify({ email, code, trustDevice })
       })
 
       const data = await response.json()
@@ -146,6 +181,22 @@ export default function PartnerLoginPage() {
                 />
               </div>
 
+              <div className="mb-4">
+                <label className="flex items-start gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={trustDevice}
+                    onChange={(e) => handleTrustDeviceChange(e.target.checked)}
+                    className="mt-0.5 h-4 w-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
+                  />
+                  <span className="text-sm text-gray-600">
+                    <strong>Stay signed in longer</strong>
+                    <br />
+                    <span className="text-xs text-gray-500">Keep me logged in for 24 hours on this device</span>
+                  </span>
+                </label>
+              </div>
+
               <button
                 type="submit"
                 disabled={loading || code.length !== 6}
@@ -179,6 +230,66 @@ export default function PartnerLoginPage() {
           to learn about our partner program.
         </p>
       </div>
+
+      {/* Trust Device Warning Modal */}
+      {showTrustWarning && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl shadow-xl max-w-md w-full">
+            <div className="p-6 border-b">
+              <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                <svg className="w-5 h-5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                Extended Session Warning
+              </h3>
+            </div>
+            
+            <div className="p-6 space-y-4">
+              <p className="text-gray-600 text-sm">
+                Selecting <strong>&quot;Stay signed in longer&quot;</strong> will keep you logged in for <strong>24 hours</strong> instead of the standard 1 hour.
+              </p>
+              
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                <p className="text-amber-800 text-sm font-medium mb-2">Security Considerations:</p>
+                <ul className="text-amber-700 text-sm space-y-1 list-disc list-inside">
+                  <li>Anyone with access to this device can access your partner account</li>
+                  <li>Your commission data and business information will be accessible</li>
+                  <li>Only use on personal, secure devices you control</li>
+                </ul>
+              </div>
+
+              <p className="text-gray-500 text-xs">
+                You can always log out manually at any time from the Partner Portal.
+              </p>
+
+              <label className="flex items-center gap-2 cursor-pointer mt-4">
+                <input
+                  type="checkbox"
+                  checked={dontShowAgain}
+                  onChange={(e) => setDontShowAgain(e.target.checked)}
+                  className="h-4 w-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
+                />
+                <span className="text-sm text-gray-600">Don&apos;t show this warning again</span>
+              </label>
+            </div>
+
+            <div className="p-6 border-t bg-gray-50 flex gap-3 justify-end rounded-b-2xl">
+              <button
+                onClick={cancelTrustDevice}
+                className="px-4 py-2 text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 font-medium"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmTrustDevice}
+                className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 font-medium"
+              >
+                I Understand, Continue
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

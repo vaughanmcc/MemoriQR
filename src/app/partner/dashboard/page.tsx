@@ -53,6 +53,47 @@ export default function PartnerDashboardPage() {
     fetchDashboard()
   }, [])
 
+  // Activity-based session extension for non-trusted device sessions
+  // Extends session every 30 minutes while user is active
+  useEffect(() => {
+    let activityTimeout: NodeJS.Timeout
+    let extensionInterval: NodeJS.Timeout
+    let lastActivity = Date.now()
+
+    const extendSession = async () => {
+      // Only extend if there was activity in the last 5 minutes
+      if (Date.now() - lastActivity < 5 * 60 * 1000) {
+        try {
+          await fetch('/api/partner/session/extend', { method: 'POST' })
+        } catch (e) {
+          // Silently fail - user will be logged out when session expires
+        }
+      }
+    }
+
+    const trackActivity = () => {
+      lastActivity = Date.now()
+    }
+
+    // Track user activity
+    window.addEventListener('mousemove', trackActivity)
+    window.addEventListener('keydown', trackActivity)
+    window.addEventListener('click', trackActivity)
+    window.addEventListener('scroll', trackActivity)
+
+    // Extend session every 30 minutes
+    extensionInterval = setInterval(extendSession, 30 * 60 * 1000)
+
+    return () => {
+      window.removeEventListener('mousemove', trackActivity)
+      window.removeEventListener('keydown', trackActivity)
+      window.removeEventListener('click', trackActivity)
+      window.removeEventListener('scroll', trackActivity)
+      clearTimeout(activityTimeout)
+      clearInterval(extensionInterval)
+    }
+  }, [])
+
   const fetchDashboard = async () => {
     try {
       const response = await fetch('/api/partner/stats')

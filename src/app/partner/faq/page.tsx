@@ -124,6 +124,31 @@ const faqCategories = [
         answer: 'Currently, each partner account supports a single login. If you need multiple users, contact us to discuss enterprise options.'
       }
     ]
+  },
+  {
+    title: 'Login & Security',
+    items: [
+      {
+        question: 'How long does my session last before I need to log in again?',
+        answer: 'For security, standard sessions last 1 hour. However, while you are actively using the Portal (clicking, scrolling, typing), your session is automatically extended. If you step away for more than an hour, you\'ll need to log in again with a new verification code.'
+      },
+      {
+        question: 'What does "Stay signed in longer" do?',
+        answer: 'When you check "Stay signed in longer" during login, your session will last 24 hours instead of the standard 1 hour. This is convenient but means anyone with access to your device can access your partner account. Only use this option on personal, secure devices you control.'
+      },
+      {
+        question: 'Is it safe to use "Stay signed in longer"?',
+        answer: 'Only use this option on devices you own and control, such as your personal computer or phone. Avoid using it on shared computers, public devices, or devices others have access to. Remember, your partner account contains business information and commission data. You can always log out manually by clicking "Logout" in the top-right corner.'
+      },
+      {
+        question: 'Why do I need a verification code every time I log in?',
+        answer: 'We use email-based verification codes instead of passwords for better security. This means even if someone knows your email, they cannot access your account without also having access to your email inbox. Each code expires after 15 minutes and can only be used once.'
+      },
+      {
+        question: 'How do I log out of the Partner Portal?',
+        answer: 'Click the "Logout" button in the top-right corner of any Partner Portal page. This immediately ends your session and requires a new verification code to log back in.'
+      }
+    ]
   }
 ]
 

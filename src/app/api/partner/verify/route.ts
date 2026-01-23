@@ -5,7 +5,7 @@ import crypto from 'crypto'
 // Verify login code and create session
 export async function POST(request: NextRequest) {
   try {
-    const { email, code } = await request.json()
+    const { email, code, trustDevice } = await request.json()
 
     if (!email || !code) {
       return NextResponse.json(
@@ -93,7 +93,10 @@ export async function POST(request: NextRequest) {
 
     // Generate session token
     const sessionToken = crypto.randomBytes(32).toString('hex')
-    const expiresAt = new Date(Date.now() + 60 * 60 * 1000) // 1 hour
+    const isTrustedDevice = trustDevice === true
+    // Trusted devices get 24 hours, standard sessions get 1 hour (but can be extended with activity)
+    const sessionDuration = isTrustedDevice ? 24 * 60 * 60 * 1000 : 60 * 60 * 1000
+    const expiresAt = new Date(Date.now() + sessionDuration)
 
     // Get request info for session
     const ipAddress = request.headers.get('x-forwarded-for') || 'unknown'
@@ -107,7 +110,8 @@ export async function POST(request: NextRequest) {
         session_token: sessionToken,
         expires_at: expiresAt.toISOString(),
         ip_address: ipAddress,
-        user_agent: userAgent
+        user_agent: userAgent,
+        is_trusted_device: isTrustedDevice
       })
 
     if (sessionError) {
