@@ -677,7 +677,11 @@ ${message ? `<div style="background: #f9f7f4; padding: 15px; border-radius: 8px;
 <strong>📋 Next Steps:</strong>
 <p style="margin: 10px 0 5px;">1. Review the application details above</p>
 <p style="margin: 5px 0;">2. Contact applicant if more info needed</p>
-<p style="margin: 5px 0 0;">3. Create partner account in admin dashboard if approved</p>
+<p style="margin: 5px 0 0;">3. Approve or reject in the admin dashboard</p>
+</div>
+
+<div style="text-align: center; margin-top: 25px;">
+<a href="https://memoriqr.co.nz/admin/partners?status=pending" style="display: inline-block; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: #fff; text-decoration: none; padding: 14px 30px; border-radius: 8px; font-size: 16px; font-weight: bold;">Review Pending Applications</a>
 </div>
 
 </div>
@@ -686,7 +690,7 @@ ${message ? `<div style="background: #f9f7f4; padding: 15px; border-radius: 8px;
 <p style="color: #888; font-size: 12px; margin: 0;">MemoriQR Admin Notification</p>
 </div>
 </div>`,
-        text: `New Partner Application\n\nBusiness: ${businessName}\nType: ${businessTypeLabels[businessType] || businessType}\nContact: ${contactName}\nEmail: ${email}\nPhone: ${phone || 'Not provided'}\n\nExpected Monthly Sales:\n- QR Plates: ${expectedQrSales || 'Not specified'}\n- NFC Tags: ${expectedNfcSales || 'Not specified'}\n${message ? `\nMessage: ${message}\n` : ''}`
+        text: `New Partner Application\n\nBusiness: ${businessName}\nType: ${businessTypeLabels[businessType] || businessType}\nContact: ${contactName}\nEmail: ${email}\nPhone: ${phone || 'Not provided'}\n\nExpected Monthly Sales:\n- QR Plates: ${expectedQrSales || 'Not specified'}\n- NFC Tags: ${expectedNfcSales || 'Not specified'}\n${message ? `\nMessage: ${message}\n` : ''}\n\nReview pending applications: https://memoriqr.co.nz/admin/partners?status=pending`
       };
     }
     
