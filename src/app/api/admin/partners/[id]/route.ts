@@ -89,10 +89,56 @@ export async function PATCH(
           newStatus = 'suspended';
           updateData = { status: 'suspended', is_active: false, suspended_reason: reason, suspended_at: new Date().toISOString() };
           break;
-        case 'activate':
+        case 'activate': {
+          // Check for duplicate partners before reactivating
+          const partnerEmail = partner.contact_email?.toLowerCase();
+          const partnerName = partner.partner_name;
+          const partnerType = partner.partner_type;
+          
+          if (partnerEmail && partnerName && partnerType) {
+            const { data: duplicates } = await supabase
+              .from('partners')
+              .select('id, partner_name, contact_email, partner_type, status')
+              .eq('contact_email', partnerEmail)
+              .eq('partner_type', partnerType)
+              .neq('id', id)
+              .in('status', ['active', 'pending']);
+            
+            if (duplicates && duplicates.length > 0) {
+              const existingPartner = duplicates[0];
+              return NextResponse.json({ 
+                error: `Cannot reactivate: A partner with the same email and business type already exists (${existingPartner.partner_name}, status: ${existingPartner.status})` 
+              }, { status: 400 });
+            }
+            
+            // Also check for same business name + type combination
+            // Extract business name (without contact name in parentheses)
+            const businessNameOnly = partnerName.replace(/\s*\([^)]+\)\s*$/, '').trim().toLowerCase();
+            const { data: nameDuplicates } = await supabase
+              .from('partners')
+              .select('id, partner_name, contact_email, partner_type, status')
+              .eq('partner_type', partnerType)
+              .neq('id', id)
+              .in('status', ['active', 'pending']);
+            
+            if (nameDuplicates) {
+              const matchingName = nameDuplicates.find(p => {
+                const existingBusinessName = p.partner_name?.replace(/\s*\([^)]+\)\s*$/, '').trim().toLowerCase();
+                return existingBusinessName === businessNameOnly;
+              });
+              
+              if (matchingName) {
+                return NextResponse.json({ 
+                  error: `Cannot reactivate: A partner with the same business name and type already exists (${matchingName.partner_name}, email: ${matchingName.contact_email}, status: ${matchingName.status})` 
+                }, { status: 400 });
+              }
+            }
+          }
+          
           newStatus = 'active';
           updateData = { status: 'active', is_active: true, suspended_reason: null, suspended_at: null };
           break;
+        }
         default:
           return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
       }
@@ -161,6 +207,21 @@ export async function PATCH(
               businessName: businessName,
               contactName: contactName,
               reason: reason,
+            },
+          }),
+        }).catch(console.error);
+      } else if (action === 'activate') {
+        // Send reactivation welcome email
+        await fetch(PIPEDREAM_WEBHOOK_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: 'partner_reactivated',
+            to: partnerEmail,
+            data: {
+              businessName: businessName,
+              contactName: contactName,
+              loginUrl: `${process.env.NEXT_PUBLIC_BASE_URL || 'https://memoriqr.co.nz'}/partner`,
             },
           }),
         }).catch(console.error);

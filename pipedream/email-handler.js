@@ -817,6 +817,52 @@ ${message ? `<div style="background: #f9f7f4; padding: 15px; border-radius: 8px;
       };
     }
 
+    // Partner reactivated notification
+    if (type === 'partner_reactivated') {
+      const { businessName, contactName, loginUrl } = body.data;
+      
+      return {
+        to: body.to,
+        replyTo: 'partners@memoriqr.co.nz',
+        from_name: 'MemoriQR',
+        subject: `🎉 Welcome Back to MemoriQR Partners!`,
+        html: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+<div style="background: linear-gradient(135deg, #2d5a27 0%, #3d7a35 100%); padding: 30px; text-align: center; border-radius: 8px 8px 0 0;">
+<h1 style="color: #fff; margin: 0; font-size: 24px;">🎉 Welcome Back!</h1>
+</div>
+
+<div style="padding: 30px; background: #fff; border: 1px solid #ddd; border-top: none;">
+<p style="color: #333; font-size: 16px;">Hi ${contactName},</p>
+
+<p style="color: #555; line-height: 1.6;">Great news! Your partner account for <strong>${businessName}</strong> has been reactivated. We're glad to have you back in the MemoriQR partner family!</p>
+
+<div style="background: #e8f5e9; border-radius: 8px; padding: 20px; margin: 20px 0; text-align: center;">
+<p style="font-size: 18px; font-weight: bold; color: #2d5a27; margin: 0 0 10px;">Your Partner Portal is Ready</p>
+<p style="color: #555; margin: 0 0 20px;">Log in to access your dashboard, request activation codes, and track commissions.</p>
+<a href="${loginUrl}" style="display: inline-block; background: linear-gradient(135deg, #2d5a27 0%, #3d7a35 100%); color: #fff; text-decoration: none; padding: 15px 40px; border-radius: 8px; font-size: 16px;">Access Partner Portal</a>
+</div>
+
+<p style="font-weight: bold; color: #333; margin-top: 25px;">What you can do:</p>
+<ul style="color: #555; line-height: 1.8;">
+<li>View your dashboard with activation statistics</li>
+<li>Request batches of activation codes at wholesale prices</li>
+<li>Track commissions on customer activations</li>
+<li>Download marketing materials for your business</li>
+</ul>
+
+<p style="color: #555; line-height: 1.6; margin-top: 25px;">If you have any questions, just reply to this email and we'll be happy to help.</p>
+
+<p style="color: #555; margin-top: 30px;">Welcome back!<br><strong>The MemoriQR Team</strong></p>
+</div>
+
+<div style="background: #f5f5f0; padding: 20px; text-align: center; border-radius: 0 0 8px 8px;">
+<p style="color: #888; font-size: 12px; margin: 0;">MemoriQR Partner Program</p>
+</div>
+</div>`,
+        text: `Hi ${contactName},\n\nGreat news! Your partner account for ${businessName} has been reactivated. We're glad to have you back in the MemoriQR partner family!\n\nYour Partner Portal is Ready:\n${loginUrl}\n\nWhat you can do:\n- View your dashboard with activation statistics\n- Request batches of activation codes at wholesale prices\n- Track commissions on customer activations\n- Download marketing materials for your business\n\nIf you have any questions, just reply to this email and we'll be happy to help.\n\nWelcome back!\nThe MemoriQR Team`
+      };
+    }
+
     // Commission payout statement notification
     if (type === 'commission_payout_statement') {
       const { 
