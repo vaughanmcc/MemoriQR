@@ -85,7 +85,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
-    const validTypes = ['funeral_director', 'cemetery', 'pet_cremation', 'retailer', 'other'];
+    const validTypes = ['vet', 'funeral_director', 'funeral_home', 'cemetery', 'crematorium', 'pet_cremation', 'pet_store', 'retailer', 'groomer', 'other'];
     if (!validTypes.includes(partnerType)) {
       return NextResponse.json({ error: 'Invalid partner type' }, { status: 400 });
     }
