@@ -867,6 +867,72 @@ ${message ? `<div style="background: #f9f7f4; padding: 15px; border-radius: 8px;
       };
     }
 
+    // Partner terms updated notification (discount, commission, or shipping changed)
+    if (type === 'partner_terms_updated') {
+      const { businessName, contactName, changes, portalUrl } = body.data;
+      
+      // Build changes list
+      let changesList = '';
+      let changesText = '';
+      
+      if (changes.discount) {
+        changesList += `<tr><td style="padding: 10px; border: 1px solid #eee;">Product Discount</td><td style="padding: 10px; border: 1px solid #eee; text-decoration: line-through; color: #999;">${changes.discount.old}%</td><td style="padding: 10px; border: 1px solid #eee; font-weight: bold; color: #2d5a27;">${changes.discount.new}%</td></tr>`;
+        changesText += `- Product Discount: ${changes.discount.old}% → ${changes.discount.new}%\n`;
+      }
+      if (changes.commission) {
+        changesList += `<tr><td style="padding: 10px; border: 1px solid #eee;">Commission Rate</td><td style="padding: 10px; border: 1px solid #eee; text-decoration: line-through; color: #999;">${changes.commission.old}%</td><td style="padding: 10px; border: 1px solid #eee; font-weight: bold; color: #2d5a27;">${changes.commission.new}%</td></tr>`;
+        changesText += `- Commission Rate: ${changes.commission.old}% → ${changes.commission.new}%\n`;
+      }
+      if (changes.freeShipping) {
+        const oldShipping = changes.freeShipping.old ? 'Free Shipping' : 'Standard Shipping';
+        const newShipping = changes.freeShipping.new ? 'Free Shipping' : 'Standard Shipping';
+        changesList += `<tr><td style="padding: 10px; border: 1px solid #eee;">Shipping</td><td style="padding: 10px; border: 1px solid #eee; text-decoration: line-through; color: #999;">${oldShipping}</td><td style="padding: 10px; border: 1px solid #eee; font-weight: bold; color: #2d5a27;">${newShipping}</td></tr>`;
+        changesText += `- Shipping: ${oldShipping} → ${newShipping}\n`;
+      }
+      
+      return {
+        to: body.to,
+        replyTo: 'partners@memoriqr.co.nz',
+        from_name: 'MemoriQR',
+        subject: `📋 Your Partner Terms Have Been Updated`,
+        html: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+<div style="background: linear-gradient(135deg, #4BA4A4 0%, #3d8a8a 100%); padding: 30px; text-align: center; border-radius: 8px 8px 0 0;">
+<h1 style="color: #fff; margin: 0; font-size: 24px;">📋 Partner Terms Updated</h1>
+</div>
+
+<div style="padding: 30px; background: #fff; border: 1px solid #ddd; border-top: none;">
+<p style="color: #333; font-size: 16px;">Hi ${contactName},</p>
+
+<p style="color: #555; line-height: 1.6;">We're writing to let you know that your partner terms for <strong>${businessName}</strong> have been updated.</p>
+
+<table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+<tr style="background: #f9f7f4;">
+<td style="padding: 12px; font-weight: bold; border: 1px solid #ddd;">Term</td>
+<td style="padding: 12px; font-weight: bold; border: 1px solid #ddd;">Previous</td>
+<td style="padding: 12px; font-weight: bold; border: 1px solid #ddd;">New</td>
+</tr>
+${changesList}
+</table>
+
+<p style="color: #555; line-height: 1.6;">These changes are effective immediately and will apply to all future orders and commissions.</p>
+
+<div style="text-align: center; margin: 25px 0;">
+<a href="${portalUrl}" style="display: inline-block; background: linear-gradient(135deg, #2d5a27 0%, #3d7a35 100%); color: #fff; text-decoration: none; padding: 15px 40px; border-radius: 8px; font-size: 16px;">View Partner Portal</a>
+</div>
+
+<p style="color: #555; line-height: 1.6;">If you have any questions about these changes, please reply to this email and we'll be happy to discuss.</p>
+
+<p style="color: #555; margin-top: 30px;">Best regards,<br><strong>The MemoriQR Team</strong></p>
+</div>
+
+<div style="background: #f5f5f0; padding: 20px; text-align: center; border-radius: 0 0 8px 8px;">
+<p style="color: #888; font-size: 12px; margin: 0;">MemoriQR Partner Program</p>
+</div>
+</div>`,
+        text: `Hi ${contactName},\n\nWe're writing to let you know that your partner terms for ${businessName} have been updated.\n\nCHANGES:\n${changesText}\nThese changes are effective immediately and will apply to all future orders and commissions.\n\nView your Partner Portal: ${portalUrl}\n\nIf you have any questions about these changes, please reply to this email and we'll be happy to discuss.\n\nBest regards,\nThe MemoriQR Team`
+      };
+    }
+
     // Commission payout statement notification
     if (type === 'commission_payout_statement') {
       const { 

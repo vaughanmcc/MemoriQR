@@ -270,16 +270,21 @@ export async function PUT(
       return NextResponse.json({ error: 'Business name and email are required' }, { status: 400 });
     }
 
-    // Check if partner exists and get current status
+    // Check if partner exists and get current data for comparison
     const { data: existing, error: fetchError } = await supabase
       .from('partners')
-      .select('id, status, contact_email, partner_name')
+      .select('id, status, contact_email, partner_name, default_discount_percent, default_commission_percent, default_free_shipping, commission_rate')
       .eq('id', id)
       .single();
 
     if (fetchError || !existing) {
       return NextResponse.json({ error: 'Partner not found' }, { status: 404 });
     }
+
+    // Track old values for change detection
+    const oldDiscount = existing.default_discount_percent ?? 0;
+    const oldCommission = existing.default_commission_percent ?? existing.commission_rate ?? 15;
+    const oldFreeShipping = existing.default_free_shipping ?? false;
 
     // Check if this is a pending or rejected partner being edited (implies approval)
     const wasPendingOrRejected = existing.status === 'pending' || existing.status === 'rejected';
@@ -348,6 +353,42 @@ export async function PUT(
           },
         }),
       }).catch(console.error);
+    }
+
+    // Check if partner terms changed (only for already-active partners, not newly approved)
+    if (!wasPendingOrRejected && PIPEDREAM_WEBHOOK_URL) {
+      const newDiscount = defaultDiscountPercent ?? oldDiscount;
+      const newCommission = defaultCommissionPercent ?? oldCommission;
+      const newFreeShipping = defaultFreeShipping ?? oldFreeShipping;
+
+      const discountChanged = newDiscount !== oldDiscount;
+      const commissionChanged = newCommission !== oldCommission;
+      const freeShippingChanged = newFreeShipping !== oldFreeShipping;
+
+      if (discountChanged || commissionChanged || freeShippingChanged) {
+        const partnerEmail = email.toLowerCase();
+        const contactNameMatch = (contactName ? `${businessName} (${contactName})` : businessName).match(/\(([^)]+)\)/);
+        const extractedContactName = contactNameMatch?.[1] || contactName || '';
+
+        await fetch(PIPEDREAM_WEBHOOK_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: 'partner_terms_updated',
+            to: partnerEmail,
+            data: {
+              businessName,
+              contactName: extractedContactName,
+              changes: {
+                discount: discountChanged ? { old: oldDiscount, new: newDiscount } : null,
+                commission: commissionChanged ? { old: oldCommission, new: newCommission } : null,
+                freeShipping: freeShippingChanged ? { old: oldFreeShipping, new: newFreeShipping } : null,
+              },
+              portalUrl: `${process.env.NEXT_PUBLIC_BASE_URL || 'https://memoriqr.co.nz'}/partner`,
+            },
+          }),
+        }).catch(console.error);
+      }
     }
 
     return NextResponse.json({ success: true, autoApproved: wasPendingOrRejected });
