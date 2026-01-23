@@ -93,7 +93,7 @@ export async function POST(request: NextRequest) {
 
     // Generate session token
     const sessionToken = crypto.randomBytes(32).toString('hex')
-    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hour
+    const expiresAt = new Date(Date.now() + 60 * 60 * 1000) // 1 hour
 
     // Get request info for session
     const ipAddress = request.headers.get('x-forwarded-for') || 'unknown'
