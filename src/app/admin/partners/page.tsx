@@ -433,7 +433,7 @@ function AdminPartnersContent() {
                       {partner.default_discount_percent ?? 0}%
                     </td>
                     <td className="px-6 py-4 text-sm text-stone-600">
-                      {partner.commission_rate}%
+                      {partner.default_commission_percent ?? partner.commission_rate ?? 15}%
                     </td>
                     <td className="px-6 py-4 text-right">
                       <button
