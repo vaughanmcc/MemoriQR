@@ -754,12 +754,18 @@ ${message ? `<div style="background: #f9f7f4; padding: 15px; border-radius: 8px;
 <a href="${loginUrl}" style="display: inline-block; background: linear-gradient(135deg, #2d5a27 0%, #3d7a35 100%); color: #fff; text-decoration: none; padding: 15px 40px; border-radius: 8px; font-size: 16px;">Access Partner Portal</a>
 </div>
 
+<div style="background: #fff8e1; border-left: 4px solid #ffa000; padding: 15px 20px; margin: 20px 0; border-radius: 0 8px 8px 0;">
+<p style="font-weight: bold; color: #e65100; margin: 0 0 8px 0;">⚡ Important: Complete Your Profile</p>
+<p style="color: #555; margin: 0; line-height: 1.5;">Before you can receive commission payouts, please log in and add your <strong>business address</strong> and <strong>banking details</strong> in your Account Settings.</p>
+</div>
+
 <p style="font-weight: bold; color: #333; margin-top: 25px;">What you can do:</p>
 <ul style="color: #555; line-height: 1.8;">
 <li>View your dashboard with activation statistics</li>
 <li>Request batches of activation codes at wholesale prices</li>
 <li>Track commissions on customer activations</li>
 <li>Download marketing materials for your business</li>
+<li><strong>Add your business address and bank details in Settings</strong></li>
 </ul>
 
 <p style="color: #555; line-height: 1.6; margin-top: 25px;">If you have any questions about getting started, just reply to this email and we'll be happy to help.</p>
@@ -771,7 +777,7 @@ ${message ? `<div style="background: #f9f7f4; padding: 15px; border-radius: 8px;
 <p style="color: #888; font-size: 12px; margin: 0;">MemoriQR Partner Program</p>
 </div>
 </div>`,
-        text: `Hi ${contactName},\n\nGreat news! Your partner application for ${businessName} has been approved. Welcome to the MemoriQR partner family!\n\nYour Partner Portal is Ready:\n${loginUrl}\n\nWhat you can do:\n- View your dashboard with activation statistics\n- Request batches of activation codes at wholesale prices\n- Track commissions on customer activations\n- Download marketing materials for your business\n\nIf you have any questions about getting started, just reply to this email and we'll be happy to help.\n\nWelcome aboard!\nThe MemoriQR Team`
+        text: `Hi ${contactName},\n\nGreat news! Your partner application for ${businessName} has been approved. Welcome to the MemoriQR partner family!\n\nYour Partner Portal is Ready:\n${loginUrl}\n\n⚡ IMPORTANT: Complete Your Profile\nBefore you can receive commission payouts, please log in and add your business address and banking details in your Account Settings.\n\nWhat you can do:\n- View your dashboard with activation statistics\n- Request batches of activation codes at wholesale prices\n- Track commissions on customer activations\n- Download marketing materials for your business\n- Add your business address and bank details in Settings\n\nIf you have any questions about getting started, just reply to this email and we'll be happy to help.\n\nWelcome aboard!\nThe MemoriQR Team`
       };
     }
     
