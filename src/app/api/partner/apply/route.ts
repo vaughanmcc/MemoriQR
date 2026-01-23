@@ -47,20 +47,21 @@ export async function POST(request: Request) {
     const normalizedEmail = email.trim().toLowerCase()
     const normalizedBusinessName = businessName.trim().toLowerCase()
 
-    // Check for exact duplicate: same email + business name + business type
+    // Check for exact duplicate: same email + EXACT business name + business type
     // This prevents the same person from applying twice with identical info
+    // But allows same email to register different businesses
     const { data: exactDuplicates } = await supabase
       .from('partners')
       .select('id, status, partner_name, partner_type')
       .ilike('contact_email', normalizedEmail)
 
     const exactDuplicate = exactDuplicates?.find(p => {
-      const existingName = (p.partner_name || '').toLowerCase()
-      const existingType = p.partner_type
-      // Check if business name contains the submitted name (or vice versa) AND same type
-      const nameMatches = existingName.includes(normalizedBusinessName) || 
-                          normalizedBusinessName.includes(existingName.split('(')[0].trim())
-      return nameMatches && existingType === resolvedPartnerType
+      // Extract just the business name (before the contact name in parentheses)
+      const existingBusinessName = (p.partner_name || '').split('(')[0].trim().toLowerCase();
+      const existingType = p.partner_type;
+      // Require exact match on business name (not partial/substring match)
+      const nameMatches = existingBusinessName === normalizedBusinessName;
+      return nameMatches && existingType === resolvedPartnerType;
     })
 
     if (exactDuplicate) {
