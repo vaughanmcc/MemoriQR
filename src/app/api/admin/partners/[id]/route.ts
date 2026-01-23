@@ -265,16 +265,19 @@ export async function PUT(
       return NextResponse.json({ error: 'Business name and email are required' }, { status: 400 });
     }
 
-    // Check if partner exists
+    // Check if partner exists and get current status
     const { data: existing, error: fetchError } = await supabase
       .from('partners')
-      .select('id')
+      .select('id, status, contact_email, partner_name')
       .eq('id', id)
       .single();
 
     if (fetchError || !existing) {
       return NextResponse.json({ error: 'Partner not found' }, { status: 404 });
     }
+
+    // Check if this is a pending partner being edited (implies approval)
+    const wasPending = existing.status === 'pending';
 
     // Build update object
     const updateData: Record<string, unknown> = {
@@ -284,6 +287,13 @@ export async function PUT(
       partner_type: partnerType,
       website: website || null,
     };
+
+    // Auto-approve pending partners when edited (editing implies approval)
+    if (wasPending) {
+      updateData.status = 'active';
+      updateData.is_active = true;
+      updateData.approved_at = new Date().toISOString();
+    }
 
     // Only update these if provided
     if (commissionRate !== undefined) {
@@ -313,7 +323,28 @@ export async function PUT(
       return NextResponse.json({ error: 'Failed to update partner' }, { status: 500 });
     }
 
-    return NextResponse.json({ success: true });
+    // Send approval email if partner was auto-approved
+    if (wasPending && PIPEDREAM_WEBHOOK_URL) {
+      const partnerEmail = email.toLowerCase();
+      const contactNameMatch = (contactName ? `${businessName} (${contactName})` : businessName).match(/\(([^)]+)\)/);
+      const extractedContactName = contactNameMatch?.[1] || contactName || '';
+      
+      await fetch(PIPEDREAM_WEBHOOK_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'partner_approved',
+          to: partnerEmail,
+          data: {
+            businessName: businessName,
+            contactName: extractedContactName,
+            loginUrl: `${process.env.NEXT_PUBLIC_BASE_URL || 'https://memoriqr.co.nz'}/partner`,
+          },
+        }),
+      }).catch(console.error);
+    }
+
+    return NextResponse.json({ success: true, autoApproved: wasPending });
   } catch (error) {
     console.error('PUT partner error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

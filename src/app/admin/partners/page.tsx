@@ -393,6 +393,7 @@ function AdminPartnersContent() {
                 <th className="text-left px-6 py-4 text-sm font-medium text-stone-500">Type</th>
                 <th className="text-left px-6 py-4 text-sm font-medium text-stone-500">Contact</th>
                 <th className="text-left px-6 py-4 text-sm font-medium text-stone-500">Status</th>
+                <th className="text-left px-6 py-4 text-sm font-medium text-stone-500">Discount</th>
                 <th className="text-left px-6 py-4 text-sm font-medium text-stone-500">Commission</th>
                 <th className="text-right px-6 py-4 text-sm font-medium text-stone-500">Actions</th>
               </tr>
@@ -400,7 +401,7 @@ function AdminPartnersContent() {
             <tbody className="divide-y divide-stone-100">
               {partners.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-6 py-12 text-center text-stone-500">
+                  <td colSpan={7} className="px-6 py-12 text-center text-stone-500">
                     No partners found
                   </td>
                 </tr>
@@ -427,6 +428,9 @@ function AdminPartnersContent() {
                           Reason: {partner.suspended_reason}
                         </p>
                       )}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-stone-600">
+                      {partner.default_discount_percent ?? 0}%
                     </td>
                     <td className="px-6 py-4 text-sm text-stone-600">
                       {partner.commission_rate}%
