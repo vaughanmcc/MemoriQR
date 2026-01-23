@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { headers } from 'next/headers';
 import { createClient } from '@supabase/supabase-js';
 
 const supabase = createClient(
@@ -119,6 +120,12 @@ export async function POST(request: Request) {
 
     // Send notification emails via Pipedream
     if (PIPEDREAM_WEBHOOK_URL) {
+      // Get the base URL from the request for dynamic admin links
+      const headersList = await headers();
+      const host = headersList.get('host') || 'memoriqr.co.nz';
+      const protocol = host.includes('localhost') ? 'http' : 'https';
+      const baseUrl = `${protocol}://${host}`;
+
       // Notify admin
       await fetch(PIPEDREAM_WEBHOOK_URL, {
         method: 'POST',
@@ -134,6 +141,7 @@ export async function POST(request: Request) {
           expectedQrSales: expectedQrSales || 'Not specified',
           expectedNfcSales: expectedNfcSales || 'Not specified',
           partnerId: partner.id,
+          baseUrl,
         }),
       }).catch(console.error);
 

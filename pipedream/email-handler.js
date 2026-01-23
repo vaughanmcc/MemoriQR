@@ -629,7 +629,7 @@ ${notes ? `<div style="background: #f9f7f4; padding: 15px; border-radius: 8px; m
     // Partner application notification (to admin)
     // Note: Data comes at root level (body.X), not nested (body.data.X)
     if (type === 'partner_application') {
-      const { businessName, contactName, email, phone, businessType, message, expectedQrSales, expectedNfcSales } = body;
+      const { businessName, contactName, email, phone, businessType, message, expectedQrSales, expectedNfcSales, baseUrl = 'https://memoriqr.co.nz' } = body;
       
       const businessTypeLabels = {
         vet: 'Veterinary Clinic',
@@ -681,7 +681,7 @@ ${message ? `<div style="background: #f9f7f4; padding: 15px; border-radius: 8px;
 </div>
 
 <div style="text-align: center; margin-top: 25px;">
-<a href="https://memoriqr.co.nz/admin/partners?status=pending" style="display: inline-block; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: #fff; text-decoration: none; padding: 14px 30px; border-radius: 8px; font-size: 16px; font-weight: bold;">Review Pending Applications</a>
+<a href="${baseUrl}/admin/partners?status=pending" style="display: inline-block; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: #fff; text-decoration: none; padding: 14px 30px; border-radius: 8px; font-size: 16px; font-weight: bold;">Review Pending Applications</a>
 </div>
 
 </div>
@@ -690,7 +690,7 @@ ${message ? `<div style="background: #f9f7f4; padding: 15px; border-radius: 8px;
 <p style="color: #888; font-size: 12px; margin: 0;">MemoriQR Admin Notification</p>
 </div>
 </div>`,
-        text: `New Partner Application\n\nBusiness: ${businessName}\nType: ${businessTypeLabels[businessType] || businessType}\nContact: ${contactName}\nEmail: ${email}\nPhone: ${phone || 'Not provided'}\n\nExpected Monthly Sales:\n- QR Plates: ${expectedQrSales || 'Not specified'}\n- NFC Tags: ${expectedNfcSales || 'Not specified'}\n${message ? `\nMessage: ${message}\n` : ''}\n\nReview pending applications: https://memoriqr.co.nz/admin/partners?status=pending`
+        text: `New Partner Application\n\nBusiness: ${businessName}\nType: ${businessTypeLabels[businessType] || businessType}\nContact: ${contactName}\nEmail: ${email}\nPhone: ${phone || 'Not provided'}\n\nExpected Monthly Sales:\n- QR Plates: ${expectedQrSales || 'Not specified'}\n- NFC Tags: ${expectedNfcSales || 'Not specified'}\n${message ? `\nMessage: ${message}\n` : ''}\n\nReview pending applications: ${baseUrl}/admin/partners?status=pending`
       };
     }
     
