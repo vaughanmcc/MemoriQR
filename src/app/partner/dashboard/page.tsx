@@ -26,6 +26,8 @@ interface DashboardData {
     type: string
     email: string
     commissionRate: number
+    discountPercent: number
+    freeShipping: boolean
   }
   stats: {
     totalCodes: number
@@ -135,9 +137,22 @@ export default function PartnerDashboardPage() {
           <h1 className="text-2xl font-bold text-gray-900">
             Welcome back, {partner.name}
           </h1>
-          <p className="text-gray-600">
-            Your commission rate: <strong>{partner.commissionRate}%</strong>
-          </p>
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-gray-600">
+            <span>
+              Commission: <strong>{partner.commissionRate}%</strong>
+            </span>
+            {partner.discountPercent > 0 && (
+              <span>
+                Product Discount: <strong>{partner.discountPercent}%</strong>
+              </span>
+            )}
+            {partner.freeShipping && (
+              <span className="inline-flex items-center gap-1 text-green-600">
+                <Package className="h-4 w-4" />
+                <strong>Free Shipping</strong>
+              </span>
+            )}
+          </div>
         </div>
 
         {/* Stats Grid */}

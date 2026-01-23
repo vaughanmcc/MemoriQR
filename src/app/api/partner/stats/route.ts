@@ -105,7 +105,9 @@ export async function GET(request: NextRequest) {
         name: partner.partner_name,
         type: partner.partner_type,
         email: partner.contact_email,
-        commissionRate: partner.commission_rate
+        commissionRate: partner.default_commission_percent ?? partner.commission_rate ?? 15,
+        discountPercent: partner.default_discount_percent ?? 0,
+        freeShipping: partner.default_free_shipping ?? false
       },
       stats: {
         totalCodes,
