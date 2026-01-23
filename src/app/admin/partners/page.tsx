@@ -454,23 +454,15 @@ function AdminPartnersContent() {
             <div className="p-6 border-b">
               <div className="flex items-center justify-between">
                 <h3 className="text-xl font-bold text-stone-800">{selectedPartner.business_name}</h3>
-                <div className="flex items-center gap-3">
-                  <button
-                    onClick={() => openEditModal(selectedPartner)}
-                    className="bg-black text-white px-4 py-2 rounded-lg hover:bg-black/90 shadow-md font-semibold"
-                  >
-                    Edit Details
-                  </button>
-                  <button
-                    onClick={() => setSelectedPartner(null)}
-                    className="text-stone-400 hover:text-stone-600"
-                    aria-label="Close"
-                  >
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
-                </div>
+                <button
+                  onClick={() => setSelectedPartner(null)}
+                  className="text-stone-400 hover:text-stone-600"
+                  aria-label="Close"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
               </div>
               <span className={`inline-block mt-2 px-2 py-1 rounded-full text-xs font-medium ${STATUS_STYLES[selectedPartner.status || 'pending']}`}>
                 {(selectedPartner.status || 'pending').charAt(0).toUpperCase() + (selectedPartner.status || 'pending').slice(1)}
