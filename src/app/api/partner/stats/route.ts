@@ -99,6 +99,9 @@ export async function GET(request: NextRequest) {
     // Monthly breakdown for chart
     const monthlyStats = getMonthlyStats(commissionsData || [])
 
+    // Check if partner has banking details
+    const hasBankingDetails = !!(partner.bank_name && partner.bank_account_name && partner.bank_account_number)
+
     return NextResponse.json({
       partner: {
         id: partner.id,
@@ -107,7 +110,8 @@ export async function GET(request: NextRequest) {
         email: partner.contact_email,
         commissionRate: partner.default_commission_percent ?? partner.commission_rate ?? 15,
         discountPercent: partner.default_discount_percent ?? 0,
-        freeShipping: partner.default_free_shipping ?? false
+        freeShipping: partner.default_free_shipping ?? false,
+        hasBankingDetails
       },
       stats: {
         totalCodes,

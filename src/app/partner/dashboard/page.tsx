@@ -16,7 +16,8 @@ import {
   ChevronRight,
   Tag,
   Settings,
-  HelpCircle
+  HelpCircle,
+  AlertTriangle
 } from 'lucide-react'
 
 interface DashboardData {
@@ -28,6 +29,7 @@ interface DashboardData {
     commissionRate: number
     discountPercent: number
     freeShipping: boolean
+    hasBankingDetails: boolean
   }
   stats: {
     totalCodes: number
@@ -195,6 +197,32 @@ export default function PartnerDashboardPage() {
             )}
           </div>
         </div>
+
+        {/* Banking Details Reminder */}
+        {!partner.hasBankingDetails && (
+          <div className="mb-8 bg-amber-50 border border-amber-200 rounded-xl p-4">
+            <div className="flex items-start gap-3">
+              <div className="flex-shrink-0">
+                <AlertTriangle className="h-6 w-6 text-amber-600" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-medium text-amber-800">Banking Details Required</h3>
+                <p className="text-sm text-amber-700 mt-1">
+                  To receive commission payouts, please add your banking details in Settings. 
+                  We need your bank name, account name, and account number.
+                </p>
+                <Link
+                  href="/partner/settings"
+                  className="inline-flex items-center gap-1 mt-3 text-sm font-medium text-amber-800 hover:text-amber-900"
+                >
+                  <Settings className="h-4 w-4" />
+                  Go to Settings
+                  <ChevronRight className="h-4 w-4" />
+                </Link>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
