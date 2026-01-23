@@ -7,6 +7,8 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
+const PIPEDREAM_WEBHOOK_URL = process.env.PIPEDREAM_WEBHOOK_URL;
+
 async function checkAdminAuth(): Promise<boolean> {
   const cookieStore = await cookies();
   const session = cookieStore.get('admin-session')?.value;
@@ -137,6 +139,23 @@ export async function POST(request: Request) {
     if (error || !partner) {
       console.error('Error creating partner:', error);
       return NextResponse.json({ error: 'Failed to create partner' }, { status: 500 });
+    }
+
+    // Send welcome/approval email if partner is created as active
+    if (status === 'active' && PIPEDREAM_WEBHOOK_URL) {
+      await fetch(PIPEDREAM_WEBHOOK_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'partner_approved',
+          to: normalizedEmail,
+          data: {
+            businessName,
+            contactName,
+            loginUrl: `${process.env.NEXT_PUBLIC_BASE_URL || 'https://memoriqr.co.nz'}/partner`,
+          },
+        }),
+      }).catch(console.error);
     }
 
     return NextResponse.json({ success: true, partner });
