@@ -28,6 +28,11 @@ interface Order {
     deceased_type: string;
     is_published: boolean;
   } | null;
+  partner: {
+    id: string;
+    partner_name: string;
+    partner_type: string;
+  } | null;
 }
 
 interface OrderDetails extends Order {
@@ -71,6 +76,8 @@ export default function AdminToolsPage() {
   
   // Search by customer
   const [searchQuery, setSearchQuery] = useState('');
+  const [searchBusinessName, setSearchBusinessName] = useState('');
+  const [searchPartnerType, setSearchPartnerType] = useState('');
   const [searchResults, setSearchResults] = useState<Order[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [searchError, setSearchError] = useState('');
@@ -112,17 +119,27 @@ export default function AdminToolsPage() {
     router.push('/admin');
   };
 
-  // Search orders by customer name/email
+  // Search orders by customer name/email and/or partner
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!searchQuery.trim()) return;
+    
+    // At least one search field required
+    if (!searchQuery.trim() && !searchBusinessName.trim() && !searchPartnerType) {
+      setSearchError('Please enter at least one search field');
+      return;
+    }
 
     setIsSearching(true);
     setSearchError('');
     setSearchResults([]);
 
     try {
-      const res = await fetch(`/api/admin/tools/search?q=${encodeURIComponent(searchQuery)}`);
+      const params = new URLSearchParams();
+      if (searchQuery.trim()) params.append('q', searchQuery.trim());
+      if (searchBusinessName.trim()) params.append('businessName', searchBusinessName.trim());
+      if (searchPartnerType) params.append('partnerType', searchPartnerType);
+      
+      const res = await fetch(`/api/admin/tools/search?${params.toString()}`);
       const data = await res.json();
 
       if (!res.ok) {
@@ -130,6 +147,9 @@ export default function AdminToolsPage() {
       }
 
       setSearchResults(data.orders || []);
+      if (data.orders?.length === 0) {
+        setSearchError('No orders found matching your search');
+      }
     } catch (err) {
       setSearchError(err instanceof Error ? err.message : 'Search failed');
     } finally {
@@ -344,23 +364,66 @@ export default function AdminToolsPage() {
         {/* Search Orders Tab */}
         {activeTab === 'search' && (
           <div className="bg-white rounded-xl shadow p-6">
-            <h3 className="text-lg font-bold text-stone-800 mb-4">Search Orders by Customer</h3>
+            <h3 className="text-lg font-bold text-stone-800 mb-4">Search Orders</h3>
             
-            <form onSubmit={handleSearch} className="mb-6">
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Enter customer name or email..."
-                  className="flex-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-stone-500 focus:border-transparent"
-                />
+            <form onSubmit={handleSearch} className="mb-6 space-y-4">
+              <div className="grid md:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-stone-700 mb-1">Customer Name or Email</label>
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="e.g. John Smith or john@..."
+                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-stone-500 focus:border-transparent"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-stone-700 mb-1">Business Name</label>
+                  <input
+                    type="text"
+                    value={searchBusinessName}
+                    onChange={(e) => setSearchBusinessName(e.target.value)}
+                    placeholder="e.g. Pet Haven Vets"
+                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-stone-500 focus:border-transparent"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-stone-700 mb-1">Partner Type</label>
+                  <select
+                    value={searchPartnerType}
+                    onChange={(e) => setSearchPartnerType(e.target.value)}
+                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-stone-500 focus:border-transparent"
+                  >
+                    <option value="">All Types</option>
+                    <option value="vet">Veterinarian</option>
+                    <option value="crematorium">Crematorium</option>
+                    <option value="funeral_home">Funeral Home</option>
+                    <option value="pet_store">Pet Store</option>
+                  </select>
+                </div>
+              </div>
+              
+              <div className="flex gap-3">
                 <button
                   type="submit"
-                  disabled={isSearching || !searchQuery.trim()}
+                  disabled={isSearching}
                   className="px-6 py-2 bg-stone-800 text-white rounded-lg hover:bg-stone-700 disabled:opacity-50"
                 >
                   {isSearching ? 'Searching...' : 'Search'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSearchQuery('');
+                    setSearchBusinessName('');
+                    setSearchPartnerType('');
+                    setSearchResults([]);
+                    setSearchError('');
+                  }}
+                  className="px-6 py-2 bg-stone-200 text-stone-700 rounded-lg hover:bg-stone-300"
+                >
+                  Clear
                 </button>
               </div>
             </form>
@@ -373,12 +436,13 @@ export default function AdminToolsPage() {
 
             {searchResults.length > 0 && (
               <div className="overflow-x-auto">
+                <p className="text-sm text-stone-600 mb-2">Found {searchResults.length} order(s)</p>
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-stone-200">
                       <th className="text-left py-3 px-2 font-medium text-stone-600">Order #</th>
                       <th className="text-left py-3 px-2 font-medium text-stone-600">Customer</th>
-                      <th className="text-left py-3 px-2 font-medium text-stone-600">Email</th>
+                      <th className="text-left py-3 px-2 font-medium text-stone-600">Partner</th>
                       <th className="text-left py-3 px-2 font-medium text-stone-600">Status</th>
                       <th className="text-left py-3 px-2 font-medium text-stone-600">Date</th>
                       <th className="text-left py-3 px-2 font-medium text-stone-600">Actions</th>
@@ -387,9 +451,21 @@ export default function AdminToolsPage() {
                   <tbody>
                     {searchResults.map((order) => (
                       <tr key={order.id} className="border-b border-stone-100 hover:bg-stone-50">
-                        <td className="py-3 px-2 font-mono">{order.order_number}</td>
-                        <td className="py-3 px-2">{order.customer?.full_name || '-'}</td>
-                        <td className="py-3 px-2">{order.customer?.email || '-'}</td>
+                        <td className="py-3 px-2 font-mono text-xs">{order.order_number}</td>
+                        <td className="py-3 px-2">
+                          <div>{order.customer?.full_name || '-'}</div>
+                          <div className="text-xs text-stone-500">{order.customer?.email || ''}</div>
+                        </td>
+                        <td className="py-3 px-2">
+                          {order.partner ? (
+                            <div>
+                              <div>{order.partner.partner_name}</div>
+                              <div className="text-xs text-stone-500">{order.partner.partner_type}</div>
+                            </div>
+                          ) : (
+                            <span className="text-stone-400">Direct</span>
+                          )}
+                        </td>
                         <td className="py-3 px-2">
                           <span className={`px-2 py-1 rounded text-xs font-medium ${
                             order.order_status === 'completed' ? 'bg-green-100 text-green-800' :

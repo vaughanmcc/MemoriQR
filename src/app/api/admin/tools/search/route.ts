@@ -10,7 +10,7 @@ async function checkAdminAuth(): Promise<boolean> {
   return !!correctPassword && session === correctPassword
 }
 
-// GET - Search orders by customer name or email
+// GET - Search orders by customer name/email and/or partner
 export async function GET(request: NextRequest) {
   if (!await checkAdminAuth()) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -18,34 +18,58 @@ export async function GET(request: NextRequest) {
 
   try {
     const { searchParams } = new URL(request.url)
-    const query = searchParams.get('q')?.trim()
+    const customerQuery = searchParams.get('q')?.trim()
+    const businessName = searchParams.get('businessName')?.trim()
+    const partnerType = searchParams.get('partnerType')?.trim()
 
-    if (!query) {
-      return NextResponse.json({ error: 'Search query is required' }, { status: 400 })
+    // At least one search parameter required
+    if (!customerQuery && !businessName && !partnerType) {
+      return NextResponse.json({ error: 'At least one search field is required' }, { status: 400 })
     }
 
     const supabase = createAdminClient()
+    let customerIds: string[] = []
+    let partnerIds: string[] = []
 
-    // Search customers by name or email
-    const { data: customers, error: customerError } = await supabase
-      .from('customers')
-      .select('id')
-      .or(`full_name.ilike.%${query}%,email.ilike.%${query}%`)
-      .limit(50)
+    // Search customers by name or email if provided
+    if (customerQuery) {
+      const { data: customers, error: customerError } = await supabase
+        .from('customers')
+        .select('id')
+        .or(`full_name.ilike.%${customerQuery}%,email.ilike.%${customerQuery}%`)
+        .limit(50)
 
-    if (customerError) {
-      console.error('Customer search error:', customerError)
-      return NextResponse.json({ error: 'Search failed' }, { status: 500 })
+      if (customerError) {
+        console.error('Customer search error:', customerError)
+        return NextResponse.json({ error: 'Search failed' }, { status: 500 })
+      }
+
+      customerIds = customers?.map(c => c.id) || []
     }
 
-    if (!customers || customers.length === 0) {
-      return NextResponse.json({ orders: [] })
+    // Search partners by business name and/or type if provided
+    if (businessName || partnerType) {
+      let partnerQuery = supabase.from('partners').select('id')
+      
+      if (businessName) {
+        partnerQuery = partnerQuery.ilike('partner_name', `%${businessName}%`)
+      }
+      if (partnerType) {
+        partnerQuery = partnerQuery.eq('partner_type', partnerType)
+      }
+
+      const { data: partners, error: partnerError } = await partnerQuery.limit(50)
+
+      if (partnerError) {
+        console.error('Partner search error:', partnerError)
+        return NextResponse.json({ error: 'Search failed' }, { status: 500 })
+      }
+
+      partnerIds = partners?.map(p => p.id) || []
     }
 
-    const customerIds = customers.map(c => c.id)
-
-    // Get orders for these customers
-    const { data: orders, error: ordersError } = await supabase
+    // Build order query based on search criteria
+    let orderQuery = supabase
       .from('orders')
       .select(`
         id,
@@ -57,12 +81,35 @@ export async function GET(request: NextRequest) {
         order_status,
         created_at,
         paid_at,
+        partner_id,
         customer:customers(id, full_name, email, phone, shipping_address),
-        memorial:memorial_records(id, memorial_slug, deceased_name, deceased_type, is_published)
+        memorial:memorial_records(id, memorial_slug, deceased_name, deceased_type, is_published),
+        partner:partners(id, partner_name, partner_type)
       `)
-      .in('customer_id', customerIds)
       .order('created_at', { ascending: false })
-      .limit(100)
+
+    // Apply filters based on what was searched
+    if (customerQuery && (businessName || partnerType)) {
+      // Both customer and partner filters - need both to match
+      if (customerIds.length === 0 || partnerIds.length === 0) {
+        return NextResponse.json({ orders: [] })
+      }
+      orderQuery = orderQuery.in('customer_id', customerIds).in('partner_id', partnerIds)
+    } else if (customerQuery) {
+      // Only customer filter
+      if (customerIds.length === 0) {
+        return NextResponse.json({ orders: [] })
+      }
+      orderQuery = orderQuery.in('customer_id', customerIds)
+    } else if (businessName || partnerType) {
+      // Only partner filter
+      if (partnerIds.length === 0) {
+        return NextResponse.json({ orders: [] })
+      }
+      orderQuery = orderQuery.in('partner_id', partnerIds)
+    }
+
+    const { data: orders, error: ordersError } = await orderQuery.limit(100)
 
     if (ordersError) {
       console.error('Orders search error:', ordersError)
