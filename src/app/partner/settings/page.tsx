@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { LogOut, ArrowLeft, Save, Building, CreditCard, AlertCircle, CheckCircle, User, MapPin } from 'lucide-react'
+import { LogOut, ArrowLeft, Save, Building, CreditCard, AlertCircle, CheckCircle, User, MapPin, Shield, Smartphone } from 'lucide-react'
 
 interface PartnerAddress {
   street?: string
@@ -32,9 +32,11 @@ export default function PartnerSettingsPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [revokingTrust, setRevokingTrust] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   const [settings, setSettings] = useState<PartnerSettings | null>(null)
+  const [hasTrustedSessions, setHasTrustedSessions] = useState(false)
   const [formData, setFormData] = useState({
     // Business info
     business_name: '',
@@ -74,6 +76,7 @@ export default function PartnerSettingsPage() {
 
       const data = await response.json()
       setSettings(data.settings)
+      setHasTrustedSessions(data.hasTrustedSessions || false)
       const addr = data.settings.address || {}
       setFormData({
         business_name: data.settings.business_name || '',
@@ -129,6 +132,38 @@ export default function PartnerSettingsPage() {
   const handleLogout = async () => {
     await fetch('/api/partner/session', { method: 'DELETE' })
     router.push('/partner')
+  }
+
+  const handleRevokeTrustedSessions = async () => {
+    if (!confirm('This will log you out of all devices where you selected "Stay signed in longer". You will need to log in again on those devices. Continue?')) {
+      return
+    }
+    
+    setRevokingTrust(true)
+    setError('')
+    setSuccess('')
+
+    try {
+      const response = await fetch('/api/partner/settings/revoke-trust', {
+        method: 'POST'
+      })
+
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.error || 'Failed to revoke trusted sessions')
+      }
+
+      const data = await response.json()
+      setSuccess(data.message || 'Trusted sessions revoked successfully')
+      setHasTrustedSessions(false)
+      
+      // Clear localStorage acknowledgment so warning shows again next time
+      localStorage.removeItem('partner_trust_warning_ack')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to revoke trusted sessions')
+    } finally {
+      setRevokingTrust(false)
+    }
   }
 
   if (loading) {
@@ -457,6 +492,46 @@ export default function PartnerSettingsPage() {
               </button>
             </div>
           </form>
+        </div>
+
+        {/* Security Section */}
+        <div className="bg-white rounded-xl shadow-sm mt-6">
+          <div className="p-6 border-b border-gray-200">
+            <div className="flex items-center gap-2">
+              <Shield className="h-5 w-5 text-gray-600" />
+              <h2 className="text-lg font-medium text-gray-900">Security</h2>
+            </div>
+            <p className="text-gray-600 mt-1 text-sm">Manage your login sessions and security settings</p>
+          </div>
+
+          <div className="p-6 space-y-4">
+            <div className="flex items-start justify-between gap-4 p-4 bg-gray-50 rounded-lg">
+              <div className="flex items-start gap-3">
+                <Smartphone className="h-5 w-5 text-gray-500 mt-0.5" />
+                <div>
+                  <h3 className="font-medium text-gray-900">Trusted Devices</h3>
+                  <p className="text-sm text-gray-600 mt-1">
+                    {hasTrustedSessions 
+                      ? 'You have active sessions on trusted devices (24-hour login). Revoking will log you out of those devices.'
+                      : 'No trusted device sessions are currently active.'}
+                  </p>
+                </div>
+              </div>
+              {hasTrustedSessions && (
+                <button
+                  onClick={handleRevokeTrustedSessions}
+                  disabled={revokingTrust}
+                  className="flex-shrink-0 px-4 py-2 text-sm font-medium text-red-600 bg-red-50 hover:bg-red-100 rounded-lg disabled:opacity-50"
+                >
+                  {revokingTrust ? 'Revoking...' : 'Revoke All'}
+                </button>
+              )}
+            </div>
+
+            <p className="text-xs text-gray-500">
+              Tip: To re-enable &quot;Stay signed in longer&quot; on a device, simply log in again and check the option.
+            </p>
+          </div>
         </div>
 
         {/* Security Note */}

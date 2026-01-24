@@ -92,6 +92,7 @@ function AdminPartnersContent() {
   const [selectedPartner, setSelectedPartner] = useState<Partner | null>(null);
   const [editingPartner, setEditingPartner] = useState<Partner | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
+  const [revokingTrust, setRevokingTrust] = useState(false);
   const [showSuspendModal, setShowSuspendModal] = useState(false);
   const [suspendPartner, setSuspendPartner] = useState<Partner | null>(null);
   const [suspendReason, setSuspendReason] = useState('');
@@ -332,6 +333,33 @@ function AdminPartnersContent() {
       setError(err instanceof Error ? err.message : 'Failed to update partner');
     } finally {
       setActionLoading(false);
+    }
+  };
+
+  const handleRevokeTrustedSessions = async (partnerId: string) => {
+    if (!confirm('This will log the partner out of all devices where they selected "Stay signed in longer" and send them an email notification. Continue?')) {
+      return;
+    }
+
+    setRevokingTrust(true);
+    setError('');
+
+    try {
+      const res = await fetch(`/api/admin/partners/${partnerId}/revoke-trust`, {
+        method: 'POST',
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to revoke trusted sessions');
+      }
+
+      alert(`Trusted sessions revoked. ${data.revokedCount} session(s) ended.`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to revoke trusted sessions');
+    } finally {
+      setRevokingTrust(false);
     }
   };
 
@@ -817,6 +845,27 @@ function AdminPartnersContent() {
                   </div>
                 </div>
               </div>
+
+              {/* Security Actions */}
+              {editingPartner.status === 'active' && (
+                <div className="border-t pt-4 mt-4">
+                  <h4 className="font-medium text-stone-800 mb-3">Security</h4>
+                  <div className="flex items-center justify-between p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                    <div>
+                      <p className="text-sm font-medium text-amber-800">Trusted Device Sessions</p>
+                      <p className="text-xs text-amber-700">End all 24-hour sessions on trusted devices</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleRevokeTrustedSessions(editingPartner.id)}
+                      disabled={revokingTrust}
+                      className="px-3 py-1.5 text-sm font-medium text-red-600 bg-white border border-red-200 rounded-lg hover:bg-red-50 disabled:opacity-50"
+                    >
+                      {revokingTrust ? 'Revoking...' : 'Revoke All'}
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="p-6 border-t bg-stone-50 flex justify-end gap-3">

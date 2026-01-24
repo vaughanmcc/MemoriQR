@@ -27,9 +27,13 @@ export default function PartnerLoginPage() {
 
   const handleTrustDeviceChange = (checked: boolean) => {
     if (checked && !warningAcknowledged) {
+      // Clear any previous acknowledgment to ensure warning shows
+      // This handles the case where admin revoked trust or partner previously disabled it
       setShowTrustWarning(true)
+    } else if (checked) {
+      setTrustDevice(true)
     } else {
-      setTrustDevice(checked)
+      setTrustDevice(false)
     }
   }
 

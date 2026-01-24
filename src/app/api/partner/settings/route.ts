@@ -63,6 +63,18 @@ export async function GET() {
     return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
   }
 
+  const supabase = createAdminClient()
+
+  // Check if partner has any trusted device sessions
+  const { data: trustedSessions } = await supabase
+    .from('partner_sessions')
+    .select('id')
+    .eq('partner_id', partner.id)
+    .eq('is_trusted_device', true)
+    .gt('expires_at', new Date().toISOString())
+
+  const hasTrustedSessions = (trustedSessions?.length || 0) > 0
+
   // Parse partner name to extract business name and contact name
   const partnerName = partner.partner_name || ''
   const contactNameMatch = partnerName.match(/\(([^)]+)\)/)
@@ -84,6 +96,7 @@ export async function GET() {
       website: partner.website,
       address: partner.address,
     },
+    hasTrustedSessions,
   })
 }
 

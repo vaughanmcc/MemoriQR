@@ -3,8 +3,8 @@
 This document summarizes all features and fixes implemented on the `preview-smoke` branch that are pending merge to `main` (production).
 
 **Branch:** `preview-smoke`  
-**Commits pending:** 59  
-**Date:** January 23, 2026
+**Commits pending:** 60  
+**Date:** January 24, 2026
 
 ---
 
@@ -31,7 +31,18 @@ This document summarizes all features and fixes implemented on the `preview-smok
 - Trust device option extends to 24 hours
 - New API endpoint: `/api/partner/session/extend`
 
-**Files:** `src/app/partner/page.tsx`, `src/app/api/partner/verify/route.ts`, `src/app/api/partner/session/extend/route.ts`, `src/app/partner/dashboard/page.tsx`
+### 1.4 Trusted Device Management
+- **Partner Settings**: New "Security" section to view and revoke trusted device sessions
+  - Shows if partner has active trusted device sessions
+  - "Revoke All" button ends all 24-hour sessions
+  - Converts current session to standard 1-hour if revoked
+  - Clears localStorage acknowledgment so warning shows again next time
+- **Admin Controls**: "Security" section in partner edit modal
+  - Admin can revoke all trusted sessions for any active partner
+  - Sends email notification to partner when admin revokes sessions
+- **Warning Re-display**: If partner or admin revokes trust, warning modal appears again on next login when re-enabling "Stay signed in longer"
+
+**Files:** `src/app/partner/page.tsx`, `src/app/api/partner/verify/route.ts`, `src/app/api/partner/session/extend/route.ts`, `src/app/partner/dashboard/page.tsx`, `src/app/partner/settings/page.tsx`, `src/app/api/partner/settings/route.ts`, `src/app/api/partner/settings/revoke-trust/route.ts`, `src/app/admin/partners/page.tsx`, `src/app/api/admin/partners/[id]/revoke-trust/route.ts`
 
 **Migration:** `015_partner_trusted_device.sql` - Adds `is_trusted_device` column
 
