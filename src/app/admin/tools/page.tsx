@@ -65,9 +65,47 @@ interface ActivationResult {
   customerName: string | null;
 }
 
+interface MemorialResult {
+  id: string;
+  memorial_slug: string;
+  deceased_name: string;
+  deceased_type: 'pet' | 'human';
+  species: string | null;
+  is_published: boolean;
+  hosting_expires_at: string;
+  renewal_status: 'active' | 'expired' | 'renewed';
+  views_count: number;
+  created_at: string;
+  customer: {
+    id: string;
+    full_name: string;
+    email: string;
+  } | null;
+}
+
+interface MemorialDetails extends MemorialResult {
+  birth_date: string | null;
+  death_date: string | null;
+  memorial_text: string | null;
+  photos_json: unknown[];
+  videos_json: unknown[];
+  hosting_duration: number;
+  product_type: string;
+  theme: string;
+  frame: string;
+  edit_token: string;
+  updated_at: string;
+  customer: {
+    id: string;
+    full_name: string;
+    email: string;
+    phone: string | null;
+  } | null;
+}
+
 export default function AdminToolsPage() {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<'search' | 'order' | 'resend'>('search');
+  const [activeTab, setActiveTab] = useState<'search' | 'order' | 'resend' | 'memorials'>('search');
   
   // Search by customer
   const [searchQuery, setSearchQuery] = useState('');
@@ -96,6 +134,16 @@ export default function AdminToolsPage() {
   const [activationSearchError, setActivationSearchError] = useState('');
   const [selectedActivation, setSelectedActivation] = useState<ActivationResult | null>(null);
   const [resendingActivationCode, setResendingActivationCode] = useState<string | null>(null);
+
+  // Memorial management
+  const [memorialSearchQuery, setMemorialSearchQuery] = useState('');
+  const [memorialResults, setMemorialResults] = useState<MemorialResult[]>([]);
+  const [isSearchingMemorials, setIsSearchingMemorials] = useState(false);
+  const [memorialSearchError, setMemorialSearchError] = useState('');
+  const [selectedMemorial, setSelectedMemorial] = useState<MemorialDetails | null>(null);
+  const [isLoadingMemorial, setIsLoadingMemorial] = useState(false);
+  const [memorialAction, setMemorialAction] = useState<string | null>(null);
+  const [memorialActionResult, setMemorialActionResult] = useState<{ success: boolean; message: string } | null>(null);
 
   useEffect(() => {
     checkAuth();
@@ -276,6 +324,93 @@ export default function AdminToolsPage() {
     }
   };
 
+  // Search memorials
+  const handleMemorialSearch = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!memorialSearchQuery.trim()) {
+      setMemorialSearchError('Please enter a search term');
+      return;
+    }
+
+    setIsSearchingMemorials(true);
+    setMemorialSearchError('');
+    setMemorialResults([]);
+    setSelectedMemorial(null);
+
+    try {
+      const res = await fetch(`/api/admin/tools/memorials?q=${encodeURIComponent(memorialSearchQuery.trim())}`);
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Search failed');
+      }
+
+      setMemorialResults(data.memorials || []);
+      if (data.memorials?.length === 0) {
+        setMemorialSearchError('No memorials found');
+      }
+    } catch (err) {
+      setMemorialSearchError(err instanceof Error ? err.message : 'Search failed');
+    } finally {
+      setIsSearchingMemorials(false);
+    }
+  };
+
+  // Load memorial details
+  const handleSelectMemorial = async (slug: string) => {
+    setIsLoadingMemorial(true);
+    setMemorialActionResult(null);
+
+    try {
+      const res = await fetch(`/api/admin/tools/memorials?slug=${encodeURIComponent(slug)}`);
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to load memorial');
+      }
+
+      setSelectedMemorial(data.memorial);
+    } catch (err) {
+      setMemorialSearchError(err instanceof Error ? err.message : 'Failed to load memorial');
+    } finally {
+      setIsLoadingMemorial(false);
+    }
+  };
+
+  // Perform memorial action (toggle publish, extend, reset views)
+  const handleMemorialAction = async (action: string, value?: number) => {
+    if (!selectedMemorial) return;
+
+    setMemorialAction(action);
+    setMemorialActionResult(null);
+
+    try {
+      const res = await fetch('/api/admin/tools/memorials', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          memorialId: selectedMemorial.id,
+          action,
+          value,
+        }),
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Action failed');
+      }
+
+      setMemorialActionResult({ success: true, message: data.message });
+      // Refresh memorial details
+      await handleSelectMemorial(selectedMemorial.memorial_slug);
+    } catch (err) {
+      setMemorialActionResult({ success: false, message: err instanceof Error ? err.message : 'Action failed' });
+    } finally {
+      setMemorialAction(null);
+    }
+  };
+
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
   };
@@ -313,10 +448,10 @@ export default function AdminToolsPage() {
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 py-8">
         <h2 className="text-2xl font-bold text-stone-800 mb-2">Admin Tools</h2>
-        <p className="text-stone-600 mb-8">Order lookup, customer search, and email management</p>
+        <p className="text-stone-600 mb-8">Order lookup, customer search, memorial management, and email tools</p>
 
         {/* Tab Navigation */}
-        <div className="flex gap-2 mb-6">
+        <div className="flex flex-wrap gap-2 mb-6">
           <button
             onClick={() => setActiveTab('search')}
             className={`px-4 py-2 rounded-lg font-medium ${
@@ -336,6 +471,16 @@ export default function AdminToolsPage() {
             }`}
           >
             Order Lookup
+          </button>
+          <button
+            onClick={() => setActiveTab('memorials')}
+            className={`px-4 py-2 rounded-lg font-medium ${
+              activeTab === 'memorials'
+                ? 'bg-stone-800 text-white'
+                : 'bg-white text-stone-600 hover:bg-stone-50'
+            }`}
+          >
+            Memorials
           </button>
           <button
             onClick={() => setActiveTab('resend')}
@@ -641,6 +786,379 @@ export default function AdminToolsPage() {
                 </div>
               </div>
             )}
+          </div>
+        )}
+
+        {/* Memorials Tab */}
+        {activeTab === 'memorials' && (
+          <div className="space-y-6">
+            {/* Search Memorials */}
+            <div className="bg-white rounded-xl shadow p-6">
+              <h3 className="text-lg font-bold text-stone-800 mb-2">Search Memorials</h3>
+              <p className="text-sm text-stone-600 mb-4">
+                Search by deceased name, memorial slug, or customer email
+              </p>
+              
+              <form onSubmit={handleMemorialSearch} className="mb-6">
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={memorialSearchQuery}
+                    onChange={(e) => setMemorialSearchQuery(e.target.value)}
+                    placeholder="Enter deceased name, slug, or customer email..."
+                    className="flex-1 max-w-lg px-4 py-2 border rounded-lg focus:ring-2 focus:ring-stone-500 focus:border-transparent"
+                  />
+                  <button
+                    type="submit"
+                    disabled={isSearchingMemorials}
+                    className="px-6 py-2 bg-stone-800 text-white rounded-lg hover:bg-stone-700 disabled:opacity-50"
+                  >
+                    {isSearchingMemorials ? 'Searching...' : 'Search'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMemorialSearchQuery('');
+                      setMemorialResults([]);
+                      setMemorialSearchError('');
+                      setSelectedMemorial(null);
+                    }}
+                    className="px-4 py-2 bg-stone-200 text-stone-700 rounded-lg hover:bg-stone-300"
+                  >
+                    Clear
+                  </button>
+                </div>
+              </form>
+
+              {memorialSearchError && (
+                <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 mb-4">
+                  {memorialSearchError}
+                </div>
+              )}
+
+              {/* Search Results */}
+              {memorialResults.length > 0 && !selectedMemorial && (
+                <div className="overflow-x-auto">
+                  <p className="text-sm text-stone-600 mb-2">Found {memorialResults.length} memorial(s)</p>
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b text-left text-stone-500">
+                        <th className="pb-2 pr-4">Deceased Name</th>
+                        <th className="pb-2 pr-4">Type</th>
+                        <th className="pb-2 pr-4">Customer</th>
+                        <th className="pb-2 pr-4">Status</th>
+                        <th className="pb-2 pr-4">Expires</th>
+                        <th className="pb-2 pr-4">Views</th>
+                        <th className="pb-2"></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {memorialResults.map((m) => (
+                        <tr key={m.id} className="border-b hover:bg-stone-50">
+                          <td className="py-3 pr-4 font-medium">{m.deceased_name}</td>
+                          <td className="py-3 pr-4 capitalize">
+                            {m.deceased_type}
+                            {m.species && ` (${m.species})`}
+                          </td>
+                          <td className="py-3 pr-4">
+                            {m.customer?.full_name || 'N/A'}
+                            {m.customer?.email && (
+                              <span className="block text-xs text-stone-500">{m.customer.email}</span>
+                            )}
+                          </td>
+                          <td className="py-3 pr-4">
+                            <span className={`px-2 py-1 rounded text-xs ${
+                              m.is_published 
+                                ? 'bg-green-100 text-green-800' 
+                                : 'bg-yellow-100 text-yellow-800'
+                            }`}>
+                              {m.is_published ? 'Published' : 'Draft'}
+                            </span>
+                          </td>
+                          <td className="py-3 pr-4 text-xs">
+                            {new Date(m.hosting_expires_at).toLocaleDateString()}
+                            <span className={`block ${
+                              new Date(m.hosting_expires_at) < new Date() 
+                                ? 'text-red-600' 
+                                : 'text-stone-500'
+                            }`}>
+                              {new Date(m.hosting_expires_at) < new Date() ? 'Expired' : m.renewal_status}
+                            </span>
+                          </td>
+                          <td className="py-3 pr-4">{m.views_count}</td>
+                          <td className="py-3">
+                            <button
+                              onClick={() => handleSelectMemorial(m.memorial_slug)}
+                              className="px-3 py-1 bg-stone-800 text-white rounded text-xs hover:bg-stone-700"
+                            >
+                              View Details
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+
+              {/* Memorial Details */}
+              {isLoadingMemorial && (
+                <div className="text-center py-8">
+                  <p className="text-stone-600">Loading memorial details...</p>
+                </div>
+              )}
+
+              {selectedMemorial && !isLoadingMemorial && (
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-lg font-bold text-stone-800">
+                      Memorial: {selectedMemorial.deceased_name}
+                    </h4>
+                    <button
+                      onClick={() => setSelectedMemorial(null)}
+                      className="text-stone-500 hover:text-stone-700 text-sm"
+                    >
+                      ← Back to Results
+                    </button>
+                  </div>
+
+                  {memorialActionResult && (
+                    <div className={`p-4 rounded-lg ${
+                      memorialActionResult.success 
+                        ? 'bg-green-50 border border-green-200 text-green-700' 
+                        : 'bg-red-50 border border-red-200 text-red-700'
+                    }`}>
+                      {memorialActionResult.message}
+                    </div>
+                  )}
+
+                  {/* Memorial Info Grid */}
+                  <div className="grid md:grid-cols-2 gap-6">
+                    {/* Basic Info */}
+                    <div className="bg-stone-50 p-4 rounded-lg space-y-2">
+                      <h5 className="font-medium text-stone-800 mb-3">Memorial Info</h5>
+                      <div className="flex justify-between">
+                        <span className="text-stone-500">Type:</span>
+                        <span className="capitalize">{selectedMemorial.deceased_type}{selectedMemorial.species && ` (${selectedMemorial.species})`}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-stone-500">Birth Date:</span>
+                        <span>{selectedMemorial.birth_date || 'Not set'}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-stone-500">Death Date:</span>
+                        <span>{selectedMemorial.death_date || 'Not set'}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-stone-500">Product:</span>
+                        <span className="capitalize">{selectedMemorial.product_type?.replace('_', ' ')}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-stone-500">Theme:</span>
+                        <span className="capitalize">{selectedMemorial.theme}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-stone-500">Frame:</span>
+                        <span className="capitalize">{selectedMemorial.frame}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-stone-500">Photos:</span>
+                        <span>{Array.isArray(selectedMemorial.photos_json) ? selectedMemorial.photos_json.length : 0}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-stone-500">Videos:</span>
+                        <span>{Array.isArray(selectedMemorial.videos_json) ? selectedMemorial.videos_json.length : 0}</span>
+                      </div>
+                    </div>
+
+                    {/* Status & Hosting */}
+                    <div className="bg-stone-50 p-4 rounded-lg space-y-2">
+                      <h5 className="font-medium text-stone-800 mb-3">Status & Hosting</h5>
+                      <div className="flex justify-between items-center">
+                        <span className="text-stone-500">Published:</span>
+                        <span className={`px-2 py-1 rounded text-xs ${
+                          selectedMemorial.is_published 
+                            ? 'bg-green-100 text-green-800' 
+                            : 'bg-yellow-100 text-yellow-800'
+                        }`}>
+                          {selectedMemorial.is_published ? 'Yes' : 'No'}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-stone-500">Hosting Duration:</span>
+                        <span>{selectedMemorial.hosting_duration} years</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-stone-500">Expires:</span>
+                        <span className={new Date(selectedMemorial.hosting_expires_at) < new Date() ? 'text-red-600 font-medium' : ''}>
+                          {new Date(selectedMemorial.hosting_expires_at).toLocaleDateString()}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-stone-500">Renewal Status:</span>
+                        <span className="capitalize">{selectedMemorial.renewal_status}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-stone-500">Views:</span>
+                        <span>{selectedMemorial.views_count}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-stone-500">Created:</span>
+                        <span>{new Date(selectedMemorial.created_at).toLocaleDateString()}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-stone-500">Updated:</span>
+                        <span>{new Date(selectedMemorial.updated_at).toLocaleDateString()}</span>
+                      </div>
+                    </div>
+
+                    {/* Customer Info */}
+                    <div className="bg-stone-50 p-4 rounded-lg space-y-2">
+                      <h5 className="font-medium text-stone-800 mb-3">Customer</h5>
+                      <div className="flex justify-between">
+                        <span className="text-stone-500">Name:</span>
+                        <span>{selectedMemorial.customer?.full_name || 'N/A'}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-stone-500">Email:</span>
+                        <span className="font-mono text-xs">{selectedMemorial.customer?.email || 'N/A'}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-stone-500">Phone:</span>
+                        <span>{selectedMemorial.customer?.phone || 'N/A'}</span>
+                      </div>
+                    </div>
+
+                    {/* Actions */}
+                    <div className="bg-stone-50 p-4 rounded-lg space-y-3">
+                      <h5 className="font-medium text-stone-800 mb-3">Actions</h5>
+                      <button
+                        onClick={() => handleMemorialAction('toggle_publish')}
+                        disabled={memorialAction !== null}
+                        className={`w-full px-4 py-2 rounded-lg text-sm ${
+                          selectedMemorial.is_published
+                            ? 'bg-yellow-600 hover:bg-yellow-700 text-white'
+                            : 'bg-green-600 hover:bg-green-700 text-white'
+                        } disabled:opacity-50`}
+                      >
+                        {memorialAction === 'toggle_publish' 
+                          ? 'Processing...' 
+                          : selectedMemorial.is_published ? 'Unpublish Memorial' : 'Publish Memorial'}
+                      </button>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => handleMemorialAction('extend_expiry', 12)}
+                          disabled={memorialAction !== null}
+                          className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm disabled:opacity-50"
+                        >
+                          {memorialAction === 'extend_expiry' ? 'Extending...' : '+12 Months'}
+                        </button>
+                        <button
+                          onClick={() => handleMemorialAction('extend_expiry', 60)}
+                          disabled={memorialAction !== null}
+                          className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm disabled:opacity-50"
+                        >
+                          +5 Years
+                        </button>
+                      </div>
+                      <button
+                        onClick={() => handleMemorialAction('reset_views')}
+                        disabled={memorialAction !== null}
+                        className="w-full px-4 py-2 bg-stone-600 text-white rounded-lg hover:bg-stone-700 text-sm disabled:opacity-50"
+                      >
+                        {memorialAction === 'reset_views' ? 'Resetting...' : 'Reset View Count'}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* URLs */}
+                  <div className="bg-stone-50 p-4 rounded-lg space-y-3">
+                    <h5 className="font-medium text-stone-800 mb-3">URLs</h5>
+                    <div className="grid gap-3">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <span className="text-xs text-stone-500 block">Memorial View URL</span>
+                          <a
+                            href={`${baseUrl}/memorial/${selectedMemorial.memorial_slug}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-600 hover:underline text-sm font-mono"
+                          >
+                            {baseUrl}/memorial/{selectedMemorial.memorial_slug}
+                          </a>
+                        </div>
+                        <button
+                          onClick={() => copyToClipboard(`${baseUrl}/memorial/${selectedMemorial.memorial_slug}`)}
+                          className="px-3 py-1 bg-stone-200 hover:bg-stone-300 rounded text-xs"
+                        >
+                          Copy
+                        </button>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <span className="text-xs text-stone-500 block">Edit Memorial URL</span>
+                          <a
+                            href={`${baseUrl}/memorial/edit?slug=${selectedMemorial.memorial_slug}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-600 hover:underline text-sm font-mono"
+                          >
+                            {baseUrl}/memorial/edit?slug={selectedMemorial.memorial_slug}
+                          </a>
+                        </div>
+                        <button
+                          onClick={() => copyToClipboard(`${baseUrl}/memorial/edit?slug=${selectedMemorial.memorial_slug}`)}
+                          className="px-3 py-1 bg-stone-200 hover:bg-stone-300 rounded text-xs"
+                        >
+                          Copy
+                        </button>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <span className="text-xs text-stone-500 block">QR Code Image URL</span>
+                          <a
+                            href={`${baseUrl}/api/qr/${selectedMemorial.memorial_slug}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-600 hover:underline text-sm font-mono"
+                          >
+                            {baseUrl}/api/qr/{selectedMemorial.memorial_slug}
+                          </a>
+                        </div>
+                        <button
+                          onClick={() => copyToClipboard(`${baseUrl}/api/qr/${selectedMemorial.memorial_slug}`)}
+                          className="px-3 py-1 bg-stone-200 hover:bg-stone-300 rounded text-xs"
+                        >
+                          Copy
+                        </button>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <span className="text-xs text-stone-500 block">Edit Token (for direct edit access)</span>
+                          <span className="text-sm font-mono text-stone-600">{selectedMemorial.edit_token}</span>
+                        </div>
+                        <button
+                          onClick={() => copyToClipboard(selectedMemorial.edit_token)}
+                          className="px-3 py-1 bg-stone-200 hover:bg-stone-300 rounded text-xs"
+                        >
+                          Copy
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Memorial Text Preview */}
+                  {selectedMemorial.memorial_text && (
+                    <div className="bg-stone-50 p-4 rounded-lg">
+                      <h5 className="font-medium text-stone-800 mb-3">Memorial Text</h5>
+                      <p className="text-sm text-stone-600 whitespace-pre-wrap">
+                        {selectedMemorial.memorial_text}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         )}
 
