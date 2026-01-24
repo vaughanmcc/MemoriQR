@@ -564,26 +564,6 @@ export default function AdminToolsPage() {
                     <div className="bg-stone-50 p-4 rounded-lg space-y-3">
                       <div className="flex items-center justify-between">
                         <div>
-                          <span className="text-xs text-stone-500 block">QR Code / View URL</span>
-                          <a
-                            href={`${baseUrl}/qr/${orderDetails.memorial.memorial_slug}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-blue-600 hover:underline text-sm font-mono"
-                          >
-                            {baseUrl}/qr/{orderDetails.memorial.memorial_slug}
-                          </a>
-                        </div>
-                        <button
-                          onClick={() => copyToClipboard(`${baseUrl}/qr/${orderDetails.memorial?.memorial_slug}`)}
-                          className="px-3 py-1 bg-stone-200 hover:bg-stone-300 rounded text-xs"
-                        >
-                          Copy
-                        </button>
-                      </div>
-
-                      <div className="flex items-center justify-between">
-                        <div>
                           <span className="text-xs text-stone-500 block">Memorial View URL</span>
                           <a
                             href={`${baseUrl}/memorial/${orderDetails.memorial.memorial_slug}`}
@@ -596,6 +576,26 @@ export default function AdminToolsPage() {
                         </div>
                         <button
                           onClick={() => copyToClipboard(`${baseUrl}/memorial/${orderDetails.memorial?.memorial_slug}`)}
+                          className="px-3 py-1 bg-stone-200 hover:bg-stone-300 rounded text-xs"
+                        >
+                          Copy
+                        </button>
+                      </div>
+
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <span className="text-xs text-stone-500 block">QR Code Image URL</span>
+                          <a
+                            href={`${baseUrl}/api/qr/${orderDetails.memorial.memorial_slug}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-600 hover:underline text-sm font-mono"
+                          >
+                            {baseUrl}/api/qr/{orderDetails.memorial.memorial_slug}
+                          </a>
+                        </div>
+                        <button
+                          onClick={() => copyToClipboard(`${baseUrl}/api/qr/${orderDetails.memorial?.memorial_slug}`)}
                           className="px-3 py-1 bg-stone-200 hover:bg-stone-300 rounded text-xs"
                         >
                           Copy
