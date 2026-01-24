@@ -83,7 +83,7 @@ export default function AdminToolsPage() {
 
   // Resend emails - Order based (for online orders)
   const [resendOrderNumber, setResendOrderNumber] = useState('');
-  const [isResending, setIsResending] = useState(false);
+  const [resendingType, setResendingType] = useState<'activation' | 'memorial' | null>(null);
   const [resendResult, setResendResult] = useState<{ success: boolean; message: string } | null>(null);
   const [resendError, setResendError] = useState('');
 
@@ -95,6 +95,7 @@ export default function AdminToolsPage() {
   const [isSearchingActivations, setIsSearchingActivations] = useState(false);
   const [activationSearchError, setActivationSearchError] = useState('');
   const [selectedActivation, setSelectedActivation] = useState<ActivationResult | null>(null);
+  const [resendingActivationCode, setResendingActivationCode] = useState<string | null>(null);
 
   useEffect(() => {
     checkAuth();
@@ -173,7 +174,7 @@ export default function AdminToolsPage() {
   const handleResendEmails = async (emailType: 'activation' | 'memorial') => {
     if (!resendOrderNumber.trim()) return;
 
-    setIsResending(true);
+    setResendingType(emailType);
     setResendError('');
     setResendResult(null);
 
@@ -196,7 +197,7 @@ export default function AdminToolsPage() {
     } catch (err) {
       setResendError(err instanceof Error ? err.message : 'Failed to resend email');
     } finally {
-      setIsResending(false);
+      setResendingType(null);
     }
   };
 
@@ -248,7 +249,7 @@ export default function AdminToolsPage() {
       return;
     }
 
-    setIsResending(true);
+    setResendingActivationCode(activation.activationCode);
     setActivationSearchError('');
     setResendResult(null);
 
@@ -271,7 +272,7 @@ export default function AdminToolsPage() {
     } catch (err) {
       setActivationSearchError(err instanceof Error ? err.message : 'Failed to resend email');
     } finally {
-      setIsResending(false);
+      setResendingActivationCode(null);
     }
   };
 
@@ -825,11 +826,11 @@ export default function AdminToolsPage() {
                           <div className="ml-4">
                             <button
                               onClick={() => handleResendActivationEmail(activation)}
-                              disabled={isResending || !activation.memorial?.slug || !activation.customerEmail}
+                              disabled={resendingActivationCode !== null || !activation.memorial?.slug || !activation.customerEmail}
                               className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 text-sm whitespace-nowrap"
                               title={!activation.customerEmail ? 'No email available' : !activation.memorial?.slug ? 'No memorial' : 'Resend email'}
                             >
-                              {isResending ? 'Sending...' : 'Resend Email'}
+                              {resendingActivationCode === activation.activationCode ? 'Sending...' : 'Resend Email'}
                             </button>
                           </div>
                         </div>
@@ -861,17 +862,17 @@ export default function AdminToolsPage() {
               <div className="flex gap-3 mb-4">
                 <button
                   onClick={() => handleResendEmails('activation')}
-                  disabled={isResending || !resendOrderNumber.trim()}
+                  disabled={resendingType !== null || !resendOrderNumber.trim()}
                   className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 text-sm"
                 >
-                  {isResending ? 'Sending...' : 'Resend Order Confirmation'}
+                  {resendingType === 'activation' ? 'Sending...' : 'Resend Order Confirmation'}
                 </button>
                 <button
                   onClick={() => handleResendEmails('memorial')}
-                  disabled={isResending || !resendOrderNumber.trim()}
+                  disabled={resendingType !== null || !resendOrderNumber.trim()}
                   className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 text-sm"
                 >
-                  {isResending ? 'Sending...' : 'Resend Memorial Email'}
+                  {resendingType === 'memorial' ? 'Sending...' : 'Resend Memorial Email'}
                 </button>
               </div>
 
