@@ -312,6 +312,9 @@ function AdminCommissionsContent() {
               <Link href="/admin/memorials" className="text-white/70 hover:text-white px-3 py-1 rounded hover:bg-white/10">
                 Memorials
               </Link>
+              <Link href="/admin/tools" className="text-white/70 hover:text-white px-3 py-1 rounded hover:bg-white/10">
+                Tools
+              </Link>
             </nav>
           </div>
           <button

@@ -3,7 +3,7 @@
 This document summarizes all features and fixes implemented on the `preview-smoke` branch that are pending merge to `main` (production).
 
 **Branch:** `preview-smoke`  
-**Commits pending:** 60  
+**Commits pending:** 61  
 **Date:** January 24, 2026
 
 ---
@@ -189,21 +189,50 @@ Added 5 Q&As covering:
 
 ---
 
-## 10. Bug Fixes & Improvements
+## 10. Admin Tools Page
 
-### 10.1 Partner Login
+### 10.1 New Admin Tools Section (`/admin/tools`)
+- Added "Tools" link to all admin page navigation
+- Three tabs: Search Orders, Order Lookup, Resend Emails
+
+### 10.2 Search Orders by Customer
+- Search by customer name or email address
+- Returns matching orders with customer, status, and date
+- Quick "View Details" link to order lookup
+
+### 10.3 Order Lookup by Order Number
+- Enter order number (e.g. MQR-ABC123) to get full details
+- Displays order info, customer data, product type, status
+- Shows memorial URLs with copy buttons:
+  - QR Code / View URL
+  - Memorial View URL
+  - Edit Memorial URL
+- Quick link to resend emails
+
+### 10.4 Resend Customer Emails
+- Resend Activation Email (QR code, setup instructions)
+- Resend Memorial Creation Email (edit link)
+- Uses Pipedream webhook for email delivery
+
+**Files:** `src/app/admin/tools/page.tsx`, `src/app/api/admin/tools/search/route.ts`, `src/app/api/admin/tools/order/route.ts`, `src/app/api/admin/tools/resend-email/route.ts`
+
+---
+
+## 11. Bug Fixes & Improvements
+
+### 11.1 Partner Login
 - Fixed email lookup in verify
 - Fixed partner verify email lookup
 - Added debug logging for troubleshooting
 - Fixed missing webhook config surfacing
 
-### 10.2 UI/UX
+### 11.2 UI/UX
 - Removed 'pre-made tags' from How It Works step 2
 - Added Partners link to main Header navigation
 - SimpleHeader on partners page (logo only)
 - Various button visibility improvements
 
-### 10.3 Database
+### 11.3 Database
 - Fixed partner apply to use correct DB column names
 - Map DB columns correctly in admin
 
