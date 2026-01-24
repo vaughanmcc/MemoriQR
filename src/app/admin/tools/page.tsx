@@ -103,6 +103,10 @@ interface MemorialDetails extends MemorialResult {
   } | null;
 }
 
+type SortDirection = 'asc' | 'desc';
+type OrderSortField = 'order_number' | 'customer' | 'order_type' | 'order_status' | 'created_at';
+type MemorialSortField = 'deceased_name' | 'deceased_type' | 'customer' | 'is_published' | 'hosting_expires_at' | 'views_count';
+
 export default function AdminToolsPage() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<'search' | 'order' | 'resend' | 'memorials'>('search');
@@ -145,6 +149,12 @@ export default function AdminToolsPage() {
   const [memorialAction, setMemorialAction] = useState<string | null>(null);
   const [memorialActionResult, setMemorialActionResult] = useState<{ success: boolean; message: string } | null>(null);
 
+  // Sorting state
+  const [orderSortField, setOrderSortField] = useState<OrderSortField>('created_at');
+  const [orderSortDirection, setOrderSortDirection] = useState<SortDirection>('desc');
+  const [memorialSortField, setMemorialSortField] = useState<MemorialSortField>('hosting_expires_at');
+  const [memorialSortDirection, setMemorialSortDirection] = useState<SortDirection>('desc');
+
   useEffect(() => {
     checkAuth();
   }, []);
@@ -160,6 +170,72 @@ export default function AdminToolsPage() {
     await fetch('/api/admin/session', { method: 'DELETE' });
     router.push('/admin');
   };
+
+  // Sort toggle handlers
+  const handleOrderSort = (field: OrderSortField) => {
+    if (orderSortField === field) {
+      setOrderSortDirection(orderSortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setOrderSortField(field);
+      setOrderSortDirection('asc');
+    }
+  };
+
+  const handleMemorialSort = (field: MemorialSortField) => {
+    if (memorialSortField === field) {
+      setMemorialSortDirection(memorialSortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setMemorialSortField(field);
+      setMemorialSortDirection('asc');
+    }
+  };
+
+  // Sort indicator component
+  const SortIndicator = ({ active, direction }: { active: boolean; direction: SortDirection }) => (
+    <span className="ml-1 inline-block">
+      {active ? (direction === 'asc' ? '↑' : '↓') : '↕'}
+    </span>
+  );
+
+  // Sorted results - Orders
+  const sortedSearchResults = [...searchResults].sort((a, b) => {
+    const dir = orderSortDirection === 'asc' ? 1 : -1;
+    switch (orderSortField) {
+      case 'order_number':
+        return dir * a.order_number.localeCompare(b.order_number);
+      case 'customer':
+        return dir * (a.customer?.full_name || '').localeCompare(b.customer?.full_name || '');
+      case 'order_type':
+        return dir * a.order_type.localeCompare(b.order_type);
+      case 'order_status':
+        return dir * a.order_status.localeCompare(b.order_status);
+      case 'created_at':
+        return dir * new Date(a.created_at).getTime() - dir * new Date(b.created_at).getTime();
+      default:
+        return 0;
+    }
+  });
+
+  // Sorted results - Memorials
+  const sortedMemorialResults = [...memorialResults].sort((a, b) => {
+    const dir = memorialSortDirection === 'asc' ? 1 : -1;
+    switch (memorialSortField) {
+      case 'deceased_name':
+        return dir * a.deceased_name.localeCompare(b.deceased_name);
+      case 'deceased_type':
+        return dir * a.deceased_type.localeCompare(b.deceased_type);
+      case 'customer':
+        return dir * (a.customer?.full_name || '').localeCompare(b.customer?.full_name || '');
+      case 'is_published':
+        return dir * (a.is_published === b.is_published ? 0 : a.is_published ? -1 : 1);
+      case 'hosting_expires_at':
+        return dir * new Date(a.hosting_expires_at).getTime() - dir * new Date(b.hosting_expires_at).getTime();
+      case 'views_count':
+        return dir * (a.views_count - b.views_count);
+      default:
+        return 0;
+    }
+  });
 
   // Search orders by customer name/email
   const handleSearch = async (e: React.FormEvent) => {
@@ -544,16 +620,41 @@ export default function AdminToolsPage() {
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-stone-200">
-                      <th className="text-left py-3 px-2 font-medium text-stone-600">Order #</th>
-                      <th className="text-left py-3 px-2 font-medium text-stone-600">Customer</th>
-                      <th className="text-left py-3 px-2 font-medium text-stone-600">Type</th>
-                      <th className="text-left py-3 px-2 font-medium text-stone-600">Status</th>
-                      <th className="text-left py-3 px-2 font-medium text-stone-600">Date</th>
+                      <th 
+                        className="text-left py-3 px-2 font-medium text-stone-600 cursor-pointer hover:text-stone-900 select-none"
+                        onClick={() => handleOrderSort('order_number')}
+                      >
+                        Order #<SortIndicator active={orderSortField === 'order_number'} direction={orderSortDirection} />
+                      </th>
+                      <th 
+                        className="text-left py-3 px-2 font-medium text-stone-600 cursor-pointer hover:text-stone-900 select-none"
+                        onClick={() => handleOrderSort('customer')}
+                      >
+                        Customer<SortIndicator active={orderSortField === 'customer'} direction={orderSortDirection} />
+                      </th>
+                      <th 
+                        className="text-left py-3 px-2 font-medium text-stone-600 cursor-pointer hover:text-stone-900 select-none"
+                        onClick={() => handleOrderSort('order_type')}
+                      >
+                        Type<SortIndicator active={orderSortField === 'order_type'} direction={orderSortDirection} />
+                      </th>
+                      <th 
+                        className="text-left py-3 px-2 font-medium text-stone-600 cursor-pointer hover:text-stone-900 select-none"
+                        onClick={() => handleOrderSort('order_status')}
+                      >
+                        Status<SortIndicator active={orderSortField === 'order_status'} direction={orderSortDirection} />
+                      </th>
+                      <th 
+                        className="text-left py-3 px-2 font-medium text-stone-600 cursor-pointer hover:text-stone-900 select-none"
+                        onClick={() => handleOrderSort('created_at')}
+                      >
+                        Date<SortIndicator active={orderSortField === 'created_at'} direction={orderSortDirection} />
+                      </th>
                       <th className="text-left py-3 px-2 font-medium text-stone-600">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {searchResults.map((order) => (
+                    {sortedSearchResults.map((order) => (
                       <tr key={order.id} className="border-b border-stone-100 hover:bg-stone-50">
                         <td className="py-3 px-2 font-mono text-xs">{order.order_number}</td>
                         <td className="py-3 px-2">
@@ -843,17 +944,47 @@ export default function AdminToolsPage() {
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="border-b text-left text-stone-500">
-                        <th className="pb-2 pr-4">Deceased Name</th>
-                        <th className="pb-2 pr-4">Type</th>
-                        <th className="pb-2 pr-4">Customer</th>
-                        <th className="pb-2 pr-4">Status</th>
-                        <th className="pb-2 pr-4">Expires</th>
-                        <th className="pb-2 pr-4">Views</th>
+                        <th 
+                          className="pb-2 pr-4 cursor-pointer hover:text-stone-900 select-none"
+                          onClick={() => handleMemorialSort('deceased_name')}
+                        >
+                          Deceased Name<SortIndicator active={memorialSortField === 'deceased_name'} direction={memorialSortDirection} />
+                        </th>
+                        <th 
+                          className="pb-2 pr-4 cursor-pointer hover:text-stone-900 select-none"
+                          onClick={() => handleMemorialSort('deceased_type')}
+                        >
+                          Type<SortIndicator active={memorialSortField === 'deceased_type'} direction={memorialSortDirection} />
+                        </th>
+                        <th 
+                          className="pb-2 pr-4 cursor-pointer hover:text-stone-900 select-none"
+                          onClick={() => handleMemorialSort('customer')}
+                        >
+                          Customer<SortIndicator active={memorialSortField === 'customer'} direction={memorialSortDirection} />
+                        </th>
+                        <th 
+                          className="pb-2 pr-4 cursor-pointer hover:text-stone-900 select-none"
+                          onClick={() => handleMemorialSort('is_published')}
+                        >
+                          Status<SortIndicator active={memorialSortField === 'is_published'} direction={memorialSortDirection} />
+                        </th>
+                        <th 
+                          className="pb-2 pr-4 cursor-pointer hover:text-stone-900 select-none"
+                          onClick={() => handleMemorialSort('hosting_expires_at')}
+                        >
+                          Expires<SortIndicator active={memorialSortField === 'hosting_expires_at'} direction={memorialSortDirection} />
+                        </th>
+                        <th 
+                          className="pb-2 pr-4 cursor-pointer hover:text-stone-900 select-none"
+                          onClick={() => handleMemorialSort('views_count')}
+                        >
+                          Views<SortIndicator active={memorialSortField === 'views_count'} direction={memorialSortDirection} />
+                        </th>
                         <th className="pb-2"></th>
                       </tr>
                     </thead>
                     <tbody>
-                      {memorialResults.map((m) => (
+                      {sortedMemorialResults.map((m) => (
                         <tr key={m.id} className="border-b hover:bg-stone-50">
                           <td className="py-3 pr-4 font-medium">{m.deceased_name}</td>
                           <td className="py-3 pr-4 capitalize">
