@@ -2,13 +2,17 @@ import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { createAdminClient } from '@/lib/supabase/server';
 
+// Check admin authentication
+async function checkAdminAuth(): Promise<boolean> {
+  const cookieStore = await cookies();
+  const session = cookieStore.get('admin-session')?.value;
+  const correctPassword = process.env.ADMIN_PASSWORD;
+  return !!correctPassword && session === correctPassword;
+}
+
 // Search memorials
 export async function GET(request: NextRequest) {
-  // Verify admin session
-  const cookieStore = cookies();
-  const adminSession = cookieStore.get('admin_session');
-  
-  if (!adminSession?.value) {
+  if (!await checkAdminAuth()) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
@@ -103,11 +107,7 @@ export async function GET(request: NextRequest) {
 
 // Update memorial (toggle publish, extend expiry)
 export async function PATCH(request: NextRequest) {
-  // Verify admin session
-  const cookieStore = cookies();
-  const adminSession = cookieStore.get('admin_session');
-  
-  if (!adminSession?.value) {
+  if (!await checkAdminAuth()) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
