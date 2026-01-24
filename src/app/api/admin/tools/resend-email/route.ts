@@ -155,22 +155,22 @@ export async function POST(request: NextRequest) {
 
     if (emailType === 'activation') {
       // Resend activation email (order confirmation)
+      // Uses same format as Pipedream order_confirmation handler expects
       await fetch(PIPEDREAM_WEBHOOK_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           type: 'order_confirmation',
-          to: recipientEmail,
-          data: {
-            customerName: customer?.full_name || 'Customer',
-            orderNumber: order.order_number,
-            productType: order.product_type,
-            hostingDuration: order.hosting_duration,
-            memorialSlug: memorial?.memorial_slug,
-            qrCodeUrl: memorial ? `${baseUrl}/qr/${memorial.memorial_slug}` : null,
-            editUrl: memorial ? `${baseUrl}/memorial/edit?slug=${memorial.memorial_slug}` : null,
-            viewUrl: memorial ? `${baseUrl}/memorial/${memorial.memorial_slug}` : null,
-          },
+          customer_email: recipientEmail,
+          customer_name: customer?.full_name || 'Customer',
+          order_number: order.order_number,
+          deceased_name: memorial?.deceased_name || 'Memorial',
+          memorial_slug: memorial?.memorial_slug,
+          product_type: order.product_type,
+          hosting_duration: order.hosting_duration,
+          activation_url: memorial ? `${baseUrl}/memorial/edit?slug=${memorial.memorial_slug}` : null,
+          sender_name: 'MemoriQR',
+          reply_to: 'memoriqr.global@gmail.com',
         }),
       })
 
@@ -179,23 +179,35 @@ export async function POST(request: NextRequest) {
         message: `Activation email resent to ${recipientEmail}` 
       })
     } else {
-      // Resend memorial creation email
+      // Resend memorial creation email (with edit link)
       if (!memorial) {
         return NextResponse.json({ error: 'No memorial found for this order' }, { status: 400 })
       }
+
+      // Get package limits
+      const hostingDuration = order.hosting_duration || 5
+      const limits = TIER_LIMITS[hostingDuration] || TIER_LIMITS[5]
+      const themeCount = hostingDuration === 5 ? 5 : hostingDuration === 10 ? 10 : 25
+      const frameCount = hostingDuration === 5 ? 5 : hostingDuration === 10 ? 10 : 25
 
       await fetch(PIPEDREAM_WEBHOOK_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          type: 'memorial_edit_link',
-          to: recipientEmail,
-          data: {
-            customerName: customer?.full_name || 'Customer',
-            deceasedName: memorial.deceased_name,
-            memorialSlug: memorial.memorial_slug,
-            editUrl: `${baseUrl}/memorial/edit?slug=${memorial.memorial_slug}`,
-            viewUrl: `${baseUrl}/memorial/${memorial.memorial_slug}`,
+          type: 'memorial_created',
+          email: recipientEmail,
+          sender_name: 'MemoriQR',
+          reply_to: 'memoriqr.global@gmail.com',
+          memorialName: memorial.deceased_name,
+          memorialUrl: `${baseUrl}/memorial/${memorial.memorial_slug}`,
+          editUrl: `${baseUrl}/memorial/edit?slug=${memorial.memorial_slug}`,
+          qrCodeUrl: `${baseUrl}/api/qr/${memorial.memorial_slug}`,
+          hostingYears: hostingDuration,
+          packageLimits: {
+            photos: limits.photos,
+            videos: limits.videos,
+            themes: themeCount,
+            frames: frameCount,
           },
         }),
       })
