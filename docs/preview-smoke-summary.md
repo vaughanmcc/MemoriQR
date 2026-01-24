@@ -3,7 +3,7 @@
 This document summarizes all features and fixes implemented on the `preview-smoke` branch that are pending merge to `main` (production).
 
 **Branch:** `preview-smoke`  
-**Commits pending:** 61  
+**Commits pending:** 71  
 **Date:** January 24, 2026
 
 ---
@@ -209,12 +209,14 @@ Added 5 Q&As covering:
   - Edit Memorial URL
 - Quick link to resend emails
 
-### 10.4 Resend Customer Emails
-- Resend Activation Email (QR code, setup instructions)
-- Resend Memorial Creation Email (edit link)
+### 10.4 Resend Customer Emails (Retail + Online)
+- **Retail activations:** search by business name, partner type, and/or customer email
+- Shows activation records with partner and memorial details
+- One-click resend of the memorial creation email (`memorial_created`)
+- **Online orders:** resend order confirmation or memorial email by order number
 - Uses Pipedream webhook for email delivery
 
-**Files:** `src/app/admin/tools/page.tsx`, `src/app/api/admin/tools/search/route.ts`, `src/app/api/admin/tools/order/route.ts`, `src/app/api/admin/tools/resend-email/route.ts`
+**Files:** `src/app/admin/tools/page.tsx`, `src/app/api/admin/tools/search/route.ts`, `src/app/api/admin/tools/order/route.ts`, `src/app/api/admin/tools/search-activations/route.ts`, `src/app/api/admin/tools/resend-email/route.ts`
 
 ---
 
@@ -274,6 +276,8 @@ Before merging to `main`, verify:
 - [ ] Admin commission payout workflow
 - [ ] Admin code generator
 - [ ] Partner suspension with reason and email
+- [ ] Admin tools: activation search by business/type/email
+- [ ] Admin tools: resend memorial creation email from activation results
 
 ---
 
@@ -292,4 +296,4 @@ Before merging to `main`, verify:
 
 ---
 
-*Generated: January 23, 2026*
+*Generated: January 24, 2026*
