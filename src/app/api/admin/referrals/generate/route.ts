@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: partner, error: partnerError } = await (supabase as any)
       .from('partners')
-      .select('id, business_name')
+      .select('id, partner_name, business_name')
       .eq('id', partnerId)
       .single()
 
@@ -66,10 +66,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Partner not found' }, { status: 404 })
     }
 
+    // Use partner_name or business_name (partner_name is the populated column)
+    const partnerDisplayName = partner.partner_name || partner.business_name || 'Unknown Partner'
+
     // Generate batch identifiers
     const batchId = crypto.randomUUID()
     const now = new Date()
-    const batchName = `${partner.business_name} × ${quantity} - ${now.toLocaleDateString('en-NZ', { month: 'short', day: 'numeric' })} ${now.toLocaleTimeString('en-NZ', { hour: '2-digit', minute: '2-digit' })}`
+    const batchName = `${partnerDisplayName} × ${quantity} - ${now.toLocaleDateString('en-NZ', { month: 'short', day: 'numeric' })} ${now.toLocaleTimeString('en-NZ', { hour: '2-digit', minute: '2-digit' })}`
 
     // Calculate expiry if specified
     let expiresAt = null
@@ -137,12 +140,12 @@ export async function POST(request: NextRequest) {
 
     const successCount = codes.length - failures.length
 
-    console.log(`Generated ${successCount} referral codes for partner ${partner.business_name} (batch: ${batchId})`)
+    console.log(`Generated ${successCount} referral codes for partner ${partnerDisplayName} (batch: ${batchId})`)
 
     return NextResponse.json({
       success: true,
       partnerId,
-      partnerName: partner.business_name,
+      partnerName: partnerDisplayName,
       quantity: successCount,
       codes,
       batchId,

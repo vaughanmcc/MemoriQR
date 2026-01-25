@@ -32,13 +32,17 @@ export async function POST(request: NextRequest) {
     // Verify partner exists and is active
     const { data: partner, error: partnerError } = await supabase
       .from('partners')
-      .select('id, business_name, status')
+      .select('id, partner_name, business_name, status')
       .eq('id', partnerId)
       .single()
 
     if (partnerError || !partner) {
+      console.error('Partner lookup error:', partnerError)
       return NextResponse.json({ error: 'Partner not found' }, { status: 404 })
     }
+
+    // Use partner_name or business_name (same as partners API)
+    const partnerDisplayName = partner.partner_name || partner.business_name || 'Unknown Partner'
 
     if (partner.status !== 'active') {
       return NextResponse.json({ error: 'Partner is not active' }, { status: 400 })
@@ -80,14 +84,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to assign codes' }, { status: 500 })
     }
 
-    console.log(`Assigned ${codesToAssign.length} codes to partner ${partner.business_name} (${partnerId})`)
+    console.log(`Assigned ${codesToAssign.length} codes to partner ${partnerDisplayName} (${partnerId})`)
 
     return NextResponse.json({
       success: true,
       assigned: codesToAssign.length,
       skippedAlreadyAssigned: alreadyAssigned.length,
       skippedUsed: usedCodes.length,
-      partnerName: partner.business_name,
+      partnerName: partnerDisplayName,
     })
 
   } catch (error) {
