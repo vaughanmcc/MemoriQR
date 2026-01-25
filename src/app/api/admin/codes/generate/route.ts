@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const { variant, quantity } = await request.json()
+    const { variant, quantity, partnerId } = await request.json()
 
     // Validate variant
     if (!variant || !CARD_VARIANTS[variant]) {
@@ -68,6 +68,31 @@ export async function POST(request: NextRequest) {
 
     const variantConfig = CARD_VARIANTS[variant]
     const supabase = createAdminClient()
+
+    // Validate partner if provided
+    let partnerName: string | null = null
+    if (partnerId) {
+      const { data: partner, error: partnerError } = await supabase
+        .from('partners')
+        .select('id, business_name, status')
+        .eq('id', partnerId)
+        .single()
+
+      if (partnerError || !partner) {
+        return NextResponse.json(
+          { error: 'Partner not found' },
+          { status: 404 }
+        )
+      }
+
+      if (partner.status !== 'active') {
+        return NextResponse.json(
+          { error: 'Partner is not active' },
+          { status: 400 }
+        )
+      }
+      partnerName = partner.business_name
+    }
 
     // Generate batch identifiers
     const batchId = crypto.randomUUID()
@@ -117,6 +142,7 @@ export async function POST(request: NextRequest) {
           expires_at: expiresAt.toISOString(),
           generation_batch_id: batchId,
           generation_batch_name: batchName,
+          ...(partnerId && { partner_id: partnerId }),
         })
 
       if (insertError) {
@@ -134,7 +160,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    console.log(`Generated ${codes.length} retail activation codes for variant ${variant} (batch: ${batchId})`)
+    console.log(`Generated ${codes.length} retail activation codes for variant ${variant} (batch: ${batchId})${partnerId ? ` assigned to partner ${partnerName}` : ''}`)
 
     return NextResponse.json({
       success: true,
@@ -147,6 +173,7 @@ export async function POST(request: NextRequest) {
       productType: variantConfig.product,
       hostingDuration: variantConfig.duration,
       retailPrice: variantConfig.price,
+      ...(partnerId && { partnerId, partnerName }),
     })
 
   } catch (error) {

@@ -39,6 +39,16 @@ interface ExistingCode {
   created_at: string;
   expires_at: string | null;
   partner_id: string | null;
+  partner?: {
+    id: string;
+    business_name: string;
+  } | null;
+}
+
+interface Partner {
+  id: string;
+  business_name: string;
+  status: string;
 }
 
 interface Batch {
@@ -91,8 +101,17 @@ export default function AdminCodesPage() {
   const [expandedBatchCodes, setExpandedBatchCodes] = useState<BatchCode[]>([]);
   const [isLoadingBatchCodes, setIsLoadingBatchCodes] = useState(false);
 
+  // Partner assignment state
+  const [partners, setPartners] = useState<Partner[]>([]);
+  const [selectedPartnerId, setSelectedPartnerId] = useState<string>(''); // For generation
+  const [assignPartnerId, setAssignPartnerId] = useState<string>(''); // For bulk assign
+  const [isAssigning, setIsAssigning] = useState(false);
+  const [assignError, setAssignError] = useState('');
+  const [assignSuccess, setAssignSuccess] = useState('');
+
   useEffect(() => {
     checkAuth();
+    fetchPartners();
   }, []);
 
   useEffect(() => {
@@ -107,6 +126,19 @@ export default function AdminCodesPage() {
     const res = await fetch('/api/admin/session');
     if (!res.ok) {
       router.push('/admin');
+    }
+  };
+
+  const fetchPartners = async () => {
+    try {
+      const res = await fetch('/api/admin/partners');
+      if (res.ok) {
+        const data = await res.json();
+        // Only show active partners
+        setPartners((data.partners || []).filter((p: Partner) => p.status === 'active'));
+      }
+    } catch (err) {
+      console.error('Failed to fetch partners:', err);
     }
   };
 
@@ -309,6 +341,7 @@ export default function AdminCodesPage() {
         body: JSON.stringify({
           variant: selectedVariant,
           quantity,
+          ...(selectedPartnerId && { partnerId: selectedPartnerId }),
         }),
       });
 
@@ -345,6 +378,74 @@ export default function AdminCodesPage() {
     navigator.clipboard.writeText(codeList);
     setCopySuccess(true);
     setTimeout(() => setCopySuccess(false), 2000);
+  };
+
+  const handleAssignToPartner = async () => {
+    if (selectedCodes.size === 0 || !assignPartnerId) return;
+
+    setIsAssigning(true);
+    setAssignError('');
+    setAssignSuccess('');
+
+    try {
+      const res = await fetch('/api/admin/codes/assign', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          codes: Array.from(selectedCodes),
+          partnerId: assignPartnerId,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setAssignError(data.error || 'Failed to assign codes');
+        return;
+      }
+
+      setAssignSuccess(`Assigned ${data.assigned} codes to ${data.partnerName}`);
+      setSelectedCodes(new Set());
+      setAssignPartnerId('');
+      fetchExistingCodes();
+    } catch (err) {
+      setAssignError('Failed to assign codes');
+    } finally {
+      setIsAssigning(false);
+    }
+  };
+
+  const handleUnassignCodes = async () => {
+    if (selectedCodes.size === 0) return;
+
+    const confirmed = confirm(`Unassign ${selectedCodes.size} code(s) from their partner?`);
+    if (!confirmed) return;
+
+    setIsAssigning(true);
+    setAssignError('');
+
+    try {
+      const res = await fetch('/api/admin/codes/assign', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ codes: Array.from(selectedCodes) }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setAssignError(data.error || 'Failed to unassign codes');
+        return;
+      }
+
+      setAssignSuccess(`Unassigned ${data.unassigned} codes`);
+      setSelectedCodes(new Set());
+      fetchExistingCodes();
+    } catch (err) {
+      setAssignError('Failed to unassign codes');
+    } finally {
+      setIsAssigning(false);
+    }
   };
 
   const downloadCSV = (codes: GeneratedCode[] | string[], variant?: string) => {
@@ -469,7 +570,7 @@ export default function AdminCodesPage() {
         <div className="bg-white rounded-xl shadow p-6 mb-8">
           <h3 className="font-semibold text-stone-800 mb-4">Generate New Codes</h3>
           
-          <div className="grid md:grid-cols-3 gap-6">
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
             {/* Variant Selection */}
             <div>
               <label className="block text-sm font-medium text-stone-600 mb-2">
@@ -506,6 +607,28 @@ export default function AdminCodesPage() {
               />
               <p className="text-sm text-stone-500 mt-1">
                 Max 100 codes per batch
+              </p>
+            </div>
+
+            {/* Assign to Partner (Optional) */}
+            <div>
+              <label className="block text-sm font-medium text-stone-600 mb-2">
+                Assign to Partner (Optional)
+              </label>
+              <select
+                value={selectedPartnerId}
+                onChange={(e) => setSelectedPartnerId(e.target.value)}
+                className="w-full px-4 py-3 border border-stone-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none"
+              >
+                <option value="">No Partner (Unassigned)</option>
+                {partners.map(partner => (
+                  <option key={partner.id} value={partner.id}>
+                    {partner.business_name}
+                  </option>
+                ))}
+              </select>
+              <p className="text-sm text-stone-500 mt-1">
+                {selectedPartnerId ? 'Codes assigned to partner' : 'Leave unassigned'}
               </p>
             </div>
 
@@ -721,25 +844,69 @@ export default function AdminCodesPage() {
 
             {/* Bulk Actions */}
             {selectedCodes.size > 0 && (
-              <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6 flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <span className="font-medium text-red-800">
-                    {selectedCodes.size} code(s) selected
-                  </span>
-                  <button
-                    onClick={clearSelection}
-                    className="text-red-600 hover:text-red-800 text-sm underline"
-                  >
-                    Clear selection
-                  </button>
+              <div className="bg-purple-50 border border-purple-200 rounded-xl p-4 mb-6">
+                <div className="flex flex-wrap items-center gap-4 justify-between">
+                  <div className="flex items-center gap-4">
+                    <span className="font-medium text-purple-800">
+                      {selectedCodes.size} code(s) selected
+                    </span>
+                    <button
+                      onClick={clearSelection}
+                      className="text-purple-600 hover:text-purple-800 text-sm underline"
+                    >
+                      Clear selection
+                    </button>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-3">
+                    {/* Assign to Partner */}
+                    <div className="flex items-center gap-2">
+                      <select
+                        value={assignPartnerId}
+                        onChange={(e) => setAssignPartnerId(e.target.value)}
+                        className="px-3 py-2 border border-purple-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                      >
+                        <option value="">Select Partner...</option>
+                        {partners.map(partner => (
+                          <option key={partner.id} value={partner.id}>
+                            {partner.business_name}
+                          </option>
+                        ))}
+                      </select>
+                      <button
+                        onClick={handleAssignToPartner}
+                        disabled={isAssigning || !assignPartnerId}
+                        className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 disabled:opacity-50 transition-colors text-sm"
+                      >
+                        {isAssigning ? 'Assigning...' : 'Assign'}
+                      </button>
+                    </div>
+
+                    {/* Unassign */}
+                    <button
+                      onClick={handleUnassignCodes}
+                      disabled={isAssigning}
+                      className="bg-stone-600 text-white px-4 py-2 rounded-lg hover:bg-stone-700 disabled:opacity-50 transition-colors text-sm"
+                    >
+                      Unassign
+                    </button>
+
+                    {/* Delete */}
+                    <button
+                      onClick={handleDeleteSelected}
+                      disabled={isDeleting}
+                      className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 disabled:opacity-50 transition-colors text-sm"
+                    >
+                      {isDeleting ? 'Deleting...' : `Delete ${selectedCodes.size}`}
+                    </button>
+                  </div>
                 </div>
-                <button
-                  onClick={handleDeleteSelected}
-                  disabled={isDeleting}
-                  className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 disabled:opacity-50 transition-colors"
-                >
-                  {isDeleting ? 'Deleting...' : `Delete ${selectedCodes.size} Code(s)`}
-                </button>
+
+                {(assignError || assignSuccess) && (
+                  <div className={`mt-3 text-sm ${assignError ? 'text-red-600' : 'text-green-600'}`}>
+                    {assignError || assignSuccess}
+                  </div>
+                )}
               </div>
             )}
 
@@ -792,6 +959,7 @@ export default function AdminCodesPage() {
                         <th className="px-4 py-3 text-left text-xs font-medium text-stone-500 uppercase">Code</th>
                         <th className="px-4 py-3 text-left text-xs font-medium text-stone-500 uppercase">Product</th>
                         <th className="px-4 py-3 text-left text-xs font-medium text-stone-500 uppercase">Duration</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-stone-500 uppercase">Partner</th>
                         <th className="px-4 py-3 text-left text-xs font-medium text-stone-500 uppercase">Status</th>
                         <th className="px-4 py-3 text-left text-xs font-medium text-stone-500 uppercase">Created</th>
                       </tr>
@@ -820,6 +988,15 @@ export default function AdminCodesPage() {
                           </td>
                           <td className="px-4 py-3 text-sm text-stone-600">
                             {code.hosting_duration} years
+                          </td>
+                          <td className="px-4 py-3 text-sm">
+                            {code.partner_id ? (
+                              <span className="text-purple-600">
+                                {partners.find(p => p.id === code.partner_id)?.business_name || 'Assigned'}
+                              </span>
+                            ) : (
+                              <span className="text-stone-400">—</span>
+                            )}
                           </td>
                           <td className="px-4 py-3">
                             {code.is_used ? (
