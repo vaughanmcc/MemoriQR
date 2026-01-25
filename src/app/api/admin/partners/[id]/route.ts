@@ -167,11 +167,11 @@ export async function PATCH(
 
     // Send notification emails
     // Note: Use correct DB columns: contact_email, partner_name
-      const partnerEmail = partner.contact_email;
-    const businessName = partner.partner_name || partner.business_name;
+    const partnerEmail = partner.contact_email;
+    const businessName = partner.partner_name;
     // Extract contact name from "Business Name (Contact Name)" format
     const contactNameMatch = partner.partner_name?.match(/\(([^)]+)\)/);
-    const contactName = contactNameMatch?.[1] || partner.contact_name || '';
+    const contactName = contactNameMatch?.[1] || '';
     
     if (PIPEDREAM_WEBHOOK_URL && action && partnerEmail) {
       if (action === 'approve') {

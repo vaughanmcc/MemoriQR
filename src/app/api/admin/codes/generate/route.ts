@@ -74,7 +74,7 @@ export async function POST(request: NextRequest) {
     if (partnerId) {
       const { data: partner, error: partnerError } = await supabase
         .from('partners')
-        .select('id, partner_name, business_name, status')
+        .select('id, partner_name, status')
         .eq('id', partnerId)
         .single()
 
@@ -91,7 +91,7 @@ export async function POST(request: NextRequest) {
           { status: 400 }
         )
       }
-      partnerName = partner.partner_name || partner.business_name
+      partnerName = partner.partner_name
     }
 
     // Generate batch identifiers

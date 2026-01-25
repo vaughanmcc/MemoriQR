@@ -49,10 +49,10 @@ export async function GET(request: Request) {
     // Map database columns to frontend expected names
     const mappedPartners = (partners || []).map(p => ({
       ...p,
-      business_name: p.partner_name || p.business_name,
-      contact_name: p.partner_name?.match(/\(([^)]+)\)/)?.[1] || p.contact_name || '',
-      email: p.contact_email || p.email,
-      phone: p.contact_phone || p.phone,
+      business_name: p.partner_name,
+      contact_name: p.partner_name?.match(/\(([^)]+)\)/)?.[1] || '',
+      email: p.contact_email,
+      phone: p.contact_phone,
     }));
 
     return NextResponse.json({ partners: mappedPartners });

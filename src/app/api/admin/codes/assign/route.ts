@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
     // Verify partner exists and is active
     const { data: partner, error: partnerError } = await supabase
       .from('partners')
-      .select('id, partner_name, business_name, status')
+      .select('id, partner_name, status')
       .eq('id', partnerId)
       .single()
 
@@ -41,8 +41,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Partner not found' }, { status: 404 })
     }
 
-    // Use partner_name or business_name (same as partners API)
-    const partnerDisplayName = partner.partner_name || partner.business_name || 'Unknown Partner'
+    const partnerDisplayName = partner.partner_name || 'Unknown Partner'
 
     if (partner.status !== 'active') {
       return NextResponse.json({ error: 'Partner is not active' }, { status: 400 })

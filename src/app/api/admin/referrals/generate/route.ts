@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: partner, error: partnerError } = await (supabase as any)
       .from('partners')
-      .select('id, partner_name, business_name')
+      .select('id, partner_name')
       .eq('id', partnerId)
       .single()
 
@@ -66,8 +66,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Partner not found' }, { status: 404 })
     }
 
-    // Use partner_name or business_name (partner_name is the populated column)
-    const partnerDisplayName = partner.partner_name || partner.business_name || 'Unknown Partner'
+    const partnerDisplayName = partner.partner_name || 'Unknown Partner'
 
     // Generate batch identifiers
     const batchId = crypto.randomUUID()
@@ -185,7 +184,7 @@ export async function GET() {
         batch_id, 
         batch_name, 
         created_at,
-        partners(business_name)
+        partners(partner_name)
       `)
       .order('created_at', { ascending: false })
 
@@ -215,7 +214,7 @@ export async function GET() {
           id: batchId,
           name: code.batch_name || 'No Batch',
           partnerId: code.partner_id,
-          partnerName: code.partners?.business_name || 'Unknown',
+          partnerName: code.partners?.partner_name || 'Unknown',
           discountPercent: code.discount_percent,
           commissionPercent: code.commission_percent,
           freeShipping: code.free_shipping,
