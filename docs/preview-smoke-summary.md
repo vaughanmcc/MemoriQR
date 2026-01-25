@@ -3,8 +3,8 @@
 This document summarizes all features and fixes implemented on the `preview-smoke` branch that are pending merge to `main` (production).
 
 **Branch:** `preview-smoke`  
-**Commits pending:** 71  
-**Date:** January 24, 2026
+**Commits pending:** 82  
+**Date:** January 25, 2026
 
 ---
 
@@ -216,25 +216,62 @@ Added 5 Q&As covering:
 - **Online orders:** resend order confirmation or memorial email by order number
 - Uses Pipedream webhook for email delivery
 
-**Files:** `src/app/admin/tools/page.tsx`, `src/app/api/admin/tools/search/route.ts`, `src/app/api/admin/tools/order/route.ts`, `src/app/api/admin/tools/search-activations/route.ts`, `src/app/api/admin/tools/resend-email/route.ts`
+### 10.5 Memorial Management Tab
+- **Search memorials:** Search by slug, name, or email
+- **View details:** Modal showing full memorial info, URLs, and stats
+- **Toggle publish:** Publish/unpublish memorials instantly
+- **Extend hosting:** Add years to memorial hosting duration
+- **Reset views:** Reset view count for testing purposes
+
+### 10.6 Sortable Table Headers
+- Orders and Memorials tables have sortable column headers
+- Click column header to sort ascending/descending
+- Visual indicator shows current sort column and direction
+
+### 10.7 Navigation Improvements
+- "← Back to Dashboard" link on all admin pages (Tools, Partners, Orders, Memorials)
+- Consistent navigation across admin interface
+
+**Files:** `src/app/admin/tools/page.tsx`, `src/app/api/admin/tools/search/route.ts`, `src/app/api/admin/tools/order/route.ts`, `src/app/api/admin/tools/search-activations/route.ts`, `src/app/api/admin/tools/resend-email/route.ts`, `src/app/api/admin/tools/memorials/route.ts`
 
 ---
 
-## 11. Bug Fixes & Improvements
+## 11. Partner Assignment for Activation Codes
 
-### 11.1 Partner Login
+### 11.1 Assign at Generation Time
+- Partner dropdown in Generate Codes tab
+- Optional: generate codes pre-assigned to a specific partner
+- Codes display partner name in the table
+
+### 11.2 Bulk Assign Existing Codes
+- Manage Codes tab shows "Assign to Partner" and "Unassign" buttons
+- Select one or more unassigned codes → assign to chosen partner
+- Select assigned codes → unassign to make available again
+- Skips codes that are already used or already assigned
+
+### 11.3 Partner Name Column Fix
+- Fixed database schema issue: `partner_name` column used (not `business_name`)
+- Both assign and generate endpoints now correctly look up partner names
+
+**Files:** `src/app/admin/codes/page.tsx`, `src/app/api/admin/codes/generate/route.ts`, `src/app/api/admin/codes/assign/route.ts` (new)
+
+---
+
+## 12. Bug Fixes & Improvements
+
+### 12.1 Partner Login
 - Fixed email lookup in verify
 - Fixed partner verify email lookup
 - Added debug logging for troubleshooting
 - Fixed missing webhook config surfacing
 
-### 11.2 UI/UX
+### 12.2 UI/UX
 - Removed 'pre-made tags' from How It Works step 2
 - Added Partners link to main Header navigation
 - SimpleHeader on partners page (logo only)
 - Various button visibility improvements
 
-### 11.3 Database
+### 12.3 Database
 - Fixed partner apply to use correct DB column names
 - Map DB columns correctly in admin
 
@@ -278,6 +315,10 @@ Before merging to `main`, verify:
 - [ ] Partner suspension with reason and email
 - [ ] Admin tools: activation search by business/type/email
 - [ ] Admin tools: resend memorial creation email from activation results
+- [ ] Admin tools: Memorial search, view, toggle publish, extend hosting
+- [ ] Admin tools: Sortable table columns
+- [ ] Activation codes: Assign codes to partner at generation
+- [ ] Activation codes: Bulk assign/unassign existing codes
 
 ---
 
@@ -291,9 +332,10 @@ Before merging to `main`, verify:
 | Application/Approval | 8 |
 | Admin Dashboard | 4 |
 | Commission Workflow | 5 |
-| Code Generator | 6 |
-| Bug Fixes | 29 |
+| Code Generator | 8 |
+| Admin Tools | 10 |
+| Bug Fixes | 41 |
 
 ---
 
-*Generated: January 24, 2026*
+*Generated: January 25, 2026*
