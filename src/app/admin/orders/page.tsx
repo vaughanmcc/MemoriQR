@@ -44,7 +44,15 @@ export default function AdminOrdersPage() {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 py-8">
-        <h2 className="text-2xl font-bold text-stone-800 mb-8">Orders</h2>
+        <div className="flex items-center justify-between mb-8">
+          <h2 className="text-2xl font-bold text-stone-800">Orders</h2>
+          <Link 
+            href="/admin/dashboard" 
+            className="text-stone-500 hover:text-stone-700 text-sm"
+          >
+            ← Back to Dashboard
+          </Link>
+        </div>
 
         {/* Coming Soon Card */}
         <div className="bg-white rounded-xl shadow p-12 text-center">

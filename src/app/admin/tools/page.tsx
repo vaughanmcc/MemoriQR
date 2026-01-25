@@ -523,7 +523,15 @@ export default function AdminToolsPage() {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 py-8">
-        <h2 className="text-2xl font-bold text-stone-800 mb-2">Admin Tools</h2>
+        <div className="flex items-center justify-between mb-2">
+          <h2 className="text-2xl font-bold text-stone-800">Admin Tools</h2>
+          <Link 
+            href="/admin/dashboard" 
+            className="text-stone-600 hover:text-stone-800 text-sm flex items-center gap-1"
+          >
+            ← Back to Dashboard
+          </Link>
+        </div>
         <p className="text-stone-600 mb-8">Order lookup, customer search, memorial management, and email tools</p>
 
         {/* Tab Navigation */}
@@ -732,6 +740,22 @@ export default function AdminToolsPage() {
 
             {orderDetails && (
               <div className="space-y-6">
+                {/* Back button and title */}
+                <div className="flex items-center justify-between">
+                  <h4 className="text-lg font-bold text-stone-800">
+                    Order: {orderDetails.order_number}
+                  </h4>
+                  <button
+                    onClick={() => {
+                      setOrderDetails(null);
+                      setOrderNumber('');
+                    }}
+                    className="text-stone-500 hover:text-stone-700 text-sm"
+                  >
+                    ← Back to Lookup
+                  </button>
+                </div>
+
                 {/* Order Info */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-4">

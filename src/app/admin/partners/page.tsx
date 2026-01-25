@@ -405,7 +405,15 @@ function AdminPartnersContent() {
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 py-8">
         <div className="flex items-center justify-between mb-8">
-          <h2 className="text-2xl font-bold text-stone-800">Partner Management</h2>
+          <div className="flex items-center gap-4">
+            <h2 className="text-2xl font-bold text-stone-800">Partner Management</h2>
+            <Link 
+              href="/admin/dashboard" 
+              className="text-stone-500 hover:text-stone-700 text-sm"
+            >
+              ← Back to Dashboard
+            </Link>
+          </div>
           <button
             onClick={() => setShowCreateModal(true)}
             className="bg-stone-800 text-white px-4 py-2 rounded-lg hover:bg-stone-700"
