@@ -19,6 +19,7 @@ interface Partner {
   website: string | null
   address: Record<string, string> | null
   is_active: boolean
+  notify_referral_redemption: boolean
 }
 
 // Helper to get authenticated partner
@@ -47,7 +48,7 @@ async function getAuthenticatedPartner(): Promise<Partner | null> {
 
   const { data: partnerData } = await supabase
     .from('partners')
-    .select('id, partner_name, contact_email, contact_phone, payout_email, bank_name, bank_account_name, bank_account_number, website, address, is_active')
+    .select('id, partner_name, contact_email, contact_phone, payout_email, bank_name, bank_account_name, bank_account_number, website, address, is_active, notify_referral_redemption')
     .eq('id', session.partner_id)
     .eq('is_active', true)
     .single()
@@ -95,6 +96,7 @@ export async function GET() {
       bank_account_number: partner.bank_account_number,
       website: partner.website,
       address: partner.address,
+      notify_referral_redemption: partner.notify_referral_redemption ?? true,
     },
     hasTrustedSessions,
   })
@@ -119,7 +121,8 @@ export async function PUT(request: NextRequest) {
       bank_account_name, 
       bank_account_number,
       website,
-      address
+      address,
+      notify_referral_redemption
     } = body
 
     // Basic validation for bank account number (NZ format)
@@ -167,6 +170,9 @@ export async function PUT(request: NextRequest) {
     }
     if (address !== undefined) {
       updateData.address = address || null
+    }
+    if (notify_referral_redemption !== undefined) {
+      updateData.notify_referral_redemption = notify_referral_redemption
     }
 
     if (Object.keys(updateData).length === 0) {

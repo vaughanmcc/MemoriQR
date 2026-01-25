@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { LogOut, ArrowLeft, Save, Building, CreditCard, AlertCircle, CheckCircle, User, MapPin, Shield, Smartphone } from 'lucide-react'
+import { LogOut, ArrowLeft, Save, Building, CreditCard, AlertCircle, CheckCircle, User, MapPin, Shield, Smartphone, Bell } from 'lucide-react'
 
 interface PartnerAddress {
   street?: string
@@ -26,6 +26,7 @@ interface PartnerSettings {
   bank_account_name: string | null
   bank_account_number: string | null
   bank_name: string | null
+  notify_referral_redemption: boolean
 }
 
 export default function PartnerSettingsPage() {
@@ -55,6 +56,8 @@ export default function PartnerSettingsPage() {
     bank_name: '',
     bank_account_name: '',
     bank_account_number: '',
+    // Notification preferences
+    notify_referral_redemption: true,
   })
 
   useEffect(() => {
@@ -94,6 +97,7 @@ export default function PartnerSettingsPage() {
         bank_name: data.settings.bank_name || '',
         bank_account_name: data.settings.bank_account_name || '',
         bank_account_number: data.settings.bank_account_number || '',
+        notify_referral_redemption: data.settings.notify_referral_redemption ?? true,
       })
     } catch (err) {
       setError('Failed to load settings')
@@ -531,6 +535,37 @@ export default function PartnerSettingsPage() {
             <p className="text-xs text-gray-500">
               Tip: To re-enable &quot;Stay signed in longer&quot; on a device, simply log in again and check the option.
             </p>
+          </div>
+        </div>
+
+        {/* Notifications Section */}
+        <div className="bg-white rounded-xl shadow-sm mt-6">
+          <div className="p-6 border-b border-gray-200">
+            <div className="flex items-center gap-2">
+              <Bell className="h-5 w-5 text-gray-600" />
+              <h2 className="text-lg font-medium text-gray-900">Email Notifications</h2>
+            </div>
+            <p className="text-gray-600 mt-1 text-sm">Manage which emails you receive</p>
+          </div>
+
+          <div className="p-6 space-y-4">
+            <div className="flex items-center justify-between gap-4 p-4 bg-gray-50 rounded-lg">
+              <div>
+                <h3 className="font-medium text-gray-900">Referral Code Redemptions</h3>
+                <p className="text-sm text-gray-600 mt-1">
+                  Receive an email when a customer uses one of your referral codes to place an order.
+                </p>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={formData.notify_referral_redemption}
+                  onChange={(e) => setFormData({ ...formData, notify_referral_redemption: e.target.checked })}
+                  className="sr-only peer"
+                />
+                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-emerald-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
+              </label>
+            </div>
           </div>
         </div>
 

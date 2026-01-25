@@ -3,6 +3,9 @@ import { headers } from 'next/headers'
 import Stripe from 'stripe'
 import { stripe } from '@/lib/stripe'
 import { createAdminClient } from '@/lib/supabase/server'
+import { generateOptOutToken } from '@/app/api/partner/notifications/unsubscribe/route'
+
+const PIPEDREAM_WEBHOOK_URL = process.env.PIPEDREAM_WEBHOOK_URL
 
 export async function POST(request: NextRequest) {
   const body = await request.text()
@@ -127,6 +130,44 @@ export async function POST(request: NextRequest) {
                 .eq('id', referralCodeId)
 
               console.log(`Commission of $${commissionAmount} recorded for partner ${refCodeData.partner_id}`)
+
+              // Send email notification to partner if they haven't opted out
+              if (PIPEDREAM_WEBHOOK_URL) {
+                const { data: partnerData } = await supabase
+                  .from('partners')
+                  .select('id, partner_name, contact_email, notify_referral_redemption')
+                  .eq('id', refCodeData.partner_id)
+                  .single()
+
+                if (partnerData && partnerData.notify_referral_redemption !== false && partnerData.contact_email) {
+                  const businessName = partnerData.partner_name?.replace(/\s*\([^)]+\)\s*$/, '') || 'Partner'
+                  const optOutToken = generateOptOutToken(partnerData.id)
+                  const baseUrl = request.headers.get('origin') || process.env.NEXT_PUBLIC_BASE_URL || 'https://memoriqr.com'
+                  const optOutUrl = `${baseUrl}/api/partner/notifications/unsubscribe?partner=${partnerData.id}&token=${optOutToken}`
+
+                  try {
+                    await fetch(PIPEDREAM_WEBHOOK_URL, {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        type: 'referral_redeemed',
+                        to: partnerData.contact_email,
+                        businessName,
+                        referralCode,
+                        orderNumber,
+                        discountPercent: referralDiscount > 0 ? Math.round((referralDiscount / (orderTotal + referralDiscount)) * 100) : 0,
+                        commissionAmount: commissionAmount.toFixed(2),
+                        orderTotal: (orderTotal + referralDiscount).toFixed(2),
+                        optOutUrl,
+                        dashboardUrl: `${baseUrl}/partner/settings`,
+                      }),
+                    })
+                    console.log(`Referral redemption email sent to ${partnerData.contact_email}`)
+                  } catch (emailError) {
+                    console.error('Failed to send referral redemption email:', emailError)
+                  }
+                }
+              }
             }
           }
         }
