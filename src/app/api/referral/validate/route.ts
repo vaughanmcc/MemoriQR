@@ -53,12 +53,15 @@ export async function POST(request: NextRequest) {
     }
 
     // Valid code - return discount info
+    // Extract just the business name (before the parentheses with contact name)
+    const partnerName = code.partners?.partner_name?.replace(/\s*\([^)]*\)$/, '') || null
+    
     return NextResponse.json({
       valid: true,
       referralCode: code.code,
       discountPercent: code.discount_percent,
       freeShipping: code.free_shipping,
-      partnerName: code.partners?.partner_name || null,
+      partnerName,
       message: code.discount_percent > 0 
         ? `${code.discount_percent}% discount applied${code.free_shipping ? ' + free shipping!' : '!'}`
         : code.free_shipping 
