@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
         free_shipping,
         is_used,
         expires_at,
-        partners(business_name)
+        partners(partner_name)
       `)
       .eq('code', referralCode.toUpperCase().trim())
       .single()
@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
       referralCode: code.code,
       discountPercent: code.discount_percent,
       freeShipping: code.free_shipping,
-      partnerName: code.partners?.business_name || null,
+      partnerName: code.partners?.partner_name || null,
       message: code.discount_percent > 0 
         ? `${code.discount_percent}% discount applied${code.free_shipping ? ' + free shipping!' : '!'}`
         : code.free_shipping 
