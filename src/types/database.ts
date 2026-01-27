@@ -456,6 +456,9 @@ export interface Database {
           used_at: string | null
           created_at: string
           expires_at: string | null
+          variant_code: string | null
+          retail_price: number | null
+          batch_id: string | null
         }
         Insert: {
           activation_code: string
@@ -467,6 +470,9 @@ export interface Database {
           used_at?: string | null
           created_at?: string
           expires_at?: string | null
+          variant_code?: string | null
+          retail_price?: number | null
+          batch_id?: string | null
         }
         Update: {
           activation_code?: string
@@ -478,6 +484,9 @@ export interface Database {
           used_at?: string | null
           created_at?: string
           expires_at?: string | null
+          variant_code?: string | null
+          retail_price?: number | null
+          batch_id?: string | null
         }
       }
       supplier_orders: {

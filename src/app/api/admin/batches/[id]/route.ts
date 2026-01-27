@@ -104,12 +104,18 @@ export async function PATCH(
       const expiresAt = new Date()
       expiresAt.setFullYear(expiresAt.getFullYear() + 2) // Codes expire in 2 years
 
+      // Ensure hosting_duration is valid (5, 10, or 25)
+      const validDurations = [5, 10, 25]
+      const hostingDuration = validDurations.includes(batch.hosting_duration) 
+        ? batch.hosting_duration 
+        : 10
+
       for (let i = 0; i < batch.quantity; i++) {
         let newCode: string
         let attempts = 0
 
         do {
-          newCode = generateCode(batch.product_type, batch.hosting_duration || 10)
+          newCode = generateCode(batch.product_type, hostingDuration)
           attempts++
           if (attempts > 100) {
             return NextResponse.json({ error: 'Failed to generate unique codes' }, { status: 500 })
@@ -117,7 +123,7 @@ export async function PATCH(
           // Check uniqueness
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const { data: existing } = await (supabase as any)
-            .from('activation_codes')
+            .from('retail_activation_codes')
             .select('activation_code')
             .eq('activation_code', newCode)
             .single()
@@ -127,11 +133,11 @@ export async function PATCH(
         codes.push(newCode)
       }
 
-      // Insert codes
+      // Insert codes with batch_id for tracking
       const codeRecords = codes.map(code => ({
         activation_code: code,
         product_type: batch.product_type,
-        hosting_duration: batch.hosting_duration,
+        hosting_duration: hostingDuration,
         is_used: false,
         partner_id: batch.partner_id,
         batch_id: batch.id,
@@ -140,7 +146,7 @@ export async function PATCH(
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { error: insertError } = await (supabase as any)
-        .from('activation_codes')
+        .from('retail_activation_codes')
         .insert(codeRecords)
 
       if (insertError) {
@@ -231,7 +237,7 @@ export async function GET(
     if (batch.status === 'generated') {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data: codeData } = await (supabase as any)
-        .from('activation_codes')
+        .from('retail_activation_codes')
         .select('activation_code')
         .eq('batch_id', id)
 
