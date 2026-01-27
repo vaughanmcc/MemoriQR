@@ -60,9 +60,9 @@ export function ActivateForm() {
               setCode(e.target.value.toUpperCase())
               setError('')
             }}
-            placeholder="e.g., ABC12345"
+            placeholder="e.g., MQR-10B-XXXXXX"
             className="input text-center text-xl tracking-widest uppercase"
-            maxLength={10}
+            maxLength={20}
             autoComplete="off"
             autoFocus
           />
