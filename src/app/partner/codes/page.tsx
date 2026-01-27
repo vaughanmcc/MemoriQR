@@ -259,7 +259,11 @@ export default function PartnerCodesPage() {
                 {codes.map((code) => (
                   <tr key={code.activation_code} className={code.is_used ? 'bg-gray-50' : ''}>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <code className="font-mono text-sm bg-gray-100 px-2 py-1 rounded">
+                      <code 
+                        className="font-mono text-sm bg-gray-100 px-2 py-1 rounded cursor-pointer hover:bg-gray-200"
+                        onClick={() => copyCode(code.activation_code)}
+                        title="Click to copy"
+                      >
                         {code.activation_code}
                       </code>
                     </td>
