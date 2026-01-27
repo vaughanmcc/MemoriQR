@@ -44,9 +44,11 @@ export function generateSlug(name: string): string {
 }
 
 export function validateActivationCode(code: string): boolean {
-  // Activation codes are 8 alphanumeric characters
-  return /^[A-Z0-9]{8}$/i.test(code)
+  // Support both old format (8 chars) and new format (MQR-XXB-XXXXXX = 12 chars without hyphens)
+  const cleanCode = code.replace(/-/g, '')
+  return /^[A-Z0-9]{8}$/i.test(cleanCode) || /^MQR\d{1,2}[BNQ][A-Z0-9]{6}$/i.test(cleanCode)
 }
+
 
 export function sanitizeText(text: string): string {
   return text

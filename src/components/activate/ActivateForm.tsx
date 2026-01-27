@@ -17,10 +17,10 @@ export function ActivateForm() {
     e.preventDefault()
     setError('')
 
-    const cleanCode = code.toUpperCase().replace(/[^A-Z0-9]/g, '')
+    const cleanCode = code.toUpperCase()
     
     if (!validateActivationCode(cleanCode)) {
-      setError('Please enter a valid 8-character activation code.')
+      setError('Please enter a valid activation code (e.g., MQR-10B-XXXXXX)')
       return
     }
 
