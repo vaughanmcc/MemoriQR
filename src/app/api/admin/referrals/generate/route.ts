@@ -143,12 +143,14 @@ export async function POST(request: NextRequest) {
 
     // Send email notification to partner via Partner Codes Notification workflow
     const webhookUrl = process.env.PIPEDREAM_PARTNER_CODES_WEBHOOK_URL || process.env.PIPEDREAM_WEBHOOK_URL
+    console.log(`[Referral Email] webhookUrl: ${webhookUrl ? 'SET' : 'NOT SET'}, contact_email: ${partner.contact_email}, successCount: ${successCount}`)
     if (webhookUrl && partner.contact_email && successCount > 0) {
       const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_BASE_URL || 'https://memoriqr.com'
       const businessName = partnerDisplayName.replace(/\s*\([^)]+\)\s*$/, '')
       
+      console.log(`[Referral Email] Sending to Pipedream: ${webhookUrl}`)
       try {
-        await fetch(webhookUrl, {
+        const response = await fetch(webhookUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -165,10 +167,13 @@ export async function POST(request: NextRequest) {
             dashboardUrl: `${baseUrl}/partner/dashboard`,
           }),
         })
+        console.log(`[Referral Email] Pipedream response status: ${response.status}`)
         console.log(`Referral codes email sent to ${partner.contact_email}`)
       } catch (emailError) {
-        console.error('Failed to send referral codes email:', emailError)
+        console.error('[Referral Email] Failed to send:', emailError)
       }
+    } else {
+      console.log(`[Referral Email] Skipped: webhookUrl=${!!webhookUrl}, email=${partner.contact_email}, count=${successCount}`)
     }
 
     return NextResponse.json({
