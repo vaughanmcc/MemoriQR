@@ -112,9 +112,9 @@ export async function POST(request: NextRequest) {
     const { quantity, productType, hostingDuration, notes } = await request.json()
 
     // Validate inputs
-    if (!quantity || quantity < 10 || quantity > 500) {
+    if (!quantity || quantity < 1 || quantity > 500) {
       return NextResponse.json(
-        { error: 'Quantity must be between 10 and 500' },
+        { error: 'Quantity must be between 1 and 500' },
         { status: 400 }
       )
     }
