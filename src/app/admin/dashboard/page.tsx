@@ -179,7 +179,7 @@ export default function AdminDashboardPage() {
               href="/admin/codes"
               className="bg-purple-700 text-white px-5 py-2.5 rounded-lg hover:bg-purple-800 transition-colors shadow-md font-semibold"
             >
-              Generate Retail Codes
+              Generate Activation Codes
             </Link>
             <Link
               href="/admin/partners"
