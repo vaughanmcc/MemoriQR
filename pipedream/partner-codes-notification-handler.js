@@ -5,6 +5,7 @@
  * - referral_codes_generated: Lead generation referral codes ready
  * - partner_codes_generated: Wholesale activation codes ready
  * - partner_codes_unassigned: Codes removed from partner
+ * - activation_code_used: Customer used an activation code
  * 
  * Use this in a SEPARATE Pipedream workflow with its own webhook URL.
  * Env var: PIPEDREAM_PARTNER_CODES_WEBHOOK_URL
@@ -22,7 +23,7 @@ export default defineComponent({
     console.log('Body object:', JSON.stringify(body, null, 2));
     console.log('Type:', body?.type);
     
-    const validTypes = ['referral_codes_generated', 'partner_codes_generated', 'partner_codes_unassigned'];
+    const validTypes = ['referral_codes_generated', 'partner_codes_generated', 'partner_codes_unassigned', 'activation_code_used'];
     
     if (!body || !validTypes.includes(body.type)) {
       $.flow.exit(`Not a partner codes notification event: ${body?.type}`);
@@ -186,6 +187,63 @@ ${freeShipping ? '<li>They get <strong>free shipping</strong></li>' : ''}
 </div>
 </div>`,
         text: `Hi ${partner_name},\n\nThis is to inform you that ${quantity} activation code${quantity > 1 ? 's have' : ' has'} been removed from your partner account.\n\nREMOVED CODES:\n${codes_list}\n\nIf you believe this is an error, please contact our partner support team.\n\nView Partner Portal: ${portal_url}`
+      };
+    }
+
+    // Handle activation code used notification
+    if (body.type === 'activation_code_used') {
+      const { 
+        to, 
+        businessName, 
+        activationCode, 
+        deceasedName,
+        productType,
+        hostingDuration,
+        memorialUrl,
+        dashboardUrl 
+      } = body;
+
+      const productLabels = {
+        'nfc_only': 'NFC Tag',
+        'qr_only': 'QR Plate',
+        'both': 'NFC Tag + QR Plate'
+      };
+      const productLabel = productLabels[productType] || productType;
+
+      return {
+        to: to,
+        replyTo: 'partners@memoriqr.co.nz',
+        from_name: 'MemoriQR Partner Program',
+        subject: `✅ Activation Code ${activationCode} Used - Memorial Created!`,
+        html: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+<div style="background: linear-gradient(135deg, #059669 0%, #10b981 100%); padding: 30px; text-align: center; border-radius: 8px 8px 0 0;">
+<h1 style="color: #fff; margin: 0; font-size: 24px;">✅ Code Activated!</h1>
+<p style="color: rgba(255,255,255,0.9); margin: 10px 0 0; font-size: 14px;">A customer has created their memorial</p>
+</div>
+
+<div style="padding: 30px; background: #fff; border: 1px solid #ddd; border-top: none;">
+<p style="color: #333; font-size: 16px;">Hi ${businessName},</p>
+<p style="color: #555; line-height: 1.6;">Great news! One of your activation codes has been used to create a memorial.</p>
+
+<table style="width: 100%; border-collapse: collapse; margin: 20px 0; background-color: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px;">
+<tr><td style="padding: 12px 20px; color: #6b7280; font-size: 14px; width: 50%; border-bottom: 1px solid #e5e7eb;">Activation Code</td><td style="padding: 12px 20px; color: #111827; font-size: 14px; font-weight: 600; font-family: monospace; border-bottom: 1px solid #e5e7eb;">${activationCode}</td></tr>
+<tr><td style="padding: 12px 20px; color: #6b7280; font-size: 14px; border-bottom: 1px solid #e5e7eb;">Memorial For</td><td style="padding: 12px 20px; color: #111827; font-size: 14px; font-weight: 600; border-bottom: 1px solid #e5e7eb;">${deceasedName}</td></tr>
+<tr><td style="padding: 12px 20px; color: #6b7280; font-size: 14px; border-bottom: 1px solid #e5e7eb;">Product</td><td style="padding: 12px 20px; color: #111827; font-size: 14px; font-weight: 600; border-bottom: 1px solid #e5e7eb;">${productLabel}</td></tr>
+<tr><td style="padding: 12px 20px; color: #6b7280; font-size: 14px;">Hosting Duration</td><td style="padding: 12px 20px; color: #111827; font-size: 14px; font-weight: 600;">${hostingDuration} years</td></tr>
+</table>
+
+<p style="color: #555; line-height: 1.6;">The customer's products will be shipped shortly. You can view all your codes and their status in the Partner Portal.</p>
+
+<div style="text-align: center; margin: 30px 0;">
+<a href="${dashboardUrl}" style="display: inline-block; background: linear-gradient(135deg, #059669 0%, #10b981 100%); color: #fff; text-decoration: none; padding: 15px 40px; border-radius: 8px; font-size: 16px;">View Partner Portal</a>
+</div>
+</div>
+
+<div style="background: #f5f5f0; padding: 20px; text-align: center; border-radius: 0 0 8px 8px;">
+<p style="color: #888; font-size: 12px; margin: 0;">MemoriQR Partner Program</p>
+</div>
+</div>`,
+        text: `Hi ${businessName},\n\nGreat news! One of your activation codes has been used to create a memorial.\n\nDETAILS:\n- Activation Code: ${activationCode}\n- Memorial For: ${deceasedName}\n- Product: ${productLabel}\n- Hosting: ${hostingDuration} years\n\nView your codes in the Partner Portal: ${dashboardUrl}`
       };
     }
   }

@@ -290,6 +290,45 @@ export async function POST(request: NextRequest) {
         })
         .eq('activation_code', activationCode)
 
+      // Notify partner that activation code was used
+      if (partnerId) {
+        const { data: partner } = await supabase
+          .from('partners')
+          .select('id, partner_name, contact_email, notify_referral_redemption')
+          .eq('id', partnerId)
+          .single()
+
+        // Use notify_referral_redemption setting (defaults to true if null)
+        if (partner?.contact_email && partner.notify_referral_redemption !== false) {
+          const webhookUrl = process.env.PIPEDREAM_PARTNER_CODES_WEBHOOK_URL || process.env.PIPEDREAM_WEBHOOK_URL
+          if (webhookUrl) {
+            const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_BASE_URL || 'https://memoriqr.com'
+            const businessName = partner.partner_name?.replace(/\s*\([^)]+\)\s*$/, '') || 'Partner'
+
+            try {
+              await fetch(webhookUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  type: 'activation_code_used',
+                  to: partner.contact_email,
+                  businessName,
+                  activationCode,
+                  deceasedName,
+                  productType,
+                  hostingDuration,
+                  memorialUrl: `${baseUrl}/memorial/${memorialSlug}`,
+                  dashboardUrl: `${baseUrl}/partner/codes`,
+                }),
+              })
+              console.log(`Activation code used notification sent to ${partner.contact_email}`)
+            } catch (emailError) {
+              console.error('Failed to send activation code used notification:', emailError)
+            }
+          }
+        }
+      }
+
       // Log activity
       await supabase.from('activity_log').insert({
         memorial_id: memorialId,
