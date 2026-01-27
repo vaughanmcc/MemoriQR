@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { createAdminClient } from '@/lib/supabase/server'
 
+const PIPEDREAM_PARTNER_CODES_WEBHOOK_URL = process.env.PIPEDREAM_PARTNER_CODES_WEBHOOK_URL || process.env.PIPEDREAM_WEBHOOK_URL
+
 // Check admin authentication
 async function checkAdminAuth(): Promise<boolean> {
   const cookieStore = await cookies()
@@ -71,10 +73,11 @@ export async function POST(request: NextRequest) {
 
     // Validate partner if provided
     let partnerName: string | null = null
+    let partnerEmail: string | null = null
     if (partnerId) {
       const { data: partner, error: partnerError } = await supabase
         .from('partners')
-        .select('id, partner_name, status')
+        .select('id, partner_name, contact_email, status')
         .eq('id', partnerId)
         .single()
 
@@ -92,6 +95,7 @@ export async function POST(request: NextRequest) {
         )
       }
       partnerName = partner.partner_name
+      partnerEmail = partner.contact_email
     }
 
     // Generate batch identifiers
@@ -161,6 +165,33 @@ export async function POST(request: NextRequest) {
     }
 
     console.log(`Generated ${codes.length} retail activation codes for variant ${variant} (batch: ${batchId})${partnerId ? ` assigned to partner ${partnerName}` : ''}`)
+
+    // Send email notification to partner if codes were assigned to them
+    if (partnerId && partnerEmail && codes.length > 0 && PIPEDREAM_PARTNER_CODES_WEBHOOK_URL) {
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_BASE_URL || 'https://memoriqr.com'
+      const businessName = (partnerName || 'Partner').replace(/\s*\([^)]+\)\s*$/, '')
+      
+      try {
+        await fetch(PIPEDREAM_PARTNER_CODES_WEBHOOK_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: 'partner_codes_generated',
+            partner_email: partnerEmail,
+            partner_name: businessName,
+            batch_number: batchName,
+            quantity: codes.length,
+            product_type: variantConfig.product,
+            hosting_duration: variantConfig.duration,
+            codes_list: codes.join('\n'),
+            portal_url: `${baseUrl}/partner/codes`,
+          }),
+        })
+        console.log(`Activation codes email sent to ${partnerEmail}`)
+      } catch (emailError) {
+        console.error('Failed to send activation codes email:', emailError)
+      }
+    }
 
     return NextResponse.json({
       success: true,

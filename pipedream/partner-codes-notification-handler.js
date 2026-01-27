@@ -4,11 +4,12 @@
  * Handles partner notification emails for codes generated:
  * - referral_codes_generated: Lead generation referral codes ready
  * - partner_codes_generated: Wholesale activation codes ready
+ * - partner_codes_unassigned: Codes removed from partner
  * 
  * Use this in a SEPARATE Pipedream workflow with its own webhook URL.
  * Env var: PIPEDREAM_PARTNER_CODES_WEBHOOK_URL
  * 
- * Last updated: January 26, 2026
+ * Last updated: January 27, 2026
  */
 
 export default defineComponent({
@@ -21,7 +22,7 @@ export default defineComponent({
     console.log('Body object:', JSON.stringify(body, null, 2));
     console.log('Type:', body?.type);
     
-    const validTypes = ['referral_codes_generated', 'partner_codes_generated'];
+    const validTypes = ['referral_codes_generated', 'partner_codes_generated', 'partner_codes_unassigned'];
     
     if (!body || !validTypes.includes(body.type)) {
       $.flow.exit(`Not a partner codes notification event: ${body?.type}`);
@@ -147,6 +148,44 @@ ${freeShipping ? '<li>They get <strong>free shipping</strong></li>' : ''}
 </div>
 </div>`,
         text: `Hi ${partner_name},\n\nYour batch of activation codes is ready!\n\nBatch: ${batch_number}\nCodes Generated: ${quantity}\nProduct: ${productDisplay}\nHosting: ${hosting_duration} years\n\nYOUR CODES:\n${codes_list}\n\nView all codes in the Partner Portal: ${portal_url}`
+      };
+    }
+    
+    // Handle codes unassigned from partner
+    if (body.type === 'partner_codes_unassigned') {
+      const { partner_email, partner_name, quantity, codes_list, portal_url } = body;
+
+      return {
+        to: partner_email,
+        replyTo: 'partners@memoriqr.co.nz',
+        from_name: 'MemoriQR Partner Portal',
+        subject: `⚠️ ${quantity} Activation Code${quantity > 1 ? 's' : ''} Removed from Your Account`,
+        html: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+<div style="background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%); padding: 30px; text-align: center; border-radius: 8px 8px 0 0;">
+<h1 style="color: #fff; margin: 0; font-size: 24px;">⚠️ Codes Removed</h1>
+</div>
+
+<div style="padding: 30px; background: #fff; border: 1px solid #ddd; border-top: none;">
+<p style="color: #333; font-size: 16px;">Hi ${partner_name},</p>
+<p style="color: #555; line-height: 1.6;">This is to inform you that <strong>${quantity} activation code${quantity > 1 ? 's have' : ' has'}</strong> been removed from your partner account.</p>
+
+<div style="background: #fef2f2; border: 1px solid #fecaca; padding: 20px; border-radius: 8px; margin: 20px 0;">
+<p style="font-weight: bold; margin: 0 0 10px; color: #991b1b;">Removed Codes:</p>
+<pre style="background: #fff; border: 1px solid #ddd; padding: 15px; border-radius: 4px; font-family: monospace; font-size: 14px; white-space: pre-wrap; word-break: break-all; margin: 0;">${codes_list}</pre>
+</div>
+
+<p style="color: #555; line-height: 1.6;">These codes are no longer associated with your account. If you believe this is an error, please contact our partner support team.</p>
+
+<div style="text-align: center; margin: 30px 0;">
+<a href="${portal_url}" style="display: inline-block; background: linear-gradient(135deg, #2d5a27 0%, #3d7a35 100%); color: #fff; text-decoration: none; padding: 15px 40px; border-radius: 8px; font-size: 16px;">View Partner Portal</a>
+</div>
+</div>
+
+<div style="background: #f5f5f0; padding: 20px; text-align: center; border-radius: 0 0 8px 8px;">
+<p style="color: #888; font-size: 12px; margin: 0;">MemoriQR Partner Portal</p>
+</div>
+</div>`,
+        text: `Hi ${partner_name},\n\nThis is to inform you that ${quantity} activation code${quantity > 1 ? 's have' : ' has'} been removed from your partner account.\n\nREMOVED CODES:\n${codes_list}\n\nIf you believe this is an error, please contact our partner support team.\n\nView Partner Portal: ${portal_url}`
       };
     }
   }
