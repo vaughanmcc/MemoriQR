@@ -6,6 +6,8 @@ import { createAdminClient } from '@/lib/supabase/server'
 import { generateOptOutToken } from '@/app/api/partner/notifications/unsubscribe/route'
 
 const PIPEDREAM_WEBHOOK_URL = process.env.PIPEDREAM_WEBHOOK_URL
+// Separate webhook for referral redemption emails (to avoid Pipedream code size limits)
+const PIPEDREAM_REFERRAL_WEBHOOK_URL = process.env.PIPEDREAM_REFERRAL_WEBHOOK_URL || PIPEDREAM_WEBHOOK_URL
 
 export async function POST(request: NextRequest) {
   const body = await request.text()
@@ -132,7 +134,7 @@ export async function POST(request: NextRequest) {
               console.log(`Commission of $${commissionAmount} recorded for partner ${refCodeData.partner_id}`)
 
               // Send email notification to partner if they haven't opted out
-              if (PIPEDREAM_WEBHOOK_URL) {
+              if (PIPEDREAM_REFERRAL_WEBHOOK_URL) {
                 const { data: partnerData } = await supabase
                   .from('partners')
                   .select('id, partner_name, contact_email, notify_referral_redemption')
@@ -142,11 +144,12 @@ export async function POST(request: NextRequest) {
                 if (partnerData && partnerData.notify_referral_redemption !== false && partnerData.contact_email) {
                   const businessName = partnerData.partner_name?.replace(/\s*\([^)]+\)\s*$/, '') || 'Partner'
                   const optOutToken = generateOptOutToken(partnerData.id)
-                  const baseUrl = request.headers.get('origin') || process.env.NEXT_PUBLIC_BASE_URL || 'https://memoriqr.com'
+                  // Use NEXT_PUBLIC_APP_URL for dev/staging, fall back to BASE_URL for prod
+                  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_BASE_URL || 'https://memoriqr.com'
                   const optOutUrl = `${baseUrl}/api/partner/notifications/unsubscribe?partner=${partnerData.id}&token=${optOutToken}`
 
                   try {
-                    await fetch(PIPEDREAM_WEBHOOK_URL, {
+                    await fetch(PIPEDREAM_REFERRAL_WEBHOOK_URL, {
                       method: 'POST',
                       headers: { 'Content-Type': 'application/json' },
                       body: JSON.stringify({

@@ -63,6 +63,8 @@ STRIPE_WEBHOOK_SECRET=your_stripe_webhook_secret
 
 # Email (Pipedream webhook to Hostinger SMTP)
 PIPEDREAM_WEBHOOK_URL=your_pipedream_webhook_url
+# Referral redemption email webhook (separate workflow)
+PIPEDREAM_REFERRAL_WEBHOOK_URL=https://eo5xpf69y0qbaul.m.pipedream.net
 
 # App
 NEXT_PUBLIC_SITE_URL=http://localhost:3000

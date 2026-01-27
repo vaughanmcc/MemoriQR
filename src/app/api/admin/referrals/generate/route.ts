@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: partner, error: partnerError } = await (supabase as any)
       .from('partners')
-      .select('id, partner_name')
+      .select('id, partner_name, contact_email')
       .eq('id', partnerId)
       .single()
 
@@ -140,6 +140,36 @@ export async function POST(request: NextRequest) {
     const successCount = codes.length - failures.length
 
     console.log(`Generated ${successCount} referral codes for partner ${partnerDisplayName} (batch: ${batchId})`)
+
+    // Send email notification to partner via Partner Codes Notification workflow
+    const webhookUrl = process.env.PIPEDREAM_PARTNER_CODES_WEBHOOK_URL || process.env.PIPEDREAM_WEBHOOK_URL
+    if (webhookUrl && partner.contact_email && successCount > 0) {
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_BASE_URL || 'https://memoriqr.com'
+      const businessName = partnerDisplayName.replace(/\s*\([^)]+\)\s*$/, '')
+      
+      try {
+        await fetch(webhookUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: 'referral_codes_generated',
+            to: partner.contact_email,
+            businessName,
+            quantity: successCount,
+            codes: codes.slice(0, 10), // First 10 codes in email, rest in attachment
+            totalCodes: codes.length,
+            discountPercent,
+            commissionPercent,
+            freeShipping,
+            expiresAt: expiresAt?.toISOString() || null,
+            dashboardUrl: `${baseUrl}/partner/dashboard`,
+          }),
+        })
+        console.log(`Referral codes email sent to ${partner.contact_email}`)
+      } catch (emailError) {
+        console.error('Failed to send referral codes email:', emailError)
+      }
+    }
 
     return NextResponse.json({
       success: true,

@@ -101,7 +101,7 @@ export async function POST(request: NextRequest) {
       .eq('id', batchId)
 
     // Send notification to partner
-    const webhookUrl = process.env.PIPEDREAM_WEBHOOK_URL
+    const webhookUrl = process.env.PIPEDREAM_PARTNER_CODES_WEBHOOK_URL || process.env.PIPEDREAM_WEBHOOK_URL
     if (webhookUrl && batch.partner) {
       try {
         await fetch(webhookUrl, {
