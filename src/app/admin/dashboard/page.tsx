@@ -81,6 +81,9 @@ export default function AdminDashboardPage() {
               <Link href="/admin/referrals" className="text-white/70 hover:text-white px-3 py-1 rounded hover:bg-white/10">
                 Referral Codes
               </Link>
+              <Link href="/admin/batches" className="text-white/70 hover:text-white px-3 py-1 rounded hover:bg-white/10">
+                Batch Requests
+              </Link>
               <Link href="/admin/partners" className="text-white/70 hover:text-white px-3 py-1 rounded hover:bg-white/10">
                 Partners
               </Link>
