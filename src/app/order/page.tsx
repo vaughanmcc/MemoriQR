@@ -1,4 +1,5 @@
 import { Metadata } from 'next'
+import Link from 'next/link'
 import { EmbedWrapper } from '@/components/layout/EmbedWrapper'
 import { OrderForm } from '@/components/order/OrderForm'
 
@@ -20,6 +21,19 @@ export default function OrderPage() {
               Select your hosting duration and product type to get started. 
               You'll be able to upload photos and customize the memorial after checkout.
             </p>
+            
+            {/* Activation Code CTA */}
+            <div className="mt-6 p-4 bg-stone-100 rounded-lg inline-block">
+              <p className="text-stone-700">
+                Already have an activation code?{' '}
+                <Link 
+                  href="/activate" 
+                  className="text-memorial-green font-semibold hover:underline"
+                >
+                  Activate your memorial here →
+                </Link>
+              </p>
+            </div>
           </div>
           
           <OrderForm />

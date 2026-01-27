@@ -5,6 +5,14 @@ import { ChevronDown, ChevronUp } from 'lucide-react'
 
 const faqs = [
   {
+    question: 'I have an activation code - how do I use it?',
+    answer: 'If you purchased a MemoriQR product from a retailer or received an activation code, go to memoriqr.co.nz/activate and enter your code. This will let you create your memorial without any additional payment - your hosting is already prepaid!',
+  },
+  {
+    question: 'What\'s the difference between activation codes and referral codes?',
+    answer: 'Activation codes (like MQR-10B-XXXXX) are for pre-purchased products - use them at /activate to create your memorial. Referral codes (like REF-XXXXX) are discount codes from our partners - enter them during checkout on the order page to get a discount on your purchase.',
+  },
+  {
     question: 'How does the NFC tag work?',
     answer: 'NFC (Near Field Communication) is the same technology used in contactless payments. Simply hold your smartphone near the tag, and it will automatically open the memorial page in your browser. No app needed – works with all modern iPhones and Android devices.',
   },
