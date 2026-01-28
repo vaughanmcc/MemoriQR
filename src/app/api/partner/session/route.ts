@@ -64,6 +64,15 @@ export async function GET(request: NextRequest) {
       )
     }
 
+    // Check if there are other businesses linked to this email
+    const { data: linkedPartners } = await supabase
+      .from('partners')
+      .select('id, partner_name')
+      .ilike('contact_email', partner.contact_email)
+      .eq('is_active', true)
+      .neq('id', partner.id)
+      .order('partner_name')
+
     return NextResponse.json({
       authenticated: true,
       partner: {
@@ -72,7 +81,8 @@ export async function GET(request: NextRequest) {
         type: partner.partner_type,
         email: partner.contact_email,
         commissionRate: partner.commission_rate
-      }
+      },
+      linkedPartners: linkedPartners || []
     })
 
   } catch (error) {

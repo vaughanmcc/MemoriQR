@@ -5,7 +5,7 @@ import crypto from 'crypto'
 // Verify login code and create session
 export async function POST(request: NextRequest) {
   try {
-    const { email, code, trustDevice } = await request.json()
+    const { email, code, trustDevice, partnerId: selectedPartnerId } = await request.json()
 
     if (!email || !code) {
       return NextResponse.json(
@@ -19,17 +19,15 @@ export async function POST(request: NextRequest) {
 
     const supabase = createAdminClient()
 
-    // Find partner by email (case-insensitive) - use same ordering as login route
+    // Find ALL partners by email (case-insensitive)
     const { data: partners, error: partnerError } = await supabase
       .from('partners')
       .select('id, partner_name, contact_email, is_active')
       .ilike('contact_email', normalizedEmail)
+      .eq('is_active', true)
       .order('created_at', { ascending: false })
-      .limit(1)
 
-    const partner = partners?.[0]
-
-    if (partnerError || !partner) {
+    if (partnerError || !partners || partners.length === 0) {
       console.log('Partner lookup failed:', { normalizedEmail, partnerError })
       return NextResponse.json(
         { error: 'Invalid email or code' },
@@ -37,39 +35,52 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    if (!partner.is_active) {
-      return NextResponse.json(
-        { error: 'This partner account is inactive' },
-        { status: 403 }
-      )
+    // If multiple partners exist and no specific one selected, verify code first then ask for selection
+    let partner = partners[0]
+    
+    if (partners.length > 1 && selectedPartnerId) {
+      // User selected a specific partner
+      const selectedPartner = partners.find(p => p.id === selectedPartnerId)
+      if (!selectedPartner) {
+        return NextResponse.json(
+          { error: 'Invalid partner selection' },
+          { status: 400 }
+        )
+      }
+      partner = selectedPartner
     }
 
-    // Find and validate login code
-    const { data: loginCode, error: codeError } = await supabase
-      .from('partner_login_codes')
-      .select('*')
-      .eq('partner_id', partner.id)
-      .eq('code', normalizedCode)
-      .is('used_at', null)
-      .single()
+    // Find and validate login code - check against ALL partners with this email
+    let loginCode = null
+    let codeOwnerPartner = null
+    
+    for (const p of partners) {
+      const { data: code, error: codeError } = await supabase
+        .from('partner_login_codes')
+        .select('*')
+        .eq('partner_id', p.id)
+        .eq('code', normalizedCode)
+        .is('used_at', null)
+        .single()
+      
+      if (!codeError && code) {
+        loginCode = code
+        codeOwnerPartner = p
+        break
+      }
+    }
 
-    console.log('Login code lookup:', { 
-      partnerId: partner.id, 
-      codeEntered: normalizedCode,
-      codeError: codeError?.message,
-      codeFound: !!loginCode 
-    })
-
-    if (codeError || !loginCode) {
-      // Check if there's ANY code for this partner to help debug
+    if (!loginCode || !codeOwnerPartner) {
+      // Check if there's ANY code for these partners to help debug
+      const partnerIds = partners.map(p => p.id)
       const { data: allCodes } = await supabase
         .from('partner_login_codes')
-        .select('code, expires_at, used_at, created_at')
-        .eq('partner_id', partner.id)
+        .select('partner_id, code, expires_at, used_at, created_at')
+        .in('partner_id', partnerIds)
         .order('created_at', { ascending: false })
-        .limit(3)
+        .limit(5)
       
-      console.log('Recent codes for partner:', allCodes)
+      console.log('Recent codes for partners:', allCodes)
       
       return NextResponse.json(
         { error: 'Invalid or expired code' },
@@ -83,6 +94,18 @@ export async function POST(request: NextRequest) {
         { error: 'Code has expired. Please request a new one.' },
         { status: 401 }
       )
+    }
+
+    // If multiple partners and no selection made yet, return the list for selection
+    if (partners.length > 1 && !selectedPartnerId) {
+      return NextResponse.json({
+        requiresSelection: true,
+        partners: partners.map(p => ({
+          id: p.id,
+          name: p.partner_name
+        })),
+        message: 'Multiple businesses found. Please select which one to log into.'
+      })
     }
 
     // Mark code as used

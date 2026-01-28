@@ -3,10 +3,16 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { Building2 } from 'lucide-react'
+
+interface PartnerOption {
+  id: string
+  name: string
+}
 
 export default function PartnerLoginPage() {
   const router = useRouter()
-  const [step, setStep] = useState<'email' | 'code'>('email')
+  const [step, setStep] = useState<'email' | 'code' | 'select-business'>('email')
   const [email, setEmail] = useState('')
   const [code, setCode] = useState('')
   const [loading, setLoading] = useState(false)
@@ -16,6 +22,7 @@ export default function PartnerLoginPage() {
   const [showTrustWarning, setShowTrustWarning] = useState(false)
   const [warningAcknowledged, setWarningAcknowledged] = useState(false)
   const [dontShowAgain, setDontShowAgain] = useState(false)
+  const [partnerOptions, setPartnerOptions] = useState<PartnerOption[]>([])
 
   // Check if user has previously acknowledged the warning
   useEffect(() => {
@@ -80,7 +87,7 @@ export default function PartnerLoginPage() {
     }
   }
 
-  const handleVerifyCode = async (e: React.FormEvent) => {
+  const handleVerifyCode = async (e: React.FormEvent, selectedPartnerId?: string) => {
     e.preventDefault()
     setLoading(true)
     setError('')
@@ -89,7 +96,7 @@ export default function PartnerLoginPage() {
       const response = await fetch('/api/partner/verify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, code, trustDevice })
+        body: JSON.stringify({ email, code, trustDevice, partnerId: selectedPartnerId })
       })
 
       const data = await response.json()
@@ -99,10 +106,45 @@ export default function PartnerLoginPage() {
         return
       }
 
+      // Check if multiple businesses require selection
+      if (data.requiresSelection && data.partners) {
+        setPartnerOptions(data.partners)
+        setMessage(data.message)
+        setStep('select-business')
+        return
+      }
+
       // Redirect to dashboard
       router.push('/partner/dashboard')
     } catch (err) {
       setError('Failed to verify code. Please try again.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleSelectBusiness = async (partnerId: string) => {
+    setLoading(true)
+    setError('')
+
+    try {
+      const response = await fetch('/api/partner/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, code, trustDevice, partnerId })
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        setError(data.error || 'Failed to select business')
+        return
+      }
+
+      // Redirect to dashboard
+      router.push('/partner/dashboard')
+    } catch (err) {
+      setError('Failed to select business. Please try again.')
     } finally {
       setLoading(false)
     }
@@ -122,7 +164,7 @@ export default function PartnerLoginPage() {
         {/* Login Card */}
         <div className="bg-white rounded-2xl shadow-xl p-8">
           <h2 className="text-2xl font-serif text-gray-900 mb-6 text-center">
-            {step === 'email' ? 'Partner Login' : 'Enter Verification Code'}
+            {step === 'email' ? 'Partner Login' : step === 'code' ? 'Enter Verification Code' : 'Select Business'}
           </h2>
 
           {error && (
@@ -131,7 +173,7 @@ export default function PartnerLoginPage() {
             </div>
           )}
 
-          {message && step === 'code' && (
+          {message && (step === 'code' || step === 'select-business') && (
             <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg text-green-700 text-sm">
               {message}
             </div>
@@ -162,8 +204,38 @@ export default function PartnerLoginPage() {
                 {loading ? 'Sending...' : 'Send Login Code'}
               </button>
             </form>
+          ) : step === 'select-business' ? (
+            <div>
+              <p className="text-gray-600 text-sm mb-4">
+                Your email is linked to multiple businesses. Select which one to log into:
+              </p>
+
+              <div className="space-y-2">
+                {partnerOptions.map((partner) => (
+                  <button
+                    key={partner.id}
+                    onClick={() => handleSelectBusiness(partner.id)}
+                    disabled={loading}
+                    className="w-full flex items-center gap-3 p-4 border border-gray-200 rounded-lg hover:bg-gray-50 hover:border-primary-300 transition-colors text-left disabled:opacity-50"
+                  >
+                    <Building2 className="h-5 w-5 text-gray-400" />
+                    <span className="font-medium text-gray-900">{partner.name}</span>
+                  </button>
+                ))}
+              </div>
+
+              <button
+                onClick={() => {
+                  setStep('code')
+                  setPartnerOptions([])
+                }}
+                className="mt-4 w-full text-gray-500 text-sm hover:text-gray-700"
+              >
+                ← Back to code entry
+              </button>
+            </div>
           ) : (
-            <form onSubmit={handleVerifyCode}>
+            <form onSubmit={(e) => handleVerifyCode(e)}>
               <p className="text-gray-600 text-sm mb-4">
                 We sent a 6-digit code to <strong>{email}</strong>. 
                 Enter it below to continue.
