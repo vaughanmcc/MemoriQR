@@ -23,21 +23,19 @@ export function PartnerHeader({ partnerName: propPartnerName, linkedPartners: pr
   const [switching, setSwitching] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
 
-  // Fetch session data if not provided as props
+  // Fetch session data to get linkedPartners (always fetch, props are just initial values)
   useEffect(() => {
-    if (!propPartnerName) {
-      fetch('/api/partner/session')
-        .then(res => res.json())
-        .then(data => {
-          if (data.partner) {
-            setPartnerName(data.partner.name)
-          }
-          if (data.linkedPartners) {
-            setLinkedPartners(data.linkedPartners)
-          }
-        })
-        .catch(() => {})
-    }
+    fetch('/api/partner/session')
+      .then(res => res.json())
+      .then(data => {
+        if (data.partner && !propPartnerName) {
+          setPartnerName(data.partner.name)
+        }
+        if (data.linkedPartners) {
+          setLinkedPartners(data.linkedPartners)
+        }
+      })
+      .catch(() => {})
   }, [propPartnerName])
 
   // Close dropdown when clicking outside
