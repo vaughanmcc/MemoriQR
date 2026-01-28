@@ -17,9 +17,16 @@ Digital memorial service with QR plates and NFC tags for pets and people.
 - **Emails:** Pipedream → SendGrid
 - **Hosting:** Vercel
 
-## Development
+## Development Workflow
+
+**⚠️ IMPORTANT: Always push to Vercel after making changes. Do NOT use local dev server.**
+
+- All testing is done on Vercel preview deployments
+- After any code changes, immediately `git add`, `git commit`, and `git push`
+- Wait for Vercel deployment before testing
 
 ```bash
+# Local commands (only if needed)
 npm install
 npm run dev        # localhost:3000
 stripe listen --forward-to localhost:3000/api/webhooks/stripe
