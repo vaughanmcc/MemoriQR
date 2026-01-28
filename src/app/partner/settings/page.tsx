@@ -127,6 +127,7 @@ export default function PartnerSettingsPage() {
       }
 
       setSuccess('Settings saved successfully!')
+      setIsEditingBankAccount(false) // Reset to obfuscated view after save
       await fetchSettings()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save settings')
