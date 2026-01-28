@@ -5,6 +5,9 @@ import { stripe } from '@/lib/stripe'
 import { createAdminClient } from '@/lib/supabase/server'
 import { generateOptOutToken } from '@/lib/utils'
 
+// Force dynamic rendering for webhook
+export const dynamic = 'force-dynamic'
+
 const PIPEDREAM_WEBHOOK_URL = process.env.PIPEDREAM_WEBHOOK_URL
 // Separate webhook for referral redemption emails (to avoid Pipedream code size limits)
 const PIPEDREAM_REFERRAL_WEBHOOK_URL = process.env.PIPEDREAM_REFERRAL_WEBHOOK_URL || PIPEDREAM_WEBHOOK_URL
