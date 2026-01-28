@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { PartnerHeader } from '@/components/layout/PartnerHeader'
 import { 
   ArrowLeft, 
   QrCode, 
@@ -131,18 +132,15 @@ export default function PartnerCodesPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <header className="bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center h-16">
-            <Link href="/partner/dashboard" className="flex items-center gap-2 text-gray-600 hover:text-gray-900">
-              <ArrowLeft className="h-5 w-5" />
-              Back to Dashboard
-            </Link>
-          </div>
-        </div>
-      </header>
+      <PartnerHeader />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Back link */}
+        <Link href="/partner/dashboard" className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-6">
+          <ArrowLeft className="h-5 w-5" />
+          Back to Dashboard
+        </Link>
+
         {/* Title & Actions */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
           <div>

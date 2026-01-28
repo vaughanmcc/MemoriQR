@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { LogOut, ArrowLeft, ChevronDown, ChevronUp, HelpCircle } from 'lucide-react'
+import { PartnerHeader } from '@/components/layout/PartnerHeader'
+import { ArrowLeft, ChevronDown, ChevronUp, HelpCircle } from 'lucide-react'
 
 interface FAQItem {
   question: string
@@ -206,30 +207,7 @@ export default function PartnerFAQPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <header className="bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center gap-4">
-              <Link href="/" className="text-2xl font-serif text-emerald-700">
-                MemoriQR
-              </Link>
-              <span className="text-gray-300">|</span>
-              <span className="text-gray-600">Partner Portal</span>
-            </div>
-
-            <div className="flex items-center gap-4">
-              <span className="text-sm text-gray-600">{partnerName}</span>
-              <button
-                onClick={handleLogout}
-                className="flex items-center gap-1 text-gray-500 hover:text-gray-700 text-sm"
-              >
-                <LogOut className="h-4 w-4" />
-                Logout
-              </button>
-            </div>
-          </div>
-        </div>
-      </header>
+      <PartnerHeader partnerName={partnerName || undefined} />
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Back link */}
