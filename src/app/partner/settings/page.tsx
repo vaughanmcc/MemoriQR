@@ -479,18 +479,27 @@ export default function PartnerSettingsPage() {
                         type="text"
                         value={formData.bank_account_number}
                         onChange={(e) => {
-                          // Remove non-digits and format
+                          // Allow any input - just limit to digits and dashes
+                          const value = e.target.value.replace(/[^\d-]/g, '')
+                          setFormData({ ...formData, bank_account_number: value })
+                        }}
+                        onBlur={(e) => {
+                          // Format on blur
                           const value = e.target.value.replace(/\D/g, '')
+                          if (value.length === 0) {
+                            setFormData({ ...formData, bank_account_number: '' })
+                            return
+                          }
                           // Format as NZ bank account (XX-XXXX-XXXXXXX-XXX)
-                          let formatted = value
+                          let formatted = value.slice(0, 2)
                           if (value.length > 2) {
-                            formatted = value.slice(0, 2) + '-' + value.slice(2)
+                            formatted += '-' + value.slice(2, 6)
                           }
                           if (value.length > 6) {
-                            formatted = value.slice(0, 2) + '-' + value.slice(2, 6) + '-' + value.slice(6)
+                            formatted += '-' + value.slice(6, 13)
                           }
                           if (value.length > 13) {
-                            formatted = value.slice(0, 2) + '-' + value.slice(2, 6) + '-' + value.slice(6, 13) + '-' + value.slice(13, 16)
+                            formatted += '-' + value.slice(13, 16)
                           }
                           setFormData({ ...formData, bank_account_number: formatted })
                         }}
