@@ -58,6 +58,28 @@ export async function PATCH(
 
       if (updateError) throw updateError
 
+      // Send email notification to partner
+      if (commission.partner?.contact_email) {
+        try {
+          await fetch(PIPEDREAM_WEBHOOK_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              type: 'commission_approved',
+              to: commission.partner.contact_email,
+              data: {
+                partner_name: commission.partner.partner_name,
+                approved_amount: commission.commission_amount,
+                commission_count: 1,
+                dashboard_url: 'https://memoriqr.co.nz/partner/commissions'
+              }
+            })
+          })
+        } catch (emailError) {
+          console.error('Failed to send commission approval email:', emailError)
+        }
+      }
+
       return NextResponse.json({ success: true, message: 'Commission approved' })
     }
 

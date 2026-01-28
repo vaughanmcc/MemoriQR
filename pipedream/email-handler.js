@@ -21,6 +21,7 @@
  * - partner_approved: Approval notification → partner
  * - partner_rejected: Rejection notification → applicant
  * - partner_suspended: Suspension notification → partner
+ * - commission_approved: Commission approved notification → partner
  * - commission_payout_statement: Payout confirmation → partner
  * 
  * SEPARATE WORKFLOW (Referral Redemption WF - PIPEDREAM_REFERRAL_WEBHOOK_URL):
@@ -945,6 +946,56 @@ ${changesList}
 </div>
 </div>`,
         text: `Hi ${contactName},\n\nWe're writing to let you know that your partner terms for ${businessName} have been updated.\n\nCHANGES:\n${changesText}\nThese changes are effective immediately and will apply to all future orders and commissions.\n\nView your Partner Portal: ${portalUrl}\n\nIf you have any questions about these changes, please reply to this email and we'll be happy to discuss.\n\nBest regards,\nThe MemoriQR Team`
+      };
+    }
+
+    // Commission approved notification (sent when admin approves pending commissions)
+    if (type === 'commission_approved') {
+      const { 
+        to, 
+        businessName, 
+        commissionCount, 
+        totalAmount, 
+        dashboardUrl 
+      } = body;
+
+      const commissionText = commissionCount === 1 ? '1 commission' : `${commissionCount} commissions`;
+
+      return {
+        to: to,
+        replyTo: 'partners@memoriqr.co.nz',
+        from_name: 'MemoriQR Partner Program',
+        subject: `✅ Commission Approved - $${totalAmount} Ready for Payout`,
+        html: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+<div style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); padding: 30px; text-align: center; border-radius: 8px 8px 0 0;">
+<h1 style="color: #fff; margin: 0; font-size: 22px;">✅ Commission Approved!</h1>
+</div>
+
+<div style="padding: 30px; background: #fff; border: 1px solid #ddd; border-top: none;">
+<p style="color: #333; font-size: 16px;">Hi ${businessName},</p>
+
+<p style="color: #555; line-height: 1.6;">Great news! Your ${commissionText} ${commissionCount === 1 ? 'has' : 'have'} been approved and ${commissionCount === 1 ? 'is' : 'are'} now ready for payout.</p>
+
+<div style="background: #ecfdf5; border: 2px solid #10b981; padding: 25px; border-radius: 8px; margin: 25px 0; text-align: center;">
+<p style="color: #059669; font-size: 14px; margin: 0 0 5px 0; text-transform: uppercase; letter-spacing: 1px;">Approved Amount</p>
+<p style="color: #047857; font-size: 36px; font-weight: bold; margin: 0;">$${totalAmount}</p>
+<p style="color: #6b7280; font-size: 12px; margin: 10px 0 0 0;">${commissionText} approved</p>
+</div>
+
+<p style="color: #555; line-height: 1.6;">We'll process the payout to your registered bank account shortly. You'll receive another email once the funds have been transferred.</p>
+
+<div style="text-align: center; margin: 30px 0;">
+<a href="${dashboardUrl}" style="display: inline-block; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #fff; text-decoration: none; padding: 15px 40px; border-radius: 8px; font-size: 16px; font-weight: 600;">View Partner Dashboard</a>
+</div>
+
+<p style="color: #555; margin-top: 30px;">Thank you for being a valued MemoriQR partner!</p>
+</div>
+
+<div style="background: #f5f5f0; padding: 20px; text-align: center; border-radius: 0 0 8px 8px;">
+<p style="color: #888; font-size: 12px; margin: 0;">MemoriQR Partner Program</p>
+</div>
+</div>`,
+        text: `Hi ${businessName},\n\nGreat news! Your ${commissionText} ${commissionCount === 1 ? 'has' : 'have'} been approved and ${commissionCount === 1 ? 'is' : 'are'} now ready for payout.\n\nAPPROVED AMOUNT: $${totalAmount}\n(${commissionText} approved)\n\nWe'll process the payout to your registered bank account shortly. You'll receive another email once the funds have been transferred.\n\nView your Partner Dashboard: ${dashboardUrl}\n\nThank you for being a valued MemoriQR partner!`
       };
     }
 

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/server'
 
 // Pipedream webhook URL for emails
-const PIPEDREAM_WEBHOOK_URL = process.env.PIPEDREAM_WEBHOOK_URL || 'https://eo7epxu5aypc0vj.m.pipedream.net'
+const PIPEDREAM_WEBHOOK_URL = process.env.PIPEDREAM_WEBHOOK_URL
 
 // Helper to check admin session from request
 function checkAdminSession(request: NextRequest): boolean {
@@ -29,6 +29,22 @@ export async function POST(request: NextRequest) {
   }
 
   try {
+    // Get commission details before updating (to send notifications)
+    const { data: commissionsToApprove } = await supabase
+      .from('partner_commissions')
+      .select(`
+        id,
+        commission_amount,
+        partner_id,
+        partners:partner_id (
+          id,
+          partner_name,
+          contact_email
+        )
+      `)
+      .in('id', commissionIds)
+      .eq('status', 'pending')
+
     const { data, error } = await supabase
       .from('partner_commissions')
       .update({
@@ -40,6 +56,53 @@ export async function POST(request: NextRequest) {
       .select()
 
     if (error) throw error
+
+    // Send notification emails to partners
+    if (PIPEDREAM_WEBHOOK_URL && commissionsToApprove && commissionsToApprove.length > 0) {
+      // Group commissions by partner
+      const partnerCommissions = new Map<string, { partner: any, totalAmount: number, count: number }>()
+      
+      for (const commission of commissionsToApprove) {
+        const partner = commission.partners as any
+        if (!partner?.contact_email) continue
+        
+        const existing = partnerCommissions.get(partner.id)
+        if (existing) {
+          existing.totalAmount += Number(commission.commission_amount)
+          existing.count += 1
+        } else {
+          partnerCommissions.set(partner.id, {
+            partner,
+            totalAmount: Number(commission.commission_amount),
+            count: 1
+          })
+        }
+      }
+
+      // Send one email per partner
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_BASE_URL || 'https://memoriqr.com'
+      
+      for (const [, { partner, totalAmount, count }] of partnerCommissions) {
+        const businessName = partner.partner_name?.replace(/\s*\([^)]+\)\s*$/, '') || 'Partner'
+        
+        try {
+          await fetch(PIPEDREAM_WEBHOOK_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              type: 'commission_approved',
+              to: partner.contact_email,
+              businessName,
+              commissionCount: count,
+              totalAmount: totalAmount.toFixed(2),
+              dashboardUrl: `${baseUrl}/partner/dashboard`,
+            }),
+          })
+        } catch (emailError) {
+          console.error(`Failed to send commission approved email to ${partner.contact_email}:`, emailError)
+        }
+      }
+    }
 
     return NextResponse.json({
       success: true,
