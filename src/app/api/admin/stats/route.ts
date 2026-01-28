@@ -59,11 +59,18 @@ export async function GET() {
       .select('*', { count: 'exact', head: true })
       .eq('status', 'pending');
 
+    // Get pending commissions (awaiting payout)
+    const { count: pendingCommissions } = await supabase
+      .from('partner_commissions')
+      .select('*', { count: 'exact', head: true })
+      .eq('status', 'pending');
+
     return NextResponse.json({
       totalPartners,
       activePartners,
       pendingApplications,
       pendingBatchRequests: pendingBatchRequests ?? 0,
+      pendingCommissions: pendingCommissions ?? 0,
       totalMemorials: totalMemorials ?? 0,
       totalOrders,
       totalRevenue,

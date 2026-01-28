@@ -9,6 +9,7 @@ interface DashboardStats {
   activePartners: number;
   pendingApplications: number;
   pendingBatchRequests: number;
+  pendingCommissions: number;
   totalMemorials: number;
   totalOrders: number;
   totalRevenue: number;
@@ -90,11 +91,21 @@ export default function AdminDashboardPage() {
                   </span>
                 )}
               </Link>
-              <Link href="/admin/partners" className="text-white/70 hover:text-white px-3 py-1 rounded hover:bg-white/10">
+              <Link href="/admin/partners" className="text-white/70 hover:text-white px-3 py-1 rounded hover:bg-white/10 relative">
                 Partners
+                {(stats?.pendingApplications ?? 0) > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-orange-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+                    {stats.pendingApplications}
+                  </span>
+                )}
               </Link>
-              <Link href="/admin/commissions" className="text-white/70 hover:text-white px-3 py-1 rounded hover:bg-white/10">
+              <Link href="/admin/commissions" className="text-white/70 hover:text-white px-3 py-1 rounded hover:bg-white/10 relative">
                 Commissions
+                {(stats?.pendingCommissions ?? 0) > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-emerald-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+                    {stats.pendingCommissions}
+                  </span>
+                )}
               </Link>
               <Link href="/admin/orders" className="text-white/70 hover:text-white px-3 py-1 rounded hover:bg-white/10">
                 Orders
@@ -184,9 +195,14 @@ export default function AdminDashboardPage() {
           <div className="flex flex-wrap gap-4">
             <Link
               href="/admin/partners?status=pending"
-              className="bg-black text-white px-5 py-2.5 rounded-lg hover:bg-black/90 transition-colors shadow-md font-semibold"
+              className="bg-black text-white px-5 py-2.5 rounded-lg hover:bg-black/90 transition-colors shadow-md font-semibold relative"
             >
               Review Applications
+              {(stats?.pendingApplications ?? 0) > 0 && (
+                <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+                  {stats?.pendingApplications}
+                </span>
+              )}
             </Link>
             <Link
               href="/admin/batches"
@@ -201,9 +217,14 @@ export default function AdminDashboardPage() {
             </Link>
             <Link
               href="/admin/commissions?status=pending"
-              className="bg-emerald-700 text-white px-5 py-2.5 rounded-lg hover:bg-emerald-800 transition-colors shadow-md font-semibold"
+              className="bg-emerald-700 text-white px-5 py-2.5 rounded-lg hover:bg-emerald-800 transition-colors shadow-md font-semibold relative"
             >
               Review Commissions
+              {(stats?.pendingCommissions ?? 0) > 0 && (
+                <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+                  {stats?.pendingCommissions}
+                </span>
+              )}
             </Link>
             <Link
               href="/admin/codes"
