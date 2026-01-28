@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/server'
 
-// Pipedream webhook URL
-const PIPEDREAM_WEBHOOK_URL = process.env.PIPEDREAM_WEBHOOK_URL || 'https://eo7epxu5aypc0vj.m.pipedream.net'
+// Pipedream webhook URL for commission emails (separate workflow)
+const PIPEDREAM_COMMISSION_WEBHOOK_URL = process.env.PIPEDREAM_COMMISSION_WEBHOOK_URL
 
 // Helper to check admin session from request
 function checkAdminSession(request: NextRequest): boolean {
@@ -59,9 +59,10 @@ export async function PATCH(
       if (updateError) throw updateError
 
       // Send email notification to partner
-      if (commission.partner?.contact_email) {
+      if (PIPEDREAM_COMMISSION_WEBHOOK_URL && commission.partner?.contact_email) {
+        const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_BASE_URL || 'https://memoriqr.co.nz'
         try {
-          await fetch(PIPEDREAM_WEBHOOK_URL, {
+          await fetch(PIPEDREAM_COMMISSION_WEBHOOK_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -69,9 +70,9 @@ export async function PATCH(
               to: commission.partner.contact_email,
               data: {
                 partner_name: commission.partner.partner_name,
-                approved_amount: commission.commission_amount,
+                approved_amount: Number(commission.commission_amount),
                 commission_count: 1,
-                dashboard_url: 'https://memoriqr.co.nz/partner/commissions'
+                dashboard_url: `${baseUrl}/partner/commissions`
               }
             })
           })

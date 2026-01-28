@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/server'
 
-// Pipedream webhook URL for emails
-const PIPEDREAM_WEBHOOK_URL = process.env.PIPEDREAM_WEBHOOK_URL
+// Pipedream webhook URL for commission emails (separate workflow)
+const PIPEDREAM_COMMISSION_WEBHOOK_URL = process.env.PIPEDREAM_COMMISSION_WEBHOOK_URL
 
 // Helper to check admin session from request
 function checkAdminSession(request: NextRequest): boolean {
@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
     if (error) throw error
 
     // Send notification emails to partners
-    if (PIPEDREAM_WEBHOOK_URL && commissionsToApprove && commissionsToApprove.length > 0) {
+    if (PIPEDREAM_COMMISSION_WEBHOOK_URL && commissionsToApprove && commissionsToApprove.length > 0) {
       // Group commissions by partner
       const partnerCommissions = new Map<string, { partner: any, totalAmount: number, count: number }>()
       
@@ -86,16 +86,18 @@ export async function POST(request: NextRequest) {
         const businessName = partner.partner_name?.replace(/\s*\([^)]+\)\s*$/, '') || 'Partner'
         
         try {
-          await fetch(PIPEDREAM_WEBHOOK_URL, {
+          await fetch(PIPEDREAM_COMMISSION_WEBHOOK_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               type: 'commission_approved',
               to: partner.contact_email,
-              businessName,
-              commissionCount: count,
-              totalAmount: totalAmount.toFixed(2),
-              dashboardUrl: `${baseUrl}/partner/dashboard`,
+              data: {
+                partner_name: businessName,
+                approved_amount: totalAmount,
+                commission_count: count,
+                dashboard_url: `${baseUrl}/partner/commissions`
+              }
             }),
           })
         } catch (emailError) {
