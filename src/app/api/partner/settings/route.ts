@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { cookies } from 'next/headers'
+import { cookies, headers } from 'next/headers'
 import { createAdminClient } from '@/lib/supabase/server'
+
+// Pipedream webhook URL for security change notifications
+const PIPEDREAM_SECURITY_WEBHOOK_URL = process.env.PIPEDREAM_SECURITY_WEBHOOK_URL
 
 interface PartnerSession {
   partner_id: string
@@ -140,6 +143,7 @@ export async function PUT(request: NextRequest) {
     const supabase = createAdminClient()
 
     const updateData: Record<string, unknown> = {}
+    const securityChanges: Array<{ type: string; description: string }> = []
     
     // Update partner name if business or contact name changed
     if (business_name !== undefined || contact_name !== undefined) {
@@ -152,19 +156,43 @@ export async function PUT(request: NextRequest) {
     if (contact_phone !== undefined) {
       updateData.contact_phone = contact_phone || null
     }
-    if (payout_email !== undefined) {
+    
+    // Track security-sensitive changes
+    if (payout_email !== undefined && payout_email !== partner.payout_email) {
       updateData.payout_email = payout_email || null
+      if (partner.payout_email) {
+        securityChanges.push({
+          type: 'payout_email',
+          description: `Payout email changed from ${partner.payout_email} to ${payout_email || '(removed)'}`
+        })
+      }
     }
+    
     if (bank_name !== undefined) {
       updateData.bank_name = bank_name || null
     }
     if (bank_account_name !== undefined) {
       updateData.bank_account_name = bank_account_name || null
     }
-    if (bank_account_number !== undefined) {
-      // Store the formatted version
+    
+    // Track bank account number changes (security sensitive)
+    if (bank_account_number !== undefined && bank_account_number !== partner.bank_account_number) {
       updateData.bank_account_number = bank_account_number || null
+      if (partner.bank_account_number) {
+        const oldLast4 = partner.bank_account_number.replace(/\D/g, '').slice(-4)
+        const newLast4 = bank_account_number ? bank_account_number.replace(/\D/g, '').slice(-4) : 'none'
+        securityChanges.push({
+          type: 'bank_account',
+          description: `Bank account changed from ****${oldLast4} to ****${newLast4}`
+        })
+      } else if (bank_account_number) {
+        securityChanges.push({
+          type: 'bank_account',
+          description: 'Bank account number added'
+        })
+      }
     }
+    
     if (website !== undefined) {
       updateData.website = website || null
     }
@@ -187,6 +215,56 @@ export async function PUT(request: NextRequest) {
 
     if (error) {
       throw error
+    }
+
+    // Send security notification emails for sensitive changes
+    if (securityChanges.length > 0) {
+      const headersList = headers()
+      const ipAddress = headersList.get('x-forwarded-for')?.split(',')[0] || headersList.get('x-real-ip') || 'Unknown'
+      const userAgent = headersList.get('user-agent') || 'Unknown'
+      const partnerName = partner.partner_name?.replace(/\s*\([^)]+\)\s*$/, '') || 'Partner'
+      
+      // Log security changes to audit table
+      for (const change of securityChanges) {
+        try {
+          await supabase
+            .from('partner_security_audit')
+            .insert({
+              partner_id: partner.id,
+              change_type: change.type,
+              change_description: change.description,
+              ip_address: ipAddress,
+              user_agent: userAgent
+            })
+        } catch (auditError) {
+          console.error('Failed to log security audit:', auditError)
+        }
+      }
+      
+      // Send email notifications
+      if (PIPEDREAM_SECURITY_WEBHOOK_URL && partner.contact_email) {
+        for (const change of securityChanges) {
+          try {
+            await fetch(PIPEDREAM_SECURITY_WEBHOOK_URL, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                type: 'security_change',
+                to: partner.contact_email,
+                data: {
+                  partner_name: partnerName,
+                  change_type: change.type,
+                  change_description: change.description,
+                  changed_at: new Date().toISOString(),
+                  ip_address: ipAddress
+                }
+              })
+            })
+          } catch (emailError) {
+            console.error('Failed to send security change notification:', emailError)
+          }
+        }
+      }
     }
 
     return NextResponse.json({ success: true, message: 'Settings updated' })

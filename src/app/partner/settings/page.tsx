@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { LogOut, ArrowLeft, Save, Building, CreditCard, AlertCircle, CheckCircle, User, MapPin, Shield, Smartphone, Bell } from 'lucide-react'
+import { LogOut, ArrowLeft, Save, Building, CreditCard, AlertCircle, CheckCircle, User, MapPin, Shield, Smartphone, Bell, Eye, EyeOff } from 'lucide-react'
 
 interface PartnerAddress {
   street?: string
@@ -38,6 +38,8 @@ export default function PartnerSettingsPage() {
   const [success, setSuccess] = useState('')
   const [settings, setSettings] = useState<PartnerSettings | null>(null)
   const [hasTrustedSessions, setHasTrustedSessions] = useState(false)
+  const [showBankAccount, setShowBankAccount] = useState(false)
+  const [isEditingBankAccount, setIsEditingBankAccount] = useState(false)
   const [formData, setFormData] = useState({
     // Business info
     business_name: '',
@@ -439,32 +441,86 @@ export default function PartnerSettingsPage() {
                       Account Number
                     </span>
                   </label>
-                  <input
-                    type="text"
-                    value={formData.bank_account_number}
-                    onChange={(e) => {
-                      // Remove non-digits and format
-                      const value = e.target.value.replace(/\D/g, '')
-                      // Format as NZ bank account (XX-XXXX-XXXXXXX-XXX)
-                      let formatted = value
-                      if (value.length > 2) {
-                        formatted = value.slice(0, 2) + '-' + value.slice(2)
-                      }
-                      if (value.length > 6) {
-                        formatted = value.slice(0, 2) + '-' + value.slice(2, 6) + '-' + value.slice(6)
-                      }
-                      if (value.length > 13) {
-                        formatted = value.slice(0, 2) + '-' + value.slice(2, 6) + '-' + value.slice(6, 13) + '-' + value.slice(13, 16)
-                      }
-                      setFormData({ ...formData, bank_account_number: formatted })
-                    }}
-                    placeholder="XX-XXXX-XXXXXXX-XXX"
-                    maxLength={19}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent font-mono"
-                  />
+                  
+                  {/* Display mode - show obfuscated with reveal button */}
+                  {settings?.bank_account_number && !isEditingBankAccount ? (
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1 px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 font-mono">
+                        {showBankAccount 
+                          ? formData.bank_account_number 
+                          : `••-••••-•••••••-${formData.bank_account_number.slice(-3)}`
+                        }
+                      </div>
+                      <button
+                        type="button"
+                        onMouseDown={() => setShowBankAccount(true)}
+                        onMouseUp={() => setShowBankAccount(false)}
+                        onMouseLeave={() => setShowBankAccount(false)}
+                        onTouchStart={() => setShowBankAccount(true)}
+                        onTouchEnd={() => setShowBankAccount(false)}
+                        className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                        title="Hold to reveal account number"
+                      >
+                        {showBankAccount ? <Eye className="h-5 w-5" /> : <EyeOff className="h-5 w-5" />}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setIsEditingBankAccount(true)}
+                        className="px-3 py-2 text-sm text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 rounded-lg transition-colors"
+                      >
+                        Change
+                      </button>
+                    </div>
+                  ) : (
+                    /* Edit mode - show full input */
+                    <div className="space-y-2">
+                      <input
+                        type="text"
+                        value={formData.bank_account_number}
+                        onChange={(e) => {
+                          // Remove non-digits and format
+                          const value = e.target.value.replace(/\D/g, '')
+                          // Format as NZ bank account (XX-XXXX-XXXXXXX-XXX)
+                          let formatted = value
+                          if (value.length > 2) {
+                            formatted = value.slice(0, 2) + '-' + value.slice(2)
+                          }
+                          if (value.length > 6) {
+                            formatted = value.slice(0, 2) + '-' + value.slice(2, 6) + '-' + value.slice(6)
+                          }
+                          if (value.length > 13) {
+                            formatted = value.slice(0, 2) + '-' + value.slice(2, 6) + '-' + value.slice(6, 13) + '-' + value.slice(13, 16)
+                          }
+                          setFormData({ ...formData, bank_account_number: formatted })
+                        }}
+                        placeholder="XX-XXXX-XXXXXXX-XXX"
+                        maxLength={19}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent font-mono"
+                      />
+                      {settings?.bank_account_number && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsEditingBankAccount(false)
+                            setFormData({ ...formData, bank_account_number: settings.bank_account_number || '' })
+                          }}
+                          className="text-sm text-gray-500 hover:text-gray-700"
+                        >
+                          Cancel
+                        </button>
+                      )}
+                    </div>
+                  )}
+                  
                   <p className="mt-1 text-sm text-gray-500">
                     New Zealand bank account format: Bank-Branch-Account-Suffix
                   </p>
+                  {settings?.bank_account_number && !isEditingBankAccount && (
+                    <p className="mt-1 text-xs text-amber-600 flex items-center gap-1">
+                      <Shield className="h-3 w-3" />
+                      Changing bank details will trigger a security notification email
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
