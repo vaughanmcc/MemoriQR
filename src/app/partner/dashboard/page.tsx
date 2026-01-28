@@ -232,6 +232,7 @@ export default function PartnerDashboardPage() {
             subtitle={`${stats.usedCodes} used of ${stats.totalCodes} total`}
             icon={<QrCode className="h-6 w-6 text-primary-600" />}
             color="primary"
+            href="/partner/codes"
           />
           <StatCard
             title="Activations (30 days)"
@@ -239,6 +240,7 @@ export default function PartnerDashboardPage() {
             subtitle="Recent code activations"
             icon={<TrendingUp className="h-6 w-6 text-green-600" />}
             color="green"
+            href="/partner/codes?status=used"
           />
           <StatCard
             title="Pending Commission"
@@ -437,13 +439,15 @@ function StatCard({
   value, 
   subtitle, 
   icon, 
-  color 
+  color,
+  href
 }: { 
   title: string
   value: string | number
   subtitle: string
   icon: React.ReactNode
   color: 'primary' | 'green' | 'yellow' | 'blue'
+  href?: string
 }) {
   const bgColors = {
     primary: 'bg-primary-50',
@@ -452,8 +456,8 @@ function StatCard({
     blue: 'bg-blue-50'
   }
 
-  return (
-    <div className="bg-white rounded-xl shadow-sm p-6">
+  const content = (
+    <>
       <div className="flex items-center justify-between mb-4">
         <span className="text-sm font-medium text-gray-500">{title}</span>
         <div className={`${bgColors[color]} rounded-lg p-2`}>
@@ -462,6 +466,23 @@ function StatCard({
       </div>
       <p className="text-3xl font-bold text-gray-900">{value}</p>
       <p className="text-sm text-gray-500 mt-1">{subtitle}</p>
+    </>
+  )
+
+  if (href) {
+    return (
+      <Link href={href} className="bg-white rounded-xl shadow-sm p-6 block hover:shadow-md hover:bg-gray-50 transition-all cursor-pointer group">
+        {content}
+        <div className="flex items-center justify-end mt-2 text-sm text-primary-600 opacity-0 group-hover:opacity-100 transition-opacity">
+          View details <ChevronRight className="h-4 w-4 ml-1" />
+        </div>
+      </Link>
+    )
+  }
+
+  return (
+    <div className="bg-white rounded-xl shadow-sm p-6">
+      {content}
     </div>
   )
 }
