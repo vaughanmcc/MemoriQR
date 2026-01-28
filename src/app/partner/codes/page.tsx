@@ -465,16 +465,35 @@ function RequestCodesModal({
               <div className="bg-gray-50 rounded-lg p-4 space-y-2">
                 {showPriceRange ? (
                   <>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">Retail price range:</span>
-                      <span className="font-medium">${minPrice} – ${maxPrice}</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">Your cost range (40% off):</span>
-                      <span className="font-medium text-green-600">${(minPrice * 0.6).toFixed(2)} – ${(maxPrice * 0.6).toFixed(2)}</span>
-                    </div>
+                    <p className="text-sm font-medium text-gray-700 mb-2">Pricing by hosting duration:</p>
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="text-left text-gray-500 border-b">
+                          <th className="pb-1">Duration</th>
+                          <th className="pb-1 text-right">Retail</th>
+                          <th className="pb-1 text-right">Your Cost</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr>
+                          <td className="py-1">5 Years</td>
+                          <td className="py-1 text-right">${retailPricing[productType][5]}</td>
+                          <td className="py-1 text-right text-green-600">${(retailPricing[productType][5] * 0.6).toFixed(2)}</td>
+                        </tr>
+                        <tr>
+                          <td className="py-1">10 Years</td>
+                          <td className="py-1 text-right">${retailPricing[productType][10]}</td>
+                          <td className="py-1 text-right text-green-600">${(retailPricing[productType][10] * 0.6).toFixed(2)}</td>
+                        </tr>
+                        <tr>
+                          <td className="py-1">25 Years</td>
+                          <td className="py-1 text-right">${retailPricing[productType][25]}</td>
+                          <td className="py-1 text-right text-green-600">${(retailPricing[productType][25] * 0.6).toFixed(2)}</td>
+                        </tr>
+                      </tbody>
+                    </table>
                     <p className="text-xs text-gray-500 mt-2">
-                      Final pricing depends on customer's hosting duration choice at activation. You'll be invoiced based on actual selections.
+                      Charge your customer the retail price for their chosen duration. You'll be invoiced at your cost when codes are used.
                     </p>
                   </>
                 ) : (
