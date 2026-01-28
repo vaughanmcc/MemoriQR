@@ -69,11 +69,17 @@ export async function GET(request: NextRequest) {
     const paidCommission = commissionsData?.filter(c => c.status === 'paid')
       .reduce((sum, c) => sum + Number(c.commission_amount), 0) || 0
 
-    // Get recent activations (last 30 days)
+    // Get recent activations (last 30 days) - now uses referral codes instead
     const thirtyDaysAgo = new Date()
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
 
-    const recentActivations = codesData?.filter(c => 
+    // Get referral codes for this partner
+    const { data: referralCodesData } = await supabase
+      .from('referral_codes')
+      .select('code, is_used, used_at')
+      .eq('partner_id', partner.id)
+
+    const recentActivations = referralCodesData?.filter(c => 
       c.is_used && c.used_at && new Date(c.used_at) > thirtyDaysAgo
     ).length || 0
 

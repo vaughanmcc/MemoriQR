@@ -235,12 +235,12 @@ export default function PartnerDashboardPage() {
             href="/partner/codes"
           />
           <StatCard
-            title="Activations (30 days)"
+            title="Referrals (30 days)"
             value={stats.recentActivations}
-            subtitle="Recent code activations"
+            subtitle="Recent referral redemptions"
             icon={<TrendingUp className="h-6 w-6 text-green-600" />}
             color="green"
-            href="/partner/codes?status=used"
+            href="/partner/referrals"
           />
           <StatCard
             title="Pending Commission"
