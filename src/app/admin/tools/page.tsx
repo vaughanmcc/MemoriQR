@@ -107,9 +107,58 @@ type SortDirection = 'asc' | 'desc';
 type OrderSortField = 'order_number' | 'customer' | 'order_type' | 'order_status' | 'created_at';
 type MemorialSortField = 'deceased_name' | 'deceased_type' | 'customer' | 'is_published' | 'hosting_expires_at' | 'views_count';
 
+interface CodeLookupResult {
+  found: boolean;
+  type?: 'activation' | 'referral';
+  message?: string;
+  code?: {
+    code: string;
+    productType?: string;
+    hostingDuration?: number;
+    discountPercent?: number;
+    commissionPercent?: number;
+    freeShipping?: boolean;
+    isUsed: boolean;
+    usedAt: string | null;
+    expiresAt?: string | null;
+    createdAt: string;
+    partner: {
+      id: string;
+      name: string;
+      type: string;
+      email: string;
+    } | null;
+    memorial?: {
+      id: string;
+      slug: string;
+      deceasedName: string;
+      deceasedType: string;
+      isPublished: boolean;
+      expiresAt: string;
+      customer: {
+        id: string;
+        name: string;
+        email: string;
+      } | null;
+    } | null;
+    order?: {
+      id: string;
+      orderNumber: string;
+      totalAmount: number;
+      status: string;
+      createdAt: string;
+      customer: {
+        id: string;
+        name: string;
+        email: string;
+      } | null;
+    } | null;
+  };
+}
+
 export default function AdminToolsPage() {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<'search' | 'order' | 'resend' | 'memorials'>('search');
+  const [activeTab, setActiveTab] = useState<'search' | 'order' | 'resend' | 'memorials' | 'code-lookup'>('search');
   
   // Search by customer
   const [searchQuery, setSearchQuery] = useState('');
@@ -138,6 +187,12 @@ export default function AdminToolsPage() {
   const [activationSearchError, setActivationSearchError] = useState('');
   const [selectedActivation, setSelectedActivation] = useState<ActivationResult | null>(null);
   const [resendingActivationCode, setResendingActivationCode] = useState<string | null>(null);
+
+  // Code lookup
+  const [codeLookupQuery, setCodeLookupQuery] = useState('');
+  const [codeLookupResult, setCodeLookupResult] = useState<CodeLookupResult | null>(null);
+  const [isLookingUpCode, setIsLookingUpCode] = useState(false);
+  const [codeLookupError, setCodeLookupError] = useState('');
 
   // Memorial management
   const [memorialSearchQuery, setMemorialSearchQuery] = useState('');
@@ -291,6 +346,37 @@ export default function AdminToolsPage() {
       setOrderError(err instanceof Error ? err.message : 'Order lookup failed');
     } finally {
       setIsLoadingOrder(false);
+    }
+  };
+
+  // Lookup activation or referral code
+  const handleCodeLookup = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!codeLookupQuery.trim()) {
+      setCodeLookupError('Please enter a code');
+      return;
+    }
+
+    setIsLookingUpCode(true);
+    setCodeLookupError('');
+    setCodeLookupResult(null);
+
+    try {
+      const res = await fetch(`/api/admin/codes/lookup?code=${encodeURIComponent(codeLookupQuery.trim())}`);
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Code lookup failed');
+      }
+
+      setCodeLookupResult(data);
+      if (!data.found) {
+        setCodeLookupError(data.message || 'Code not found');
+      }
+    } catch (err) {
+      setCodeLookupError(err instanceof Error ? err.message : 'Code lookup failed');
+    } finally {
+      setIsLookingUpCode(false);
     }
   };
 
@@ -575,6 +661,16 @@ export default function AdminToolsPage() {
             }`}
           >
             Resend Emails
+          </button>
+          <button
+            onClick={() => setActiveTab('code-lookup')}
+            className={`px-4 py-2 rounded-lg font-medium ${
+              activeTab === 'code-lookup'
+                ? 'bg-stone-800 text-white'
+                : 'bg-white text-stone-600 hover:bg-stone-50'
+            }`}
+          >
+            Code Lookup
           </button>
         </div>
 
@@ -1569,6 +1665,241 @@ export default function AdminToolsPage() {
                   <p className="mt-1">Use order number to resend order confirmation or memorial edit instructions.</p>
                 </div>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* Code Lookup Tab */}
+        {activeTab === 'code-lookup' && (
+          <div className="bg-white rounded-xl shadow p-6">
+            <h3 className="text-lg font-bold text-stone-800 mb-2">Code Lookup</h3>
+            <p className="text-sm text-stone-600 mb-4">
+              Find which partner an activation code or referral code is assigned to, and who has used it.
+            </p>
+            
+            <form onSubmit={handleCodeLookup} className="mb-6">
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={codeLookupQuery}
+                  onChange={(e) => setCodeLookupQuery(e.target.value.toUpperCase())}
+                  placeholder="Enter code (e.g., MQR-5N-XLRHG9 or REF-ABC12)"
+                  className="flex-1 px-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-stone-500 focus:border-transparent font-mono"
+                />
+                <button
+                  type="submit"
+                  disabled={isLookingUpCode}
+                  className="px-6 py-2 bg-stone-800 text-white rounded-lg hover:bg-stone-700 disabled:opacity-50"
+                >
+                  {isLookingUpCode ? 'Looking up...' : 'Lookup'}
+                </button>
+              </div>
+            </form>
+
+            {codeLookupError && (
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+                {codeLookupError}
+              </div>
+            )}
+
+            {codeLookupResult?.found && codeLookupResult.code && (
+              <div className="border border-stone-200 rounded-lg overflow-hidden">
+                {/* Code Header */}
+                <div className={`p-4 ${codeLookupResult.type === 'activation' ? 'bg-blue-50' : 'bg-purple-50'}`}>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <span className={`inline-block px-2 py-1 rounded text-xs font-medium ${
+                        codeLookupResult.type === 'activation' 
+                          ? 'bg-blue-100 text-blue-800' 
+                          : 'bg-purple-100 text-purple-800'
+                      }`}>
+                        {codeLookupResult.type === 'activation' ? 'Activation Code' : 'Referral Code'}
+                      </span>
+                      <h4 className="text-xl font-mono font-bold text-stone-800 mt-2">{codeLookupResult.code.code}</h4>
+                    </div>
+                    <div className="text-right">
+                      <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${
+                        codeLookupResult.code.isUsed 
+                          ? 'bg-green-100 text-green-800' 
+                          : 'bg-yellow-100 text-yellow-800'
+                      }`}>
+                        {codeLookupResult.code.isUsed ? '✓ Used' : '○ Available'}
+                      </span>
+                      {codeLookupResult.code.usedAt && (
+                        <p className="text-xs text-stone-500 mt-1">
+                          Used: {new Date(codeLookupResult.code.usedAt).toLocaleDateString('en-NZ', { 
+                            day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' 
+                          })}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Code Details */}
+                <div className="p-4 border-t border-stone-200">
+                  <div className="grid md:grid-cols-2 gap-6">
+                    {/* Left Column - Code Info */}
+                    <div>
+                      <h5 className="text-sm font-semibold text-stone-500 uppercase mb-3">Code Details</h5>
+                      <dl className="space-y-2 text-sm">
+                        {codeLookupResult.type === 'activation' && (
+                          <>
+                            <div className="flex justify-between">
+                              <dt className="text-stone-500">Product Type:</dt>
+                              <dd className="font-medium text-stone-800">
+                                {codeLookupResult.code.productType === 'both' ? 'QR + NFC' : 
+                                 codeLookupResult.code.productType === 'qr_only' ? 'QR Only' : 'NFC Only'}
+                              </dd>
+                            </div>
+                            <div className="flex justify-between">
+                              <dt className="text-stone-500">Hosting Duration:</dt>
+                              <dd className="font-medium text-stone-800">{codeLookupResult.code.hostingDuration} years</dd>
+                            </div>
+                          </>
+                        )}
+                        {codeLookupResult.type === 'referral' && (
+                          <>
+                            <div className="flex justify-between">
+                              <dt className="text-stone-500">Discount:</dt>
+                              <dd className="font-medium text-stone-800">{codeLookupResult.code.discountPercent}%</dd>
+                            </div>
+                            <div className="flex justify-between">
+                              <dt className="text-stone-500">Commission:</dt>
+                              <dd className="font-medium text-stone-800">{codeLookupResult.code.commissionPercent}%</dd>
+                            </div>
+                            <div className="flex justify-between">
+                              <dt className="text-stone-500">Free Shipping:</dt>
+                              <dd className="font-medium text-stone-800">{codeLookupResult.code.freeShipping ? 'Yes' : 'No'}</dd>
+                            </div>
+                            {codeLookupResult.code.expiresAt && (
+                              <div className="flex justify-between">
+                                <dt className="text-stone-500">Expires:</dt>
+                                <dd className="font-medium text-stone-800">
+                                  {new Date(codeLookupResult.code.expiresAt).toLocaleDateString('en-NZ')}
+                                </dd>
+                              </div>
+                            )}
+                          </>
+                        )}
+                        <div className="flex justify-between">
+                          <dt className="text-stone-500">Created:</dt>
+                          <dd className="font-medium text-stone-800">
+                            {new Date(codeLookupResult.code.createdAt).toLocaleDateString('en-NZ')}
+                          </dd>
+                        </div>
+                      </dl>
+                    </div>
+
+                    {/* Right Column - Partner Info */}
+                    <div>
+                      <h5 className="text-sm font-semibold text-stone-500 uppercase mb-3">Assigned Partner</h5>
+                      {codeLookupResult.code.partner ? (
+                        <div className="bg-stone-50 rounded-lg p-3">
+                          <p className="font-medium text-stone-800">{codeLookupResult.code.partner.name}</p>
+                          <p className="text-sm text-stone-500">{codeLookupResult.code.partner.type}</p>
+                          <p className="text-sm text-stone-600 mt-1">{codeLookupResult.code.partner.email}</p>
+                          <Link 
+                            href={`/admin/partners?id=${codeLookupResult.code.partner.id}`}
+                            className="text-xs text-blue-600 hover:underline mt-2 inline-block"
+                          >
+                            View Partner →
+                          </Link>
+                        </div>
+                      ) : (
+                        <p className="text-stone-500 italic">Not assigned to any partner</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Usage Info - Memorial or Order */}
+                {codeLookupResult.code.isUsed && (
+                  <div className="p-4 border-t border-stone-200 bg-green-50">
+                    <h5 className="text-sm font-semibold text-stone-500 uppercase mb-3">
+                      {codeLookupResult.type === 'activation' ? 'Memorial Created' : 'Order Placed'}
+                    </h5>
+                    
+                    {/* Activation Code - Memorial Info */}
+                    {codeLookupResult.type === 'activation' && codeLookupResult.code.memorial && (
+                      <div className="bg-white rounded-lg p-3 border border-green-200">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <p className="font-medium text-stone-800">{codeLookupResult.code.memorial.deceasedName}</p>
+                            <p className="text-sm text-stone-500">
+                              {codeLookupResult.code.memorial.deceasedType === 'pet' ? '🐾 Pet' : '👤 Human'}
+                              {codeLookupResult.code.memorial.isPublished ? ' • Published' : ' • Draft'}
+                            </p>
+                            <p className="text-xs text-stone-400 mt-1">Slug: {codeLookupResult.code.memorial.slug}</p>
+                          </div>
+                          <Link 
+                            href={`/memorial/${codeLookupResult.code.memorial.slug}`}
+                            target="_blank"
+                            className="text-sm text-blue-600 hover:underline"
+                          >
+                            View Memorial →
+                          </Link>
+                        </div>
+                        {codeLookupResult.code.memorial.customer && (
+                          <div className="mt-3 pt-3 border-t border-stone-100">
+                            <p className="text-sm text-stone-600">
+                              <strong>Customer:</strong> {codeLookupResult.code.memorial.customer.name}
+                            </p>
+                            <p className="text-sm text-stone-600">{codeLookupResult.code.memorial.customer.email}</p>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Referral Code - Order Info */}
+                    {codeLookupResult.type === 'referral' && codeLookupResult.code.order && (
+                      <div className="bg-white rounded-lg p-3 border border-green-200">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <p className="font-medium text-stone-800">Order #{codeLookupResult.code.order.orderNumber}</p>
+                            <p className="text-sm text-stone-500">
+                              ${(codeLookupResult.code.order.totalAmount / 100).toFixed(2)} NZD
+                              <span className={`ml-2 px-2 py-0.5 rounded text-xs ${
+                                codeLookupResult.code.order.status === 'completed' ? 'bg-green-100 text-green-800' :
+                                codeLookupResult.code.order.status === 'paid' ? 'bg-blue-100 text-blue-800' :
+                                'bg-yellow-100 text-yellow-800'
+                              }`}>
+                                {codeLookupResult.code.order.status}
+                              </span>
+                            </p>
+                            <p className="text-xs text-stone-400 mt-1">
+                              {new Date(codeLookupResult.code.order.createdAt).toLocaleDateString('en-NZ')}
+                            </p>
+                          </div>
+                          <Link 
+                            href={`/admin/orders?search=${codeLookupResult.code.order.orderNumber}`}
+                            className="text-sm text-blue-600 hover:underline"
+                          >
+                            View Order →
+                          </Link>
+                        </div>
+                        {codeLookupResult.code.order.customer && (
+                          <div className="mt-3 pt-3 border-t border-stone-100">
+                            <p className="text-sm text-stone-600">
+                              <strong>Customer:</strong> {codeLookupResult.code.order.customer.name}
+                            </p>
+                            <p className="text-sm text-stone-600">{codeLookupResult.code.order.customer.email}</p>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Help text */}
+            <div className="mt-6 p-4 bg-stone-50 rounded-lg">
+              <h4 className="font-medium text-stone-800 mb-2">Code Formats</h4>
+              <ul className="text-sm text-stone-600 space-y-1">
+                <li><strong>Activation Codes:</strong> MQR-XX-XXXXXX (e.g., MQR-5N-XLRHG9)</li>
+                <li><strong>Referral Codes:</strong> REF-XXXXX (e.g., REF-ABC12)</li>
+              </ul>
             </div>
           </div>
         )}
