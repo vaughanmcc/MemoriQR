@@ -17,11 +17,6 @@ export async function POST(request: NextRequest) {
   const headersList = await headers()
   const signature = headersList.get('stripe-signature')
 
-  // Debug logging
-  console.log('Webhook received, signature present:', !!signature)
-  console.log('STRIPE_WEBHOOK_SECRET present:', !!process.env.STRIPE_WEBHOOK_SECRET)
-  console.log('STRIPE_WEBHOOK_SECRET first 10 chars:', process.env.STRIPE_WEBHOOK_SECRET?.substring(0, 10))
-
   if (!signature) {
     return NextResponse.json(
       { error: 'Missing stripe-signature header' },
@@ -39,7 +34,6 @@ export async function POST(request: NextRequest) {
     )
   } catch (error) {
     console.error('Webhook signature verification failed:', error)
-    console.error('Secret used starts with:', process.env.STRIPE_WEBHOOK_SECRET?.substring(0, 15))
     return NextResponse.json(
       { error: 'Invalid signature' },
       { status: 400 }
