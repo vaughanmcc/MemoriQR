@@ -334,7 +334,7 @@ function RequestCodesModal({
 }) {
   const [quantity, setQuantity] = useState(50)
   const [productType, setProductType] = useState('both')
-  const [hostingDuration, setHostingDuration] = useState<number | null>(null) // null = customer chooses at activation
+  const [hostingDuration, setHostingDuration] = useState<number>(10)
   const [notes, setNotes] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -377,11 +377,7 @@ function RequestCodesModal({
     'both': { 5: 199, 10: 249, 25: 349 }
   }
 
-  // If no hosting duration selected, show range
-  const showPriceRange = hostingDuration === null
-  const minPrice = retailPricing[productType][5]
-  const maxPrice = retailPricing[productType][25]
-  const retailPrice = hostingDuration ? retailPricing[productType][hostingDuration] : 0
+  const retailPrice = retailPricing[productType][hostingDuration]
   const partnerPrice = retailPrice * 0.6
   const totalCost = partnerPrice * quantity
   const potentialRevenue = retailPrice * quantity
@@ -436,16 +432,14 @@ function RequestCodesModal({
                   Hosting Duration
                 </label>
                 <select
-                  value={hostingDuration ?? ''}
-                  onChange={(e) => setHostingDuration(e.target.value ? parseInt(e.target.value) : null)}
+                  value={hostingDuration}
+                  onChange={(e) => setHostingDuration(parseInt(e.target.value))}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
                 >
-                  <option value="">Customer chooses at activation</option>
                   <option value={5}>5 Years</option>
                   <option value={10}>10 Years</option>
                   <option value={25}>25 Years</option>
                 </select>
-                <p className="text-xs text-gray-500 mt-1">Leave blank if customers should choose duration when activating</p>
               </div>
 
               <div>
@@ -463,61 +457,24 @@ function RequestCodesModal({
 
               {/* Pricing Summary */}
               <div className="bg-gray-50 rounded-lg p-4 space-y-2">
-                {showPriceRange ? (
-                  <>
-                    <p className="text-sm font-medium text-gray-700 mb-2">Pricing by hosting duration:</p>
-                    <table className="w-full text-sm">
-                      <thead>
-                        <tr className="text-left text-gray-500 border-b">
-                          <th className="pb-1">Duration</th>
-                          <th className="pb-1 text-right">Retail</th>
-                          <th className="pb-1 text-right">Your Cost</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        <tr>
-                          <td className="py-1">5 Years</td>
-                          <td className="py-1 text-right">${retailPricing[productType][5]}</td>
-                          <td className="py-1 text-right text-green-600">${(retailPricing[productType][5] * 0.6).toFixed(2)}</td>
-                        </tr>
-                        <tr>
-                          <td className="py-1">10 Years</td>
-                          <td className="py-1 text-right">${retailPricing[productType][10]}</td>
-                          <td className="py-1 text-right text-green-600">${(retailPricing[productType][10] * 0.6).toFixed(2)}</td>
-                        </tr>
-                        <tr>
-                          <td className="py-1">25 Years</td>
-                          <td className="py-1 text-right">${retailPricing[productType][25]}</td>
-                          <td className="py-1 text-right text-green-600">${(retailPricing[productType][25] * 0.6).toFixed(2)}</td>
-                        </tr>
-                      </tbody>
-                    </table>
-                    <p className="text-xs text-gray-500 mt-2">
-                      Charge your customer the retail price for their chosen duration. You'll be invoiced at your cost when codes are used.
-                    </p>
-                  </>
-                ) : (
-                  <>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">Retail price per code:</span>
-                      <span className="font-medium">${retailPrice.toFixed(2)}</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">Your cost per code (40% off):</span>
-                      <span className="font-medium text-green-600">${partnerPrice.toFixed(2)}</span>
-                    </div>
-                    <div className="border-t pt-2 mt-2">
-                      <div className="flex justify-between text-sm">
-                        <span className="text-gray-600">Total cost ({quantity} codes):</span>
-                        <span className="font-bold">${totalCost.toFixed(2)}</span>
-                      </div>
-                      <div className="flex justify-between text-sm text-green-600">
-                        <span>Potential profit:</span>
-                        <span className="font-bold">${potentialProfit.toFixed(2)}</span>
-                      </div>
-                    </div>
-                  </>
-                )}
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">Retail price per code:</span>
+                  <span className="font-medium">${retailPrice.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">Your cost per code (40% off):</span>
+                  <span className="font-medium text-green-600">${partnerPrice.toFixed(2)}</span>
+                </div>
+                <div className="border-t pt-2 mt-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-600">Total cost ({quantity} codes):</span>
+                    <span className="font-bold">${totalCost.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between text-sm text-green-600">
+                    <span>Potential profit:</span>
+                    <span className="font-bold">${potentialProfit.toFixed(2)}</span>
+                  </div>
+                </div>
               </div>
             </div>
 
