@@ -3,7 +3,7 @@ import { headers } from 'next/headers'
 import Stripe from 'stripe'
 import { stripe } from '@/lib/stripe'
 import { createAdminClient } from '@/lib/supabase/server'
-import { generateOptOutToken } from '@/app/api/partner/notifications/unsubscribe/route'
+import { generateOptOutToken } from '@/lib/utils'
 
 const PIPEDREAM_WEBHOOK_URL = process.env.PIPEDREAM_WEBHOOK_URL
 // Separate webhook for referral redemption emails (to avoid Pipedream code size limits)

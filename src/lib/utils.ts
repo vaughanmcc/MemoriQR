@@ -79,3 +79,17 @@ export function getYouTubeId(url: string): string | null {
 export function getYouTubeThumbnail(videoId: string): string {
   return `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`
 }
+
+// Generate a simple opt-out token for partner notification emails
+export function generateOptOutToken(partnerId: string): string {
+  const secret = process.env.ADMIN_PASSWORD || 'memori-secret'
+  // Simple hash - in production you'd use a proper HMAC
+  const str = `${partnerId}-${secret}-optout`
+  let hash = 0
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i)
+    hash = ((hash << 5) - hash) + char
+    hash = hash & hash // Convert to 32bit integer
+  }
+  return Math.abs(hash).toString(36)
+}

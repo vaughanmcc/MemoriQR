@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/server'
+import { generateOptOutToken } from '@/lib/utils'
 
 // GET - Opt out of referral redemption emails via signed link
 export async function GET(request: NextRequest) {
@@ -59,20 +60,6 @@ export async function GET(request: NextRequest) {
     ),
     { headers: { 'Content-Type': 'text/html' } }
   )
-}
-
-// Generate a simple opt-out token
-export function generateOptOutToken(partnerId: string): string {
-  const secret = process.env.ADMIN_PASSWORD || 'memori-secret'
-  // Simple hash - in production you'd use a proper HMAC
-  const str = `${partnerId}-${secret}-optout`
-  let hash = 0
-  for (let i = 0; i < str.length; i++) {
-    const char = str.charCodeAt(i)
-    hash = ((hash << 5) - hash) + char
-    hash = hash & hash // Convert to 32bit integer
-  }
-  return Math.abs(hash).toString(36)
 }
 
 function renderPage(title: string, message: string, success: boolean): string {
