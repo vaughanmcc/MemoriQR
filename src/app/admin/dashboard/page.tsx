@@ -8,6 +8,7 @@ interface DashboardStats {
   totalPartners: number;
   activePartners: number;
   pendingApplications: number;
+  pendingBatchRequests: number;
   totalMemorials: number;
   totalOrders: number;
   totalRevenue: number;
@@ -81,8 +82,13 @@ export default function AdminDashboardPage() {
               <Link href="/admin/referrals" className="text-white/70 hover:text-white px-3 py-1 rounded hover:bg-white/10">
                 Referral Codes
               </Link>
-              <Link href="/admin/batches" className="text-white/70 hover:text-white px-3 py-1 rounded hover:bg-white/10">
+              <Link href="/admin/batches" className="text-white/70 hover:text-white px-3 py-1 rounded hover:bg-white/10 relative">
                 Batch Requests
+                {(stats?.pendingBatchRequests ?? 0) > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-orange-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+                    {stats.pendingBatchRequests}
+                  </span>
+                )}
               </Link>
               <Link href="/admin/partners" className="text-white/70 hover:text-white px-3 py-1 rounded hover:bg-white/10">
                 Partners
@@ -135,6 +141,19 @@ export default function AdminDashboardPage() {
             <p className="text-3xl font-bold text-stone-800">{stats?.pendingApplications ?? 0}</p>
           </Link>
 
+          {/* Pending Batch Requests */}
+          <Link href="/admin/batches" className="bg-white rounded-xl shadow p-6 hover:shadow-lg transition-shadow">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-stone-500 text-sm">Pending Batch Requests</span>
+              {(stats?.pendingBatchRequests ?? 0) > 0 && (
+                <span className="bg-yellow-100 text-yellow-700 text-xs font-medium px-2 py-1 rounded-full">
+                  Needs Approval
+                </span>
+              )}
+            </div>
+            <p className="text-3xl font-bold text-stone-800">{stats?.pendingBatchRequests ?? 0}</p>
+          </Link>
+
           {/* Active Partners */}
           <div className="bg-white rounded-xl shadow p-6">
             <span className="text-stone-500 text-sm">Active Partners</span>
@@ -168,6 +187,17 @@ export default function AdminDashboardPage() {
               className="bg-black text-white px-5 py-2.5 rounded-lg hover:bg-black/90 transition-colors shadow-md font-semibold"
             >
               Review Applications
+            </Link>
+            <Link
+              href="/admin/batches"
+              className="bg-yellow-600 text-white px-5 py-2.5 rounded-lg hover:bg-yellow-700 transition-colors shadow-md font-semibold relative"
+            >
+              Approve Batch Requests
+              {(stats?.pendingBatchRequests ?? 0) > 0 && (
+                <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+                  {stats?.pendingBatchRequests}
+                </span>
+              )}
             </Link>
             <Link
               href="/admin/commissions?status=pending"

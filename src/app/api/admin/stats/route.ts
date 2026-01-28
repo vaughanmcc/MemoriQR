@@ -53,10 +53,17 @@ export async function GET() {
       .select('*', { count: 'exact', head: true })
       .gte('created_at', startOfMonth.toISOString());
 
+    // Get pending batch requests
+    const { count: pendingBatchRequests } = await supabase
+      .from('code_batches')
+      .select('*', { count: 'exact', head: true })
+      .eq('status', 'pending');
+
     return NextResponse.json({
       totalPartners,
       activePartners,
       pendingApplications,
+      pendingBatchRequests: pendingBatchRequests ?? 0,
       totalMemorials: totalMemorials ?? 0,
       totalOrders,
       totalRevenue,
