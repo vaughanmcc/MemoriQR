@@ -3,8 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Header } from '@/components/layout/Header'
-import { Footer } from '@/components/layout/Footer'
+import { PartnerHeader } from '@/components/layout/PartnerHeader'
 
 interface Partner {
   business_name: string
@@ -215,26 +214,25 @@ export default function PartnerMaterialsPage() {
 
   if (loading) {
     return (
-      <>
-        <Header />
-        <main className="min-h-screen bg-gray-50 pt-24 pb-16">
+      <div className="min-h-screen bg-gray-50">
+        <PartnerHeader />
+        <main className="py-8">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex justify-center items-center h-64">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600"></div>
             </div>
           </div>
         </main>
-        <Footer />
-      </>
+      </div>
     )
   }
 
   return (
-    <>
-      <Header />
-      <main className="min-h-screen bg-gray-50 pt-24 pb-16">
+    <div className="min-h-screen bg-gray-50">
+      <PartnerHeader />
+      <main className="py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Header */}
+          {/* Page Header */}
           <div className="mb-8">
             <nav className="text-sm mb-4">
               <Link href="/partner/dashboard" className="text-emerald-600 hover:text-emerald-700">
@@ -363,7 +361,6 @@ export default function PartnerMaterialsPage() {
           </div>
         </div>
       </main>
-      <Footer />
-    </>
+    </div>
   )
 }
