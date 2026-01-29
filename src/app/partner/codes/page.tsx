@@ -106,13 +106,15 @@ export default function PartnerCodesPage() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'pending':
-        return <span className="px-2 py-1 bg-yellow-100 text-yellow-700 rounded-full text-xs">Pending Approval</span>
+        return <span className="px-2 py-1 bg-yellow-100 text-yellow-700 rounded-full text-xs">Awaiting Payment</span>
       case 'approved':
-        return <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs">Approved</span>
+        return <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs">Paid - Processing</span>
       case 'generated':
-        return <span className="px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs">Generated</span>
+        return <span className="px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs">Ready</span>
       case 'shipped':
         return <span className="px-2 py-1 bg-purple-100 text-purple-700 rounded-full text-xs">Shipped</span>
+      case 'cancelled':
+        return <span className="px-2 py-1 bg-gray-100 text-gray-500 rounded-full text-xs">Cancelled</span>
       default:
         return <span className="px-2 py-1 bg-gray-100 text-gray-700 rounded-full text-xs">{status}</span>
     }
@@ -164,15 +166,15 @@ export default function PartnerCodesPage() {
               className="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
             >
               <Plus className="h-4 w-4" />
-              Request Codes
+              Purchase Codes
             </button>
           </div>
         </div>
 
-        {/* Batch Requests */}
+        {/* Recent Purchases */}
         {batches.length > 0 && (
           <div className="bg-white rounded-xl shadow-sm p-6 mb-8">
-            <h2 className="text-lg font-medium text-gray-900 mb-4">Recent Batch Requests</h2>
+            <h2 className="text-lg font-medium text-gray-900 mb-4">Recent Purchases</h2>
             <div className="divide-y">
               {batches.slice(0, 5).map((batch) => (
                 <div key={batch.id} className="py-3 flex items-center justify-between">
@@ -349,7 +351,7 @@ function RequestCodesModal({
         body: JSON.stringify({
           quantity,
           productType,
-          hostingDuration, // null means customer chooses at activation
+          hostingDuration,
           notes
         })
       })
@@ -357,13 +359,17 @@ function RequestCodesModal({
       const data = await response.json()
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to request codes')
+        throw new Error(data.error || 'Failed to create checkout')
       }
 
-      onSuccess()
+      // Redirect to Stripe checkout
+      if (data.checkoutUrl) {
+        window.location.href = data.checkoutUrl
+      } else {
+        onSuccess()
+      }
     } catch (err: any) {
       setError(err.message)
-    } finally {
       setLoading(false)
     }
   }
@@ -385,7 +391,7 @@ function RequestCodesModal({
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
       <div className="bg-white rounded-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
         <div className="p-6">
-          <h2 className="text-xl font-bold text-gray-900 mb-4">Request Activation Codes</h2>
+          <h2 className="text-xl font-bold text-gray-900 mb-4">Purchase Activation Codes</h2>
 
           {error && (
             <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
@@ -489,7 +495,7 @@ function RequestCodesModal({
                 disabled={loading}
                 className="flex-1 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50"
               >
-                {loading ? 'Submitting...' : 'Submit Request'}
+                {loading ? 'Redirecting...' : `Pay $${totalCost.toFixed(2)} NZD`}
               </button>
             </div>
           </form>

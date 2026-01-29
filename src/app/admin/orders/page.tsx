@@ -201,7 +201,7 @@ export default function AdminOrdersPage() {
                 Referral Codes
               </Link>
               <Link href="/admin/batches" className="text-white/70 hover:text-white px-3 py-1 rounded hover:bg-white/10">
-                Batch Requests
+                Partner Batches
               </Link>
               <Link href="/admin/partners" className="text-white/70 hover:text-white px-3 py-1 rounded hover:bg-white/10">
                 Partners

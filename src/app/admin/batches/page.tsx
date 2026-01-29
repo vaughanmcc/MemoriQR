@@ -42,7 +42,15 @@ const STATUS_COLORS: Record<string, string> = {
   'approved': 'bg-blue-100 text-blue-800',
   'generated': 'bg-green-100 text-green-800',
   'shipped': 'bg-purple-100 text-purple-800',
-  'cancelled': 'bg-red-100 text-red-800',
+  'cancelled': 'bg-gray-100 text-gray-500',
+}
+
+const STATUS_LABELS: Record<string, string> = {
+  'pending': 'Awaiting Payment',
+  'approved': 'Paid',
+  'generated': 'Codes Ready',
+  'shipped': 'Shipped',
+  'cancelled': 'Cancelled',
 }
 
 export default function AdminBatchesPage() {
@@ -121,8 +129,8 @@ export default function AdminBatchesPage() {
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Partner Batch Requests</h1>
-            <p className="text-gray-600 mt-1">Approve and generate wholesale activation codes</p>
+            <h1 className="text-2xl font-bold text-gray-900">Partner Code Batches</h1>
+            <p className="text-gray-600 mt-1">View partner wholesale code purchases (auto-generated after Stripe payment)</p>
           </div>
           <Link
             href="/admin/dashboard"
@@ -140,15 +148,15 @@ export default function AdminBatchesPage() {
           </div>
           <div className="bg-yellow-50 rounded-lg p-4 shadow-sm border border-yellow-200">
             <div className="text-2xl font-bold text-yellow-700">{summary.pending}</div>
-            <div className="text-sm text-yellow-600">Pending Approval</div>
+            <div className="text-sm text-yellow-600">Awaiting Payment</div>
           </div>
           <div className="bg-blue-50 rounded-lg p-4 shadow-sm border border-blue-200">
             <div className="text-2xl font-bold text-blue-700">{summary.approved}</div>
-            <div className="text-sm text-blue-600">Approved</div>
+            <div className="text-sm text-blue-600">Paid</div>
           </div>
           <div className="bg-green-50 rounded-lg p-4 shadow-sm border border-green-200">
             <div className="text-2xl font-bold text-green-700">{summary.generated}</div>
-            <div className="text-sm text-green-600">Generated</div>
+            <div className="text-sm text-green-600">Codes Generated</div>
           </div>
         </div>
 
@@ -183,7 +191,7 @@ export default function AdminBatchesPage() {
           {isLoading ? (
             <div className="p-8 text-center text-gray-500">Loading...</div>
           ) : batches.length === 0 ? (
-            <div className="p-8 text-center text-gray-500">No batch requests found</div>
+            <div className="p-8 text-center text-gray-500">No partner batches found</div>
           ) : (
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
@@ -234,7 +242,7 @@ export default function AdminBatchesPage() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${STATUS_COLORS[batch.status]}`}>
-                        {batch.status.charAt(0).toUpperCase() + batch.status.slice(1)}
+                        {STATUS_LABELS[batch.status] || batch.status}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -242,31 +250,10 @@ export default function AdminBatchesPage() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
                       {batch.status === 'pending' && (
-                        <div className="flex justify-end gap-2">
-                          <button
-                            onClick={() => handleAction(batch.id, 'approve')}
-                            disabled={processingId === batch.id}
-                            className="px-3 py-1.5 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 text-xs font-medium"
-                          >
-                            {processingId === batch.id ? '...' : 'Approve'}
-                          </button>
-                          <button
-                            onClick={() => handleAction(batch.id, 'reject')}
-                            disabled={processingId === batch.id}
-                            className="px-3 py-1.5 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50 text-xs font-medium"
-                          >
-                            Reject
-                          </button>
-                        </div>
+                        <span className="text-yellow-600 text-xs">⏳ Waiting for payment</span>
                       )}
                       {batch.status === 'approved' && (
-                        <button
-                          onClick={() => handleAction(batch.id, 'generate')}
-                          disabled={processingId === batch.id}
-                          className="px-3 py-1.5 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 text-xs font-medium"
-                        >
-                          {processingId === batch.id ? 'Generating...' : 'Generate Codes'}
-                        </button>
+                        <span className="text-blue-600 text-xs">🔄 Processing...</span>
                       )}
                       {batch.status === 'generated' && (
                         <span className="text-green-600 text-xs">✓ Codes sent</span>

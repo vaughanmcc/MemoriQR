@@ -54,11 +54,13 @@ export async function GET() {
       .select('*', { count: 'exact', head: true })
       .gte('created_at', startOfMonth.toISOString());
 
-    // Get pending batch requests
+    // Get pending batch requests (pending status = unpaid checkout sessions)
+    // Note: With Stripe checkout, 'pending' means checkout started but not completed
     const { count: pendingBatchRequests } = await supabase
       .from('code_batches')
       .select('*', { count: 'exact', head: true })
-      .eq('status', 'pending');
+      .eq('status', 'pending')
+      .is('paid_at', null);
 
     // Get pending commissions (awaiting payout)
     const { count: pendingCommissions } = await supabase
