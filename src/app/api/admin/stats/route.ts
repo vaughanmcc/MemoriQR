@@ -65,12 +65,19 @@ export async function GET() {
       .select('*', { count: 'exact', head: true })
       .eq('status', 'pending');
 
+    // Get pending fulfillment orders (paid but not shipped)
+    const { count: pendingFulfillment } = await supabase
+      .from('orders')
+      .select('*', { count: 'exact', head: true })
+      .eq('order_status', 'paid');
+
     return NextResponse.json({
       totalPartners,
       activePartners,
       pendingApplications,
       pendingBatchRequests: pendingBatchRequests ?? 0,
       pendingCommissions: pendingCommissions ?? 0,
+      pendingFulfillment: pendingFulfillment ?? 0,
       totalMemorials: totalMemorials ?? 0,
       totalOrders,
       totalRevenue,
