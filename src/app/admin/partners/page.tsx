@@ -137,6 +137,7 @@ function AdminPartnersContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const statusFilter = searchParams.get('status') || 'all';
+  const partnerId = searchParams.get('id');
 
   const fetchPartners = useCallback(async () => {
     try {
@@ -154,12 +155,20 @@ function AdminPartnersContent() {
       }
       const data = await res.json();
       setPartners(data.partners);
+      
+      // Auto-select partner if id is in URL
+      if (partnerId && data.partners) {
+        const partnerToSelect = data.partners.find((p: Partner) => p.id === partnerId);
+        if (partnerToSelect) {
+          setSelectedPartner(partnerToSelect);
+        }
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load partners');
     } finally {
       setLoading(false);
     }
-  }, [statusFilter, router]);
+  }, [statusFilter, router, partnerId]);
 
   useEffect(() => {
     fetchPartners();
