@@ -63,7 +63,7 @@ async function handlePartnerCodePurchase(session: Stripe.Checkout.Session, supab
     return
   }
 
-  // Generate activation codes
+  // Generate activation codes with database uniqueness check
   const codes: string[] = []
   const expiresAt = new Date()
   expiresAt.setFullYear(expiresAt.getFullYear() + 2) // Codes expire in 2 years
@@ -71,6 +71,7 @@ async function handlePartnerCodePurchase(session: Stripe.Checkout.Session, supab
   for (let i = 0; i < quantity; i++) {
     let newCode: string
     let attempts = 0
+    let isUnique = false
 
     do {
       newCode = generateActivationCode()
@@ -79,16 +80,30 @@ async function handlePartnerCodePurchase(session: Stripe.Checkout.Session, supab
         console.error('Too many attempts generating unique code')
         break
       }
-    } while (codes.includes(newCode))
+      
+      // Check if code already exists in this batch
+      if (codes.includes(newCode)) {
+        continue
+      }
+      
+      // Check if code already exists in database
+      const { data: existing } = await supabase
+        .from('retail_activation_codes')
+        .select('activation_code')
+        .eq('activation_code', newCode)
+        .single()
+      
+      isUnique = !existing
+    } while (!isUnique && attempts <= 100)
 
-    if (attempts <= 100) {
+    if (isUnique && attempts <= 100) {
       codes.push(newCode)
     }
   }
 
   // Insert activation codes
   const codeInserts = codes.map(code => ({
-    code,
+    activation_code: code,
     partner_id: partnerId,
     batch_id: batchId,
     product_type: productType,
@@ -103,6 +118,13 @@ async function handlePartnerCodePurchase(session: Stripe.Checkout.Session, supab
 
   if (insertError) {
     console.error('Failed to insert activation codes:', insertError)
+    console.error('Insert data sample:', JSON.stringify(codeInserts[0]))
+    console.error('Batch ID:', batchId, 'Partner ID:', partnerId)
+    // Don't return - try to update batch status to show there was an issue
+    await supabase
+      .from('code_batches')
+      .update({ notes: `Code generation failed: ${insertError.message}` })
+      .eq('id', batchId)
     return
   }
 

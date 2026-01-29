@@ -90,10 +90,15 @@ export default function AdminBatchesPage() {
     setError('')
 
     try {
-      const res = await fetch(`/api/admin/batches/${batchId}`, {
-        method: 'PATCH',
+      // Use different endpoint for generate action
+      const url = action === 'generate' 
+        ? `/api/admin/batches/${batchId}/generate`
+        : `/api/admin/batches/${batchId}`
+      
+      const res = await fetch(url, {
+        method: action === 'generate' ? 'POST' : 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action }),
+        body: action === 'generate' ? undefined : JSON.stringify({ action }),
       })
 
       const data = await res.json()
@@ -253,7 +258,13 @@ export default function AdminBatchesPage() {
                         <span className="text-yellow-600 text-xs">⏳ Waiting for payment</span>
                       )}
                       {batch.status === 'approved' && (
-                        <span className="text-blue-600 text-xs">🔄 Processing...</span>
+                        <button
+                          onClick={() => handleAction(batch.id, 'generate')}
+                          disabled={processingId === batch.id}
+                          className="px-3 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 disabled:opacity-50"
+                        >
+                          {processingId === batch.id ? 'Generating...' : '🔄 Retry Generation'}
+                        </button>
                       )}
                       {batch.status === 'generated' && (
                         <span className="text-green-600 text-xs">✓ Codes sent</span>
