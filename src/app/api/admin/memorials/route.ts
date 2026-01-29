@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
 
     const supabase = createAdminClient()
 
-    // Build query
+    // Build query - note: views_count (not view_count), no activation_code on this table
     let query = supabase
       .from('memorial_records')
       .select(`
@@ -36,11 +36,11 @@ export async function GET(request: NextRequest) {
         death_date,
         is_published,
         fulfillment_status,
-        activation_code,
-        view_count,
+        views_count,
         created_at,
         updated_at,
-        customer:customers(id, full_name, email)
+        customer:customers(id, full_name, email),
+        activation_codes:retail_activation_codes(activation_code)
       `)
       .order('created_at', { ascending: false })
 
@@ -66,8 +66,29 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to fetch memorials' }, { status: 500 })
     }
 
+    // Transform memorials to flatten activation_code from related table
+    const transformedMemorials = (memorials || []).map((m: {
+      id: string
+      memorial_slug: string
+      deceased_name: string
+      deceased_type: string
+      birth_date: string | null
+      death_date: string | null
+      is_published: boolean
+      fulfillment_status: string
+      views_count: number
+      created_at: string
+      updated_at: string
+      customer: { id: string; full_name: string; email: string } | null
+      activation_codes: { activation_code: string }[] | null
+    }) => ({
+      ...m,
+      view_count: m.views_count,
+      activation_code: m.activation_codes?.[0]?.activation_code || null,
+    }))
+
     // Filter by search if provided
-    let filteredMemorials = memorials || []
+    let filteredMemorials = transformedMemorials
     if (search) {
       const searchLower = search.toLowerCase()
       filteredMemorials = filteredMemorials.filter((m: {
@@ -85,7 +106,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Calculate counts
-    const allMemorials = memorials || []
+    const allMemorials = transformedMemorials
     const counts = {
       all: allMemorials.length,
       published: allMemorials.filter((m: { is_published: boolean }) => m.is_published).length,
