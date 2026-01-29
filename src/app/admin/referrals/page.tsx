@@ -236,7 +236,7 @@ export default function AdminReferralsPage() {
       <header className="bg-stone-800 text-white shadow-lg">
         <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <a href="https://memoriqr.co.nz" target="_blank" rel="noopener noreferrer" className="text-xl font-bold text-amber-200 hover:text-amber-100">MemoriQR</a>
+            <a href={process.env.NEXT_PUBLIC_BASE_URL || 'https://memoriqr.co.nz'} target="_blank" rel="noopener noreferrer" className="text-xl font-bold text-amber-200 hover:text-amber-100">MemoriQR</a>
             <span className="text-white/50 mx-2">|</span>
             <span className="text-lg font-semibold">Admin</span>
             <nav className="hidden md:flex gap-4 ml-8">
