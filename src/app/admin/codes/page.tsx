@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 
 // Card variant options with readable labels
@@ -71,6 +71,10 @@ interface BatchCode {
 }
 
 export default function AdminCodesPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const initialSearch = searchParams.get('search') || '';
+  
   const [selectedVariant, setSelectedVariant] = useState(CARD_VARIANTS[0].code);
   const [quantity, setQuantity] = useState(10);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -78,14 +82,13 @@ export default function AdminCodesPage() {
   const [recentBatches, setRecentBatches] = useState<RecentBatch[]>([]);
   const [error, setError] = useState('');
   const [copySuccess, setCopySuccess] = useState(false);
-  const router = useRouter();
 
   // Code management state
-  const [activeTab, setActiveTab] = useState<'generate' | 'manage' | 'batches'>('generate');
+  const [activeTab, setActiveTab] = useState<'generate' | 'manage' | 'batches'>(initialSearch ? 'manage' : 'generate');
   const [existingCodes, setExistingCodes] = useState<ExistingCode[]>([]);
   const [totalCodes, setTotalCodes] = useState(0);
   const [isLoadingCodes, setIsLoadingCodes] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState(initialSearch);
   const [statusFilter, setStatusFilter] = useState('all');
   const [selectedCodes, setSelectedCodes] = useState<Set<string>>(new Set());
   const [isDeleting, setIsDeleting] = useState(false);

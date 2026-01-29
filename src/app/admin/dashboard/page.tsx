@@ -171,6 +171,20 @@ export default function AdminDashboardPage() {
             <p className="text-sm text-stone-400 mt-1">of {stats?.totalPartners ?? 0} total</p>
           </div>
 
+          {/* Pending Fulfillment */}
+          <Link href="/admin/orders?status=needs_fulfillment" className="bg-white rounded-xl shadow p-6 block hover:shadow-lg transition-shadow cursor-pointer">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-stone-500 text-sm">Pending Fulfillment</span>
+              {(stats?.pendingFulfillment ?? 0) > 0 && (
+                <span className="bg-orange-100 text-orange-700 text-xs font-medium px-2 py-1 rounded-full">
+                  Action Required
+                </span>
+              )}
+            </div>
+            <p className="text-3xl font-bold text-stone-800">{stats?.pendingFulfillment ?? 0}</p>
+            <p className="text-sm text-stone-400 mt-1">memorials awaiting shipping</p>
+          </Link>
+
           {/* Total Memorials */}
           <Link href="/admin/memorials" className="bg-white rounded-xl shadow p-6 block hover:shadow-lg transition-shadow cursor-pointer">
             <span className="text-stone-500 text-sm">Total Memorials</span>

@@ -316,11 +316,17 @@ export default function AdminOrdersPage() {
         <div className="mb-6">
           <input
             type="text"
-            placeholder="Search by order number, customer, or memorial..."
+            placeholder="Search by order number, activation code, customer, or memorial..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full max-w-md px-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-stone-500 focus:border-transparent"
           />
+          {search.toUpperCase().startsWith('MQR-') && (
+            <p className="mt-2 text-sm text-amber-700 bg-amber-50 px-3 py-2 rounded-lg inline-block">
+              💡 Looking for activation code <strong>{search.toUpperCase()}</strong>? Check the{' '}
+              <Link href={`/admin/codes?search=${encodeURIComponent(search)}`} className="text-amber-800 underline font-medium">Activation Codes</Link> page.
+            </p>
+          )}
         </div>
 
         {/* Orders List */}
