@@ -79,11 +79,12 @@ export async function GET() {
       .select('*', { count: 'exact', head: true })
       .eq('status', 'pending');
 
-    // Get pending fulfillment orders (paid but not shipped)
+    // Get pending fulfillment - memorials that need physical products shipped
+    // This includes both online orders and partner-activated codes
     const { count: pendingFulfillment } = await supabase
-      .from('orders')
+      .from('memorial_records')
       .select('*', { count: 'exact', head: true })
-      .eq('order_status', 'paid');
+      .in('fulfillment_status', ['pending', 'processing']);
 
     return NextResponse.json({
       totalPartners,
