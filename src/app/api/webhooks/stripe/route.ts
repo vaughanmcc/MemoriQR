@@ -250,11 +250,12 @@ export async function POST(request: NextRequest) {
         if (customer && memorial) {
           // Extract the code from order number (remove MQR- prefix)
           const activationCode = orderNumber.replace('MQR-', '')
+          const baseUrl = (process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_BASE_URL || 'https://memoriqr.co.nz').trim()
           // Activation URL for customer to set up their memorial
-          const activationUrl = `${process.env.NEXT_PUBLIC_APP_URL}/activate/${activationCode}`
+          const activationUrl = `${baseUrl}/activate/${activationCode}`
           // Memorial URL for viewing (and for NFC tag programming)
-          const memorialUrl = `${process.env.NEXT_PUBLIC_APP_URL}/memorial/${memorial.memorial_slug}`
-          const qrCodeUrl = `${process.env.NEXT_PUBLIC_APP_URL}/api/qr/${memorial.memorial_slug}`
+          const memorialUrl = `${baseUrl}/memorial/${memorial.memorial_slug}`
+          const qrCodeUrl = `${baseUrl}/api/qr/${memorial.memorial_slug}`
           
           // Debug: log shipping details
           console.log('Stripe session shipping_details:', JSON.stringify(session.shipping_details, null, 2))
