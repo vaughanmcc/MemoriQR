@@ -89,6 +89,7 @@ export default function AdminOrdersPage() {
   const [actionLoading, setActionLoading] = useState(false);
   const [trackingNumber, setTrackingNumber] = useState('');
   const [shippingCarrier, setShippingCarrier] = useState('');
+  const [checklist, setChecklist] = useState<Record<string, boolean>>({});
 
   const fetchOrders = useCallback(async () => {
     try {
@@ -516,16 +517,79 @@ export default function AdminOrdersPage() {
 
                 {/* Action Checklist */}
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                  <h4 className="font-semibold text-blue-900 mb-2">📋 Action Checklist</h4>
-                  <ul className="text-sm text-blue-800 space-y-1">
+                  <h4 className="font-semibold text-blue-900 mb-3">📋 Action Checklist</h4>
+                  <div className="space-y-2">
                     {(selectedOrder.product_type === 'nfc_only' || selectedOrder.product_type === 'both') && (
-                      <li>☐ Program NFC tag with memorial URL</li>
+                      <label className="flex items-center gap-3 cursor-pointer group">
+                        <input
+                          type="checkbox"
+                          checked={checklist[`${selectedOrder.id}-nfc`] || false}
+                          onChange={(e) => setChecklist({ ...checklist, [`${selectedOrder.id}-nfc`]: e.target.checked })}
+                          className="sr-only"
+                        />
+                        <span className={`w-6 h-6 rounded border-2 flex items-center justify-center transition-colors ${
+                          checklist[`${selectedOrder.id}-nfc`]
+                            ? 'bg-green-500 border-green-500 text-white'
+                            : 'border-blue-300 bg-white group-hover:border-blue-400'
+                        }`}>
+                          {checklist[`${selectedOrder.id}-nfc`] && (
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                            </svg>
+                          )}
+                        </span>
+                        <span className={`text-sm ${checklist[`${selectedOrder.id}-nfc`] ? 'text-green-700 line-through' : 'text-blue-800'}`}>
+                          Program NFC tag with memorial URL
+                        </span>
+                      </label>
                     )}
                     {(selectedOrder.product_type === 'qr_only' || selectedOrder.product_type === 'both') && (
-                      <li>☐ Print QR code for plate</li>
+                      <label className="flex items-center gap-3 cursor-pointer group">
+                        <input
+                          type="checkbox"
+                          checked={checklist[`${selectedOrder.id}-qr`] || false}
+                          onChange={(e) => setChecklist({ ...checklist, [`${selectedOrder.id}-qr`]: e.target.checked })}
+                          className="sr-only"
+                        />
+                        <span className={`w-6 h-6 rounded border-2 flex items-center justify-center transition-colors ${
+                          checklist[`${selectedOrder.id}-qr`]
+                            ? 'bg-green-500 border-green-500 text-white'
+                            : 'border-blue-300 bg-white group-hover:border-blue-400'
+                        }`}>
+                          {checklist[`${selectedOrder.id}-qr`] && (
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                            </svg>
+                          )}
+                        </span>
+                        <span className={`text-sm ${checklist[`${selectedOrder.id}-qr`] ? 'text-green-700 line-through' : 'text-blue-800'}`}>
+                          Print QR code for plate
+                        </span>
+                      </label>
                     )}
-                    <li>☐ Pack and ship to customer address</li>
-                  </ul>
+                    <label className="flex items-center gap-3 cursor-pointer group">
+                      <input
+                        type="checkbox"
+                        checked={checklist[`${selectedOrder.id}-ship`] || false}
+                        onChange={(e) => setChecklist({ ...checklist, [`${selectedOrder.id}-ship`]: e.target.checked })}
+                        className="sr-only"
+                      />
+                      <span className={`w-6 h-6 rounded border-2 flex items-center justify-center transition-colors ${
+                        checklist[`${selectedOrder.id}-ship`]
+                          ? 'bg-green-500 border-green-500 text-white'
+                          : 'border-blue-300 bg-white group-hover:border-blue-400'
+                      }`}>
+                        {checklist[`${selectedOrder.id}-ship`] && (
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                          </svg>
+                        )}
+                      </span>
+                      <span className={`text-sm ${checklist[`${selectedOrder.id}-ship`] ? 'text-green-700 line-through' : 'text-blue-800'}`}>
+                        Pack and ship to customer address
+                      </span>
+                    </label>
+                  </div>
                 </div>
 
                 {/* Shipping/Tracking (for shipped orders or to add) */}

@@ -37,11 +37,12 @@ export async function GET() {
     // Get order stats
     const { data: orders } = await supabase
       .from('orders')
-      .select('amount_total, status');
+      .select('total_amount, order_status');
 
-    const completedOrders = orders?.filter(o => o.status === 'completed') ?? [];
-    const totalOrders = completedOrders.length;
-    const totalRevenue = completedOrders.reduce((sum, o) => sum + (o.amount_total || 0), 0);
+    // Count orders that are paid, shipped, or completed (not cancelled or pending)
+    const paidOrders = orders?.filter(o => ['paid', 'processing', 'shipped', 'completed'].includes(o.order_status)) ?? [];
+    const totalOrders = paidOrders.length;
+    const totalRevenue = paidOrders.reduce((sum, o) => sum + (Number(o.total_amount) || 0), 0);
 
     // Get recent activations (this month)
     const startOfMonth = new Date();

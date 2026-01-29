@@ -4,6 +4,49 @@
 
 ---
 
+## January 29, 2026 - Order Fulfillment & Admin Enhancements
+
+**Completed:**
+- ✅ **Order Fulfillment Page** (`/admin/orders`):
+  - Full orders list with filter tabs: Needs Fulfillment, Shipped, Completed, All
+  - Order detail modal with complete customer/product info (same as email notification)
+  - Action checklist with interactive checkboxes (green checkmarks when done)
+  - Status workflow: Mark as Shipped → Mark as Completed
+  - Tracking number and carrier input for shipments
+  - Internal notes field
+  - Badge counts on filter tabs
+
+- ✅ **Code Lookup Feature** (`/admin/codes` - Lookup tab):
+  - Quick activation code validation
+  - Shows partner attribution and usage status
+  - Links to partner details if applicable
+
+- ✅ **Partners Page Enhancements**:
+  - Auto-select partner with `?id=` query parameter
+  - Added partner types: Photo Studio, Photographer, Videographer
+
+- ✅ **UI/UX Improvements**:
+  - "Lead Generation Cards" renamed to "Referral Codes" across all pages
+  - Admin header links to main MemoriQR site (environment-aware dev/prod URL)
+  - Fixed trailing space bug in `NEXT_PUBLIC_APP_URL` with `.trim()`
+
+- ✅ **Bug Fixes**:
+  - Fixed dashboard Total Revenue showing $0.00 (wrong column names in stats API)
+  - Changed `amount_total` → `total_amount`, `status` → `order_status`
+  - Removed confusing activation code from online order fulfillment emails
+
+**Key Files Created/Modified:**
+- `src/app/admin/orders/page.tsx` (NEW) - Order fulfillment page
+- `src/app/api/admin/orders/route.ts` (NEW) - List orders API
+- `src/app/api/admin/orders/[id]/route.ts` (NEW) - Order detail/update API
+- `src/app/api/admin/stats/route.ts` - Fixed column names for revenue
+- `src/app/admin/codes/page.tsx` - Added Code Lookup tab
+- `src/app/admin/partners/page.tsx` - Auto-select with ?id= param
+- `src/components/admin/AdminHeader.tsx` - Link to main site
+- `pipedream/email-handler.js` - Removed activation code from online orders
+
+---
+
 ## January 21, 2026 - Lead Generation Cards System
 
 **Completed:**
