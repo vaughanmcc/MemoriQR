@@ -640,6 +640,9 @@ export interface Database {
           shipped_at: string | null
           notes: string | null
           created_at: string
+          stripe_session_id: string | null
+          stripe_payment_intent_id: string | null
+          paid_at: string | null
         }
         Insert: {
           id?: string
@@ -657,6 +660,9 @@ export interface Database {
           shipped_at?: string | null
           notes?: string | null
           created_at?: string
+          stripe_session_id?: string | null
+          stripe_payment_intent_id?: string | null
+          paid_at?: string | null
         }
         Update: {
           id?: string
@@ -674,6 +680,9 @@ export interface Database {
           shipped_at?: string | null
           notes?: string | null
           created_at?: string
+          stripe_session_id?: string | null
+          stripe_payment_intent_id?: string | null
+          paid_at?: string | null
         }
       }
       partner_payouts: {

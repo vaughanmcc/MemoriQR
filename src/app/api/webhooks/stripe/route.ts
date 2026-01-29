@@ -4,6 +4,7 @@ import Stripe from 'stripe'
 import { stripe } from '@/lib/stripe'
 import { createAdminClient } from '@/lib/supabase/server'
 import { generateOptOutToken } from '@/lib/utils'
+import { SupabaseClient } from '@supabase/supabase-js'
 
 // Force dynamic rendering for webhook
 export const dynamic = 'force-dynamic'
@@ -11,6 +12,144 @@ export const dynamic = 'force-dynamic'
 const PIPEDREAM_WEBHOOK_URL = process.env.PIPEDREAM_WEBHOOK_URL
 // Separate webhook for referral redemption emails (to avoid Pipedream code size limits)
 const PIPEDREAM_REFERRAL_WEBHOOK_URL = process.env.PIPEDREAM_REFERRAL_WEBHOOK_URL || PIPEDREAM_WEBHOOK_URL
+// Webhook for partner code notifications
+const PIPEDREAM_PARTNER_CODES_WEBHOOK_URL = process.env.PIPEDREAM_PARTNER_CODES_WEBHOOK_URL || PIPEDREAM_WEBHOOK_URL
+
+// Generate a unique activation code
+function generateActivationCode(): string {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789' // Excluded I, O, 0, 1
+  let code = 'MQR-'
+  for (let i = 0; i < 2; i++) {
+    code += chars.charAt(Math.floor(Math.random() * chars.length))
+  }
+  code += '-'
+  for (let i = 0; i < 6; i++) {
+    code += chars.charAt(Math.floor(Math.random() * chars.length))
+  }
+  return code
+}
+
+// Handle partner code purchase payment completion
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function handlePartnerCodePurchase(session: Stripe.Checkout.Session, supabase: SupabaseClient<any, 'public', any>) {
+  const batchId = session.metadata?.batch_id
+  const partnerId = session.metadata?.partner_id
+  const partnerName = session.metadata?.partner_name
+  const batchNumber = session.metadata?.batch_number
+  const quantity = parseInt(session.metadata?.quantity || '0')
+  const productType = session.metadata?.product_type
+  const hostingDuration = parseInt(session.metadata?.hosting_duration || '10')
+
+  if (!batchId || !partnerId) {
+    console.error('Missing batch_id or partner_id in partner code purchase metadata')
+    return
+  }
+
+  console.log(`Processing partner code purchase: batch ${batchNumber}, ${quantity} codes for ${partnerName}`)
+
+  // Update batch with payment info and mark as approved
+  const { error: updateError } = await supabase
+    .from('code_batches')
+    .update({
+      stripe_payment_intent_id: session.payment_intent as string,
+      paid_at: new Date().toISOString(),
+      status: 'approved',
+      approved_at: new Date().toISOString(),
+    })
+    .eq('id', batchId)
+
+  if (updateError) {
+    console.error('Failed to update batch with payment info:', updateError)
+    return
+  }
+
+  // Generate activation codes
+  const codes: string[] = []
+  const expiresAt = new Date()
+  expiresAt.setFullYear(expiresAt.getFullYear() + 2) // Codes expire in 2 years
+
+  for (let i = 0; i < quantity; i++) {
+    let newCode: string
+    let attempts = 0
+
+    do {
+      newCode = generateActivationCode()
+      attempts++
+      if (attempts > 100) {
+        console.error('Too many attempts generating unique code')
+        break
+      }
+    } while (codes.includes(newCode))
+
+    if (attempts <= 100) {
+      codes.push(newCode)
+    }
+  }
+
+  // Insert activation codes
+  const codeInserts = codes.map(code => ({
+    code,
+    partner_id: partnerId,
+    batch_id: batchId,
+    product_type: productType,
+    hosting_duration: hostingDuration,
+    is_used: false,
+    expires_at: expiresAt.toISOString(),
+  }))
+
+  const { error: insertError } = await supabase
+    .from('retail_activation_codes')
+    .insert(codeInserts)
+
+  if (insertError) {
+    console.error('Failed to insert activation codes:', insertError)
+    return
+  }
+
+  // Update batch status to generated
+  await supabase
+    .from('code_batches')
+    .update({
+      status: 'generated',
+      generated_at: new Date().toISOString(),
+    })
+    .eq('id', batchId)
+
+  console.log(`Generated ${codes.length} activation codes for batch ${batchNumber}`)
+
+  // Get partner email for notification
+  const { data: partner } = await supabase
+    .from('partners')
+    .select('contact_email')
+    .eq('id', partnerId)
+    .single()
+
+  // Send email notification to partner
+  if (PIPEDREAM_PARTNER_CODES_WEBHOOK_URL && partner?.contact_email) {
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_BASE_URL || 'https://memoriqr.com'
+    
+    try {
+      await fetch(PIPEDREAM_PARTNER_CODES_WEBHOOK_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'partner_codes_generated',
+          partner_email: partner.contact_email,
+          partner_name: partnerName,
+          batch_number: batchNumber,
+          quantity: codes.length,
+          product_type: productType,
+          hosting_duration: hostingDuration,
+          codes_list: codes.join('\n'),
+          portal_url: `${baseUrl}/partner/codes`,
+        }),
+      })
+      console.log(`Partner codes email sent to ${partner.contact_email}`)
+    } catch (emailError) {
+      console.error('Failed to send partner codes email:', emailError)
+    }
+  }
+}
 
 export async function POST(request: NextRequest) {
   const body = await request.text()
@@ -45,6 +184,12 @@ export async function POST(request: NextRequest) {
   switch (event.type) {
     case 'checkout.session.completed': {
       const session = event.data.object as Stripe.Checkout.Session
+
+      // Check if this is a partner code purchase
+      if (session.metadata?.type === 'partner_code_purchase') {
+        await handlePartnerCodePurchase(session, supabase)
+        break
+      }
 
       const orderNumber = session.metadata?.order_number
       const memorialId = session.metadata?.memorial_id
@@ -323,6 +468,20 @@ export async function POST(request: NextRequest) {
 
     case 'checkout.session.expired': {
       const session = event.data.object as Stripe.Checkout.Session
+      
+      // Handle partner code purchase expiry
+      if (session.metadata?.type === 'partner_code_purchase') {
+        const batchId = session.metadata?.batch_id
+        if (batchId) {
+          await supabase
+            .from('code_batches')
+            .update({ status: 'cancelled' })
+            .eq('id', batchId)
+          console.log(`Partner code batch ${batchId} checkout expired`)
+        }
+        break
+      }
+
       const orderNumber = session.metadata?.order_number
 
       if (orderNumber) {
