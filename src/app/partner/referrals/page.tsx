@@ -138,7 +138,7 @@ export default function PartnerReferralsPage() {
               <ArrowLeft className="h-5 w-5" />
             </Link>
             <div>
-              <h1 className="text-xl font-bold text-gray-900">Lead Generation Cards</h1>
+              <h1 className="text-xl font-bold text-gray-900">Referral Codes</h1>
               <p className="text-sm text-gray-600">Referral codes for your customers</p>
             </div>
           </div>
@@ -178,7 +178,7 @@ export default function PartnerReferralsPage() {
 
         {/* Info Box */}
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-8">
-          <h3 className="font-medium text-blue-900 mb-2">How Lead Generation Cards Work</h3>
+          <h3 className="font-medium text-blue-900 mb-2">How Referral Codes Work</h3>
           <ul className="text-sm text-blue-800 space-y-1">
             <li>• Give customers a card with a scratch-off referral code</li>
             <li>• Customer visits the order page and enters the code for their discount</li>
@@ -218,7 +218,7 @@ export default function PartnerReferralsPage() {
               <div className="p-8 text-center text-gray-500">
                 <Tag className="h-12 w-12 mx-auto mb-4 text-gray-400" />
                 <p className="font-medium">No referral codes yet</p>
-                <p className="text-sm mt-1">Contact us to request lead generation cards</p>
+                <p className="text-sm mt-1">Contact us to request referral codes</p>
               </div>
             ) : (
               <div className="divide-y">
@@ -378,7 +378,7 @@ export default function PartnerReferralsPage() {
 
         {/* Contact CTA */}
         <div className="mt-8 bg-white rounded-lg shadow p-6 text-center">
-          <h3 className="font-semibold mb-2">Need more lead generation cards?</h3>
+          <h3 className="font-semibold mb-2">Need more referral codes?</h3>
           <p className="text-gray-600 text-sm mb-4">
             Contact us to request additional cards for your business.
           </p>

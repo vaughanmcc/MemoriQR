@@ -262,7 +262,7 @@ export default function PartnerDashboardPage() {
                 <Tag className="h-6 w-6 text-purple-600" />
               </div>
               <div>
-                <h3 className="font-medium text-gray-900">Lead Gen Cards</h3>
+                <h3 className="font-medium text-gray-900">Referral Codes</h3>
                 <p className="text-sm text-gray-500">Referral codes</p>
               </div>
             </div>

@@ -42,7 +42,7 @@ stripe listen --forward-to localhost:3000/api/webhooks/stripe
 | `/memorial/edit` | Edit existing memorial |
 | `/partner/dashboard` | Partner portal |
 | `/admin/codes` | Admin code generator |
-| `/admin/referrals` | Lead gen card management |
+| `/admin/referrals` | Referral code management |
 | `/partners` | Public partner application |
 
 ## Documentation

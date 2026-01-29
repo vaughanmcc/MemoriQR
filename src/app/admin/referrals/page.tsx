@@ -260,8 +260,8 @@ export default function AdminReferralsPage() {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 py-8">
-        <h2 className="text-2xl font-bold text-stone-800 mb-2">Lead Generation Cards</h2>
-        <p className="text-stone-600 mb-8">Generate referral codes for partner lead generation cards</p>
+        <h2 className="text-2xl font-bold text-stone-800 mb-2">Referral Codes</h2>
+        <p className="text-stone-600 mb-8">Generate referral codes for partners</p>
 
         {/* Tabs */}
         <div className="flex gap-2 mb-6">

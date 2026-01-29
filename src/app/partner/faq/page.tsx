@@ -21,7 +21,7 @@ const faqCategories = [
       },
       {
         question: 'What is the difference between Activation Codes and Referral Codes?',
-        answer: 'Activation Codes are pre-paid codes you purchase at wholesale prices and resell to customers. You keep the margin between your cost and selling price. Referral Codes (Lead Gen Cards) are free to generate - when a customer uses your referral code, they pay full price and you earn a commission on the sale.'
+        answer: 'Activation Codes are pre-paid codes you purchase at wholesale prices and resell to customers. You keep the margin between your cost and selling price. Referral Codes are free to generate - when a customer uses your referral code, they pay full price and you earn a commission on the sale.'
       },
       {
         question: 'How do I set up my banking details for payouts?',
