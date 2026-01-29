@@ -20,7 +20,7 @@ export function ActivateForm() {
     const cleanCode = code.toUpperCase()
     
     if (!validateActivationCode(cleanCode)) {
-      setError('Please enter a valid activation code (e.g., MQR-10B-XXXXXX)')
+      setError('Please enter a valid activation code (e.g., MQR-XX-XXXXXX)')
       return
     }
 
@@ -60,7 +60,7 @@ export function ActivateForm() {
               setCode(e.target.value.toUpperCase())
               setError('')
             }}
-            placeholder="e.g., MQR-10B-XXXXXX"
+            placeholder="e.g., MQR-XX-XXXXXX"
             className="input text-center text-xl tracking-widest uppercase"
             maxLength={20}
             autoComplete="off"

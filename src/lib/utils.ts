@@ -44,9 +44,22 @@ export function generateSlug(name: string): string {
 }
 
 export function validateActivationCode(code: string): boolean {
-  // Support both old format (8 chars) and new format (MQR-XXB-XXXXXX = 12 chars without hyphens)
-  const cleanCode = code.replace(/-/g, '')
-  return /^[A-Z0-9]{8}$/i.test(cleanCode) || /^MQR\d{1,2}[BNQ][A-Z0-9]{6}$/i.test(cleanCode)
+  // Support multiple formats:
+  // 1. Old format: 8 alphanumeric chars (e.g., ABCD1234)
+  // 2. Retail format: MQR-XXB-XXXXXX (e.g., MQR-10B-ABC123) - 14 chars with hyphens
+  // 3. Partner format: MQR-XX-XXXXXX (e.g., MQR-3P-RZG83K) - 13 chars with hyphens
+  const cleanCode = code.replace(/-/g, '').toUpperCase()
+  
+  // Old 8-char format
+  if (/^[A-Z0-9]{8}$/.test(cleanCode)) return true
+  
+  // Retail format: MQR + 2-3 digits + B/N/Q + 6 alphanumeric
+  if (/^MQR\d{1,3}[BNQ][A-Z0-9]{6}$/.test(cleanCode)) return true
+  
+  // Partner format: MQR + 2 alphanumeric + 6 alphanumeric (total 11 after MQR)
+  if (/^MQR[A-Z0-9]{2}[A-Z0-9]{6}$/.test(cleanCode)) return true
+  
+  return false
 }
 
 
