@@ -172,11 +172,11 @@ export default function AdminDashboardPage() {
           </div>
 
           {/* Total Memorials */}
-          <div className="bg-white rounded-xl shadow p-6">
+          <Link href="/admin/memorials" className="bg-white rounded-xl shadow p-6 block hover:shadow-lg transition-shadow cursor-pointer">
             <span className="text-stone-500 text-sm">Total Memorials</span>
             <p className="text-3xl font-bold text-stone-800">{stats?.totalMemorials ?? 0}</p>
             <p className="text-sm text-green-600 mt-1">+{stats?.recentActivations ?? 0} this month</p>
-          </div>
+          </Link>
 
           {/* Revenue */}
           <div className="bg-white rounded-xl shadow p-6">
