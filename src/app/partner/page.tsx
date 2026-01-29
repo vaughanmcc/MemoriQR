@@ -283,6 +283,36 @@ export default function PartnerLoginPage() {
 
               <button
                 type="button"
+                onClick={async () => {
+                  setLoading(true)
+                  setError('')
+                  setCode('')
+                  try {
+                    const response = await fetch('/api/partner/login', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ email })
+                    })
+                    const data = await response.json()
+                    if (!response.ok) {
+                      setError(data.error || 'Failed to send new code')
+                    } else {
+                      setMessage('New verification code sent!')
+                    }
+                  } catch {
+                    setError('Failed to send new code. Please try again.')
+                  } finally {
+                    setLoading(false)
+                  }
+                }}
+                disabled={loading}
+                className="w-full mt-3 text-primary-600 text-sm hover:text-primary-800 font-medium disabled:opacity-50"
+              >
+                {loading ? 'Sending...' : 'Request New Code'}
+              </button>
+
+              <button
+                type="button"
                 onClick={() => {
                   setStep('email')
                   setCode('')
