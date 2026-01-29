@@ -31,7 +31,7 @@ export async function GET() {
 
     // Get memorial count
     const { count: totalMemorials } = await supabase
-      .from('memorials')
+      .from('memorial_records')
       .select('*', { count: 'exact', head: true });
 
     // Get order stats
