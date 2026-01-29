@@ -195,8 +195,6 @@ ${surfacePrepSection}
 
 <div style="background: #8B7355; color: #fff; padding: 12px; font-weight: bold; border-radius: 8px 8px 0 0;">⚙️ Fulfillment Details</div>
 <div style="border: 2px solid #8B7355; border-top: none; padding: 15px; margin-bottom: 20px; border-radius: 0 0 8px 8px;">
-<p style="margin: 0 0 15px;"><strong>Activation Code:</strong><br>
-<code style="background: #f0f0f0; padding: 10px 20px; border-radius: 4px; font-size: 20px; font-weight: bold; letter-spacing: 3px; display: inline-block; margin-top: 5px;">${activation_code}</code></p>
 <p style="margin: 0 0 10px;"><strong>NFC URL (program to tag):</strong><br>
 <a href="${nfc_url}" style="color: #8B7355; word-break: break-all;">${nfc_url}</a></p>
 <p style="margin: 0;"><strong>Memorial Page:</strong><br>
@@ -239,7 +237,7 @@ ${qr_code_url ? `<div style="border: 1px solid #ddd; border-radius: 8px; padding
 <p style="color: #888; font-size: 12px; margin: 0;">Internal order notification</p>
 </div>
 </div>`,
-        text: `NEW ORDER: ${order_number}\n\nPRODUCT: ${productDisplay}\nHOSTING: ${hosting_duration} years\nAMOUNT: $${amount_paid} ${currency}\nMEMORIAL FOR: ${deceased_name}\n\nFULFILLMENT DETAILS:\nActivation Code: ${activation_code}\nNFC URL: ${nfc_url}\nMemorial Page: ${memorial_url}\nQR Code: ${qr_code_url || 'N/A'}\n\nCUSTOMER:\n${customer_name}\n${customer_email}\n\nSHIP TO:\n${shippingText}\n\nACTION CHECKLIST:\n- Program NFC tag with URL: ${nfc_url}\n- Print QR code for plate (if applicable)\n- Pack and ship`
+        text: `NEW ORDER: ${order_number}\n\nPRODUCT: ${productDisplay}\nHOSTING: ${hosting_duration} years\nAMOUNT: $${amount_paid} ${currency}\nMEMORIAL FOR: ${deceased_name}\n\nFULFILLMENT DETAILS:\nNFC URL: ${nfc_url}\nMemorial Page: ${memorial_url}\nQR Code: ${qr_code_url || 'N/A'}\n\nCUSTOMER:\n${customer_name}\n${customer_email}\n\nSHIP TO:\n${shippingText}\n\nACTION CHECKLIST:\n- Program NFC tag with URL: ${nfc_url}\n- Print QR code for plate (if applicable)\n- Pack and ship`
       };
     }
     
