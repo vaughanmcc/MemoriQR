@@ -182,7 +182,7 @@ export default function AdminDashboardPage() {
           <div className="bg-white rounded-xl shadow p-6">
             <span className="text-stone-500 text-sm">Total Revenue</span>
             <p className="text-3xl font-bold text-stone-800">
-              ${((stats?.totalRevenue ?? 0) / 100).toLocaleString('en-NZ', { minimumFractionDigits: 2 })}
+              ${(stats?.totalRevenue ?? 0).toLocaleString('en-NZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </p>
             <p className="text-sm text-stone-400 mt-1">{stats?.totalOrders ?? 0} orders</p>
           </div>
