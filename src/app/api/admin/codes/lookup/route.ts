@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
     // Try to find as activation code first
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: activationCode, error: activationError } = await (supabase as any)
-      .from('activation_codes')
+      .from('retail_activation_codes')
       .select(`
         activation_code,
         product_type,
@@ -39,20 +39,31 @@ export async function GET(request: NextRequest) {
         created_at,
         partner_id,
         partner:partners(id, partner_name, partner_type, contact_email),
-        memorial:memorials(
+        memorial:memorial_records(
           id,
           memorial_slug,
           deceased_name,
           deceased_type,
           is_published,
           hosting_expires_at,
-          customer:customers(id, full_name, email)
+          customer_id
         )
       `)
       .eq('activation_code', code)
       .single()
 
     if (!activationError && activationCode) {
+      // If memorial exists, get customer info separately
+      let customer = null
+      if (activationCode.memorial?.customer_id) {
+        const { data: customerData } = await (supabase as any)
+          .from('customers')
+          .select('id, full_name, email')
+          .eq('id', activationCode.memorial.customer_id)
+          .single()
+        customer = customerData
+      }
+
       return NextResponse.json({
         found: true,
         type: 'activation',
@@ -76,10 +87,10 @@ export async function GET(request: NextRequest) {
             deceasedType: activationCode.memorial.deceased_type,
             isPublished: activationCode.memorial.is_published,
             expiresAt: activationCode.memorial.hosting_expires_at,
-            customer: activationCode.memorial.customer ? {
-              id: activationCode.memorial.customer.id,
-              name: activationCode.memorial.customer.full_name,
-              email: activationCode.memorial.customer.email
+            customer: customer ? {
+              id: customer.id,
+              name: customer.full_name,
+              email: customer.email
             } : null
           } : null
         }
