@@ -42,7 +42,18 @@ export async function GET() {
     // Count orders that are paid, shipped, or completed (not cancelled or pending)
     const paidOrders = orders?.filter(o => ['paid', 'processing', 'shipped', 'completed'].includes(o.order_status)) ?? [];
     const totalOrders = paidOrders.length;
-    const totalRevenue = paidOrders.reduce((sum, o) => sum + (Number(o.total_amount) || 0), 0);
+    const orderRevenue = paidOrders.reduce((sum, o) => sum + (Number(o.total_amount) || 0), 0);
+
+    // Get partner batch revenue (paid code batches)
+    const { data: batches } = await supabase
+      .from('code_batches')
+      .select('total_cost, status, paid_at')
+      .not('paid_at', 'is', null);
+    
+    const batchRevenue = batches?.reduce((sum, b) => sum + (Number(b.total_cost) || 0), 0) ?? 0;
+    
+    // Total revenue = orders + partner batches
+    const totalRevenue = orderRevenue + batchRevenue;
 
     // Get recent activations (this month)
     const startOfMonth = new Date();
