@@ -42,6 +42,9 @@ const PARTNER_TYPE_LABELS: Record<string, string> = {
   pet_store: 'Pet Store',
   retailer: 'Retailer',
   groomer: 'Pet Groomer',
+  photo_studio: 'Photo Studio',
+  photographer: 'Photographer',
+  videographer: 'Videographer',
   other: 'Other',
 };
 
@@ -758,6 +761,9 @@ function AdminPartnersContent() {
                     <option value="pet_cremation">Pet Cremation</option>
                     <option value="pet_store">Pet Store</option>
                     <option value="retailer">Retailer</option>
+                    <option value="photo_studio">Photo Studio</option>
+                    <option value="photographer">Photographer</option>
+                    <option value="videographer">Videographer</option>
                     <option value="other">Other</option>
                   </select>
                 </div>
