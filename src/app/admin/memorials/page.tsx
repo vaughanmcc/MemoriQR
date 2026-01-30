@@ -345,14 +345,25 @@ export default function AdminMemorialsPage() {
                         {formatDate(memorial.created_at)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
-                        <a
-                          href={`/memorial/${memorial.memorial_slug}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-amber-700 hover:text-amber-900 font-medium"
-                        >
-                          View →
-                        </a>
+                        <div className="flex items-center justify-end gap-3">
+                          <Link
+                            href={`/admin/tools?tab=memorial&slug=${memorial.memorial_slug}`}
+                            className="text-amber-700 hover:text-amber-900 font-medium"
+                          >
+                            View →
+                          </Link>
+                          {memorial.is_published && (
+                            <a
+                              href={`/memorial/${memorial.memorial_slug}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-stone-500 hover:text-stone-700 text-xs"
+                              title="Open public memorial page"
+                            >
+                              ↗
+                            </a>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))}
