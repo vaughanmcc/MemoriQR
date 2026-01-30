@@ -46,6 +46,7 @@ export default function PartnerCodesPage() {
   const [filter, setFilter] = useState<'all' | 'available' | 'used'>('all')
   const [showRequestModal, setShowRequestModal] = useState(false)
   const [copiedCode, setCopiedCode] = useState<string | null>(null)
+  const [hasBankingDetails, setHasBankingDetails] = useState(true) // Default to true to avoid flash
 
   useEffect(() => {
     fetchCodes()
@@ -63,6 +64,7 @@ export default function PartnerCodesPage() {
       const data = await response.json()
       setCodes(data.codes || [])
       setBatches(data.batches || [])
+      setHasBankingDetails(data.hasBankingDetails ?? true)
     } catch (err) {
       console.error('Failed to fetch codes:', err)
     } finally {
@@ -319,6 +321,7 @@ export default function PartnerCodesPage() {
             setShowRequestModal(false)
             fetchCodes()
           }}
+          hasBankingDetails={hasBankingDetails}
         />
       )}
     </div>
@@ -327,10 +330,12 @@ export default function PartnerCodesPage() {
 
 function RequestCodesModal({ 
   onClose, 
-  onSuccess 
+  onSuccess,
+  hasBankingDetails
 }: { 
   onClose: () => void
   onSuccess: () => void
+  hasBankingDetails: boolean
 }) {
   const [quantity, setQuantity] = useState(50)
   const [productType, setProductType] = useState('both')
@@ -392,6 +397,21 @@ function RequestCodesModal({
       <div className="bg-white rounded-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
         <div className="p-6">
           <h2 className="text-xl font-bold text-gray-900 mb-4">Purchase Activation Codes</h2>
+
+          {!hasBankingDetails && (
+            <div className="mb-4 p-4 bg-amber-50 border-2 border-amber-300 rounded-lg">
+              <div className="flex items-start gap-3">
+                <span className="text-2xl">⚠️</span>
+                <div>
+                  <p className="font-medium text-amber-800">Banking Details Required</p>
+                  <p className="text-sm text-amber-700 mt-1">
+                    To receive payouts when your codes are used, please add your banking details in{' '}
+                    <a href="/partner/settings" className="underline font-medium hover:text-amber-900">Settings</a>.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
 
           {error && (
             <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">

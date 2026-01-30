@@ -294,9 +294,12 @@ export async function POST(request: NextRequest) {
       if (partnerId) {
         const { data: partner } = await supabase
           .from('partners')
-          .select('id, partner_name, contact_email, notify_referral_redemption')
+          .select('id, partner_name, contact_email, notify_referral_redemption, bank_name, bank_account_number')
           .eq('id', partnerId)
           .single()
+
+        // Check if partner has banking details
+        const hasBankingDetails = !!(partner?.bank_name && partner?.bank_account_number)
 
         // Use notify_referral_redemption setting (defaults to true if null)
         if (partner?.contact_email && partner.notify_referral_redemption !== false) {
@@ -319,6 +322,8 @@ export async function POST(request: NextRequest) {
                   hostingDuration,
                   memorialUrl: `${baseUrl}/memorial/${memorialSlug}`,
                   dashboardUrl: `${baseUrl}/partner/codes`,
+                  hasBankingDetails,
+                  settingsUrl: `${baseUrl}/partner/settings`,
                 }),
               })
               console.log(`Activation code used notification sent to ${partner.contact_email}`)

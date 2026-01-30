@@ -78,9 +78,13 @@ export async function GET(request: NextRequest) {
       .eq('partner_id', partner.id)
       .order('created_at', { ascending: false })
 
+    // Check if partner has banking details
+    const hasBankingDetails = !!(partner.bank_name && partner.bank_account_number)
+
     return NextResponse.json({
       codes: codes || [],
       batches: batches || [],
+      hasBankingDetails,
       pagination: {
         page,
         limit,
