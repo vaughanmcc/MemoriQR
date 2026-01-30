@@ -156,9 +156,25 @@ interface CodeLookupResult {
   };
 }
 
+interface PartnerMissingBanking {
+  id: string;
+  partnerName: string;
+  email: string;
+  partnerType: string;
+  status: string;
+  createdAt: string;
+  bankingStatus: {
+    hasName: boolean;
+    hasAccountName: boolean;
+    hasAccountNumber: boolean;
+  };
+  assignedCodesCount: number;
+  usedCodesCount: number;
+}
+
 export default function AdminToolsPage() {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<'search' | 'order' | 'resend' | 'memorials' | 'code-lookup'>('search');
+  const [activeTab, setActiveTab] = useState<'search' | 'order' | 'resend' | 'memorials' | 'code-lookup' | 'missing-banking'>('search');
   
   // Search by customer
   const [searchQuery, setSearchQuery] = useState('');
@@ -209,6 +225,11 @@ export default function AdminToolsPage() {
   const [orderSortDirection, setOrderSortDirection] = useState<SortDirection>('desc');
   const [memorialSortField, setMemorialSortField] = useState<MemorialSortField>('hosting_expires_at');
   const [memorialSortDirection, setMemorialSortDirection] = useState<SortDirection>('desc');
+
+  // Missing banking lookup
+  const [partnersMissingBanking, setPartnersMissingBanking] = useState<PartnerMissingBanking[]>([]);
+  const [isLoadingMissingBanking, setIsLoadingMissingBanking] = useState(false);
+  const [missingBankingError, setMissingBankingError] = useState('');
 
   useEffect(() => {
     checkAuth();
@@ -377,6 +398,27 @@ export default function AdminToolsPage() {
       setCodeLookupError(err instanceof Error ? err.message : 'Code lookup failed');
     } finally {
       setIsLookingUpCode(false);
+    }
+  };
+
+  // Fetch partners missing banking details
+  const fetchMissingBanking = async () => {
+    setIsLoadingMissingBanking(true);
+    setMissingBankingError('');
+
+    try {
+      const res = await fetch('/api/admin/tools/missing-banking');
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to fetch partners');
+      }
+
+      setPartnersMissingBanking(data.partners || []);
+    } catch (err) {
+      setMissingBankingError(err instanceof Error ? err.message : 'Failed to fetch partners');
+    } finally {
+      setIsLoadingMissingBanking(false);
     }
   };
 
@@ -673,6 +715,21 @@ export default function AdminToolsPage() {
             }`}
           >
             Code Lookup
+          </button>
+          <button
+            onClick={() => {
+              setActiveTab('missing-banking');
+              if (partnersMissingBanking.length === 0 && !isLoadingMissingBanking) {
+                fetchMissingBanking();
+              }
+            }}
+            className={`px-4 py-2 rounded-lg font-medium ${
+              activeTab === 'missing-banking'
+                ? 'bg-amber-600 text-white'
+                : 'bg-white text-amber-600 hover:bg-amber-50 border border-amber-200'
+            }`}
+          >
+            Missing Banking
           </button>
         </div>
 
@@ -1901,6 +1958,149 @@ export default function AdminToolsPage() {
               <ul className="text-sm text-stone-600 space-y-1">
                 <li><strong>Activation Codes:</strong> MQR-XX-XXXXXX (e.g., MQR-5N-XLRHG9)</li>
                 <li><strong>Referral Codes:</strong> REF-XXXXX (e.g., REF-ABC12)</li>
+              </ul>
+            </div>
+          </div>
+        )}
+
+        {/* Missing Banking Tab */}
+        {activeTab === 'missing-banking' && (
+          <div className="bg-white rounded-xl shadow p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className="text-lg font-bold text-stone-800">Partners Missing Banking Details</h3>
+                <p className="text-sm text-stone-600">
+                  Active partners who haven&apos;t completed their banking information for payouts.
+                </p>
+              </div>
+              <button
+                onClick={fetchMissingBanking}
+                disabled={isLoadingMissingBanking}
+                className="px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 disabled:opacity-50"
+              >
+                {isLoadingMissingBanking ? 'Loading...' : 'Refresh'}
+              </button>
+            </div>
+
+            {missingBankingError && (
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+                {missingBankingError}
+              </div>
+            )}
+
+            {isLoadingMissingBanking && partnersMissingBanking.length === 0 ? (
+              <div className="text-center py-12 text-stone-500">
+                <div className="animate-spin inline-block w-6 h-6 border-2 border-amber-600 border-t-transparent rounded-full mb-2"></div>
+                <p>Loading partners...</p>
+              </div>
+            ) : partnersMissingBanking.length === 0 ? (
+              <div className="text-center py-12">
+                <div className="text-4xl mb-3">✅</div>
+                <p className="text-stone-600 font-medium">All active partners have complete banking details!</p>
+              </div>
+            ) : (
+              <>
+                <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                  <p className="text-amber-800 font-medium">
+                    ⚠️ {partnersMissingBanking.length} partner{partnersMissingBanking.length !== 1 ? 's' : ''} missing banking details
+                  </p>
+                  <p className="text-sm text-amber-700 mt-1">
+                    These partners won&apos;t receive commission payouts until they add their banking information.
+                  </p>
+                </div>
+
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead className="bg-stone-50">
+                      <tr>
+                        <th className="text-left p-3 font-medium text-stone-700">Partner</th>
+                        <th className="text-left p-3 font-medium text-stone-700">Type</th>
+                        <th className="text-left p-3 font-medium text-stone-700">Missing Fields</th>
+                        <th className="text-center p-3 font-medium text-stone-700">Codes</th>
+                        <th className="text-left p-3 font-medium text-stone-700">Joined</th>
+                        <th className="text-left p-3 font-medium text-stone-700">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-stone-100">
+                      {partnersMissingBanking.map((partner) => (
+                        <tr key={partner.id} className="hover:bg-stone-50">
+                          <td className="p-3">
+                            <div className="font-medium text-stone-800">{partner.partnerName}</div>
+                            <div className="text-xs text-stone-500">{partner.email}</div>
+                          </td>
+                          <td className="p-3">
+                            <span className={`inline-block px-2 py-1 rounded text-xs font-medium ${
+                              partner.partnerType === 'wholesale' 
+                                ? 'bg-blue-100 text-blue-800' 
+                                : 'bg-purple-100 text-purple-800'
+                            }`}>
+                              {partner.partnerType}
+                            </span>
+                          </td>
+                          <td className="p-3">
+                            <div className="flex flex-wrap gap-1">
+                              {!partner.bankingStatus.hasName && (
+                                <span className="px-2 py-0.5 bg-red-100 text-red-700 text-xs rounded">Bank Name</span>
+                              )}
+                              {!partner.bankingStatus.hasAccountName && (
+                                <span className="px-2 py-0.5 bg-red-100 text-red-700 text-xs rounded">Account Name</span>
+                              )}
+                              {!partner.bankingStatus.hasAccountNumber && (
+                                <span className="px-2 py-0.5 bg-red-100 text-red-700 text-xs rounded">Account Number</span>
+                              )}
+                            </div>
+                          </td>
+                          <td className="p-3 text-center">
+                            <div className="text-stone-800">
+                              {partner.assignedCodesCount > 0 && (
+                                <span className="text-blue-600" title="Assigned (unused)">
+                                  {partner.assignedCodesCount}
+                                </span>
+                              )}
+                              {partner.assignedCodesCount > 0 && partner.usedCodesCount > 0 && ' / '}
+                              {partner.usedCodesCount > 0 && (
+                                <span className="text-green-600" title="Used">
+                                  {partner.usedCodesCount}
+                                </span>
+                              )}
+                              {partner.assignedCodesCount === 0 && partner.usedCodesCount === 0 && (
+                                <span className="text-stone-400">—</span>
+                              )}
+                            </div>
+                            {(partner.assignedCodesCount > 0 || partner.usedCodesCount > 0) && (
+                              <div className="text-[10px] text-stone-400">assigned / used</div>
+                            )}
+                          </td>
+                          <td className="p-3 text-stone-600 whitespace-nowrap">
+                            {new Date(partner.createdAt).toLocaleDateString('en-NZ', {
+                              day: 'numeric',
+                              month: 'short',
+                              year: 'numeric'
+                            })}
+                          </td>
+                          <td className="p-3">
+                            <Link
+                              href={`/admin/partners?id=${partner.id}`}
+                              className="text-blue-600 hover:underline text-sm"
+                            >
+                              View Partner →
+                            </Link>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </>
+            )}
+
+            {/* Info box */}
+            <div className="mt-6 p-4 bg-stone-50 rounded-lg">
+              <h4 className="font-medium text-stone-800 mb-2">About Banking Details</h4>
+              <ul className="text-sm text-stone-600 space-y-1">
+                <li>• Partners need <strong>Bank Name</strong>, <strong>Account Name</strong>, and <strong>Account Number</strong> to receive payouts</li>
+                <li>• Partners are reminded to add banking details when purchasing codes and when codes are activated</li>
+                <li>• You can contact partners directly to remind them to complete their profile</li>
               </ul>
             </div>
           </div>
