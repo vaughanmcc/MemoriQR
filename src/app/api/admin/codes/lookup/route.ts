@@ -160,7 +160,7 @@ export async function GET(request: NextRequest) {
     if (!referralError && referralCode) {
       // Fetch activity history for this referral code
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data: activityLog } = await (supabase as any)
+      const { data: activityLog, error: activityError } = await (supabase as any)
         .from('referral_code_activity_log')
         .select(`
           id,
@@ -175,6 +175,8 @@ export async function GET(request: NextRequest) {
         `)
         .eq('referral_code_id', referralCode.id)
         .order('created_at', { ascending: true })
+
+      console.log(`[Code Lookup] Activity log for ${referralCode.id}: found=${activityLog?.length || 0} entries, error=${activityError?.message || 'none'}`)
 
       return NextResponse.json({
         found: true,
