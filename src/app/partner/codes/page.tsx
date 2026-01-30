@@ -60,7 +60,6 @@ export default function PartnerCodesPage() {
   const [hasBankingDetails, setHasBankingDetails] = useState(true) // Default to true to avoid flash
   const [linkedPartners, setLinkedPartners] = useState<LinkedPartner[]>([])
   const [selectedCodes, setSelectedCodes] = useState<Set<string>>(new Set())
-  const [selectionMode, setSelectionMode] = useState(false)
 
   useEffect(() => {
     fetchCodes()
@@ -125,7 +124,6 @@ export default function PartnerCodesPage() {
   }
 
   const cancelSelection = () => {
-    setSelectionMode(false)
     setSelectedCodes(new Set())
   }
 
@@ -206,34 +204,14 @@ export default function PartnerCodesPage() {
           </div>
 
           <div className="flex gap-3 flex-wrap">
-            {linkedPartners.length > 0 && !selectionMode && (
+            {selectedCodes.size > 0 && linkedPartners.length > 0 && (
               <button
-                onClick={() => setSelectionMode(true)}
-                disabled={availableCount === 0}
-                className="flex items-center gap-2 px-4 py-2 border border-blue-300 rounded-lg text-blue-700 hover:bg-blue-50 disabled:opacity-50"
+                onClick={() => setShowTransferModal(true)}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
               >
                 <ArrowRightLeft className="h-4 w-4" />
-                Transfer Codes
+                Transfer {selectedCodes.size} Code{selectedCodes.size !== 1 ? 's' : ''}
               </button>
-            )}
-            {selectionMode && (
-              <>
-                <button
-                  onClick={cancelSelection}
-                  className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
-                >
-                  <XCircle className="h-4 w-4" />
-                  Cancel
-                </button>
-                <button
-                  onClick={() => setShowTransferModal(true)}
-                  disabled={selectedCodes.size === 0}
-                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
-                >
-                  <ArrowRightLeft className="h-4 w-4" />
-                  Transfer {selectedCodes.size} Code{selectedCodes.size !== 1 ? 's' : ''}
-                </button>
-              </>
             )}
             <button
               onClick={downloadCodes}
@@ -252,6 +230,39 @@ export default function PartnerCodesPage() {
             </button>
           </div>
         </div>
+
+        {/* Selection & Transfer Controls */}
+        {linkedPartners.length > 0 && codes.length > 0 && (
+          <div className="flex items-center justify-between bg-gray-50 rounded-lg p-3 mb-4">
+            <div className="flex items-center gap-4">
+              <button
+                onClick={toggleSelectAll}
+                className="text-sm text-primary-600 hover:text-primary-700 font-medium"
+              >
+                {selectedCodes.size === codes.filter(c => !c.is_used).length && codes.filter(c => !c.is_used).length > 0 
+                  ? 'Deselect All' 
+                  : 'Select All Available'}
+              </button>
+              {selectedCodes.size > 0 && (
+                <button
+                  onClick={cancelSelection}
+                  className="text-sm text-gray-500 hover:text-gray-700"
+                >
+                  Clear Selection ({selectedCodes.size})
+                </button>
+              )}
+            </div>
+            {selectedCodes.size > 0 && (
+              <button
+                onClick={() => setShowTransferModal(true)}
+                className="flex items-center gap-2 px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm"
+              >
+                <ArrowRightLeft className="h-4 w-4" />
+                Transfer to Another Business
+              </button>
+            )}
+          </div>
+        )}
 
         {/* Recent Purchases */}
         {batches.length > 0 && (
@@ -317,8 +328,8 @@ export default function PartnerCodesPage() {
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  {selectionMode && (
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  {linkedPartners.length > 0 && (
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-10">
                       <button
                         onClick={toggleSelectAll}
                         className="flex items-center gap-1 hover:text-gray-700"
@@ -356,9 +367,9 @@ export default function PartnerCodesPage() {
                 {codes.map((code) => (
                   <tr 
                     key={code.activation_code} 
-                    className={`${code.is_used ? 'bg-gray-50' : ''} ${selectionMode && selectedCodes.has(code.activation_code) ? 'bg-blue-50' : ''}`}
+                    className={`${code.is_used ? 'bg-gray-50' : ''} ${selectedCodes.has(code.activation_code) ? 'bg-blue-50' : ''}`}
                   >
-                    {selectionMode && (
+                    {linkedPartners.length > 0 && (
                       <td className="px-4 py-4 whitespace-nowrap">
                         {!code.is_used ? (
                           <button
@@ -451,7 +462,6 @@ export default function PartnerCodesPage() {
           onClose={() => setShowTransferModal(false)}
           onSuccess={() => {
             setShowTransferModal(false)
-            setSelectionMode(false)
             setSelectedCodes(new Set())
             fetchCodes()
           }}
