@@ -113,8 +113,13 @@ export default function AdminDashboardPage() {
                   </span>
                 )}
               </Link>
-              <Link href="/admin/memorials" className="text-white/70 hover:text-white px-3 py-1 rounded hover:bg-white/10">
+              <Link href="/admin/memorials?fulfillment=pending" className="text-white/70 hover:text-white px-3 py-1 rounded hover:bg-white/10 relative">
                 Memorials
+                {(stats?.pendingFulfillment ?? 0) > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-orange-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+                    {stats.pendingFulfillment}
+                  </span>
+                )}
               </Link>
               <Link href="/admin/tools" className="text-white/70 hover:text-white px-3 py-1 rounded hover:bg-white/10">
                 Tools
