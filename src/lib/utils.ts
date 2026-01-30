@@ -30,6 +30,62 @@ export function formatTimeAgo(date: string | Date): string {
   return formatDistanceToNow(d, { addSuffix: true })
 }
 
+/**
+ * Format date with time and timezone for admin/partner displays
+ * Output: "27/01/2026, 07:25 am NZDT"
+ */
+export function formatDateTime(date: string | Date): string {
+  const d = typeof date === 'string' ? new Date(date) : date
+  return d.toLocaleString('en-NZ', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true,
+    timeZoneName: 'short'
+  })
+}
+
+/**
+ * Format date only (no time) for admin/partner displays
+ * Output: "27/01/2026"
+ */
+export function formatDateOnly(date: string | Date): string {
+  const d = typeof date === 'string' ? new Date(date) : date
+  return d.toLocaleDateString('en-NZ', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric'
+  })
+}
+
+/**
+ * Format time with timezone for admin/partner displays
+ * Output: "07:25 am NZDT"
+ */
+export function formatTimeWithZone(date: string | Date): string {
+  const d = typeof date === 'string' ? new Date(date) : date
+  return d.toLocaleTimeString('en-NZ', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true,
+    timeZoneName: 'short'
+  })
+}
+
+/**
+ * Format date and time for multi-line display
+ * Returns { date: "27/01/2026", time: "07:25 am NZDT" }
+ */
+export function formatDateTimeParts(date: string | Date): { date: string; time: string } {
+  const d = typeof date === 'string' ? new Date(date) : date
+  return {
+    date: formatDateOnly(d),
+    time: formatTimeWithZone(d)
+  }
+}
+
 export function generateSlug(name: string): string {
   const base = name
     .toLowerCase()

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import { formatDateOnly, formatTimeWithZone } from '@/lib/utils';
 
 // Card variant options with readable labels
 const CARD_VARIANTS = [
@@ -1016,7 +1017,8 @@ export default function AdminCodesPage() {
                             )}
                           </td>
                           <td className="px-4 py-3 text-sm text-stone-500">
-                            {new Date(code.created_at).toLocaleDateString()}
+                            <div>{formatDateOnly(code.created_at)}</div>
+                            <div className="text-xs">{formatTimeWithZone(code.created_at)}</div>
                           </td>
                         </tr>
                       ))}
@@ -1182,10 +1184,8 @@ export default function AdminCodesPage() {
                               )}
                             </td>
                             <td className="px-4 py-3 text-sm text-stone-500">
-                              {new Date(batch.createdAt).toLocaleDateString()}
-                              <span className="text-xs ml-1">
-                                {new Date(batch.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                              </span>
+                              <div>{formatDateOnly(batch.createdAt)}</div>
+                              <div className="text-xs">{formatTimeWithZone(batch.createdAt)}</div>
                             </td>
                           </tr>
                           {/* Expanded codes row */}

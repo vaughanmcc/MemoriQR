@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import { formatDateOnly, formatTimeWithZone } from '@/lib/utils';
 
 interface Partner {
   id: string;
@@ -612,13 +613,10 @@ function AdminPartnersContent() {
               </div>
               <div>
                 <label className="text-sm text-stone-500">Applied</label>
-                <p className="text-stone-600">
-                  {new Date(selectedPartner.created_at).toLocaleDateString('en-NZ', {
-                    day: 'numeric',
-                    month: 'long',
-                    year: 'numeric',
-                  })}
-                </p>
+                <div className="text-stone-600">
+                  <div>{formatDateOnly(selectedPartner.created_at)}</div>
+                  <div className="text-xs">{formatTimeWithZone(selectedPartner.created_at)}</div>
+                </div>
               </div>
             </div>
 

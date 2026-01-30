@@ -4,6 +4,41 @@
 
 ---
 
+## January 30, 2026 - Date/Time Display Formatting & Partner Notifications
+
+**Completed:**
+- ✅ **Date/Time Display Standardization:**
+  - All dates in admin and partner portals now show time with timezone (e.g., "30/01/2026" + "07:25 am NZDT")
+  - Multi-line display: date on first line, time with timezone below (for compact views)
+  - Added utility functions: `formatDateOnly()`, `formatTimeWithZone()`, `formatDateTimeParts()`
+  - Updated across: partner/codes, partner/referrals, partner/dashboard, admin/codes, admin/referrals, admin/partners, admin/tools
+
+- ✅ **Partner Codes Page UI Fix:**
+  - Moved Download + Transfer buttons to table header (matching referral codes page layout)
+  - Users no longer need to scroll up to access selection/transfer controls
+  - Filter tabs, Download All, and Transfer controls now in one header row
+
+- ✅ **Partner Order Notification Workflow:**
+  - Created Pipedream workflow for partner code notifications
+  - Handles `referral_codes_generated` and `partner_codes_generated` events
+  - Env var: `PIPEDREAM_PARTNER_CODES_WEBHOOK_URL`
+
+- ✅ **Type Definition Fix:**
+  - Added `activityHistory` to `CodeLookupResult` interface in admin/tools
+
+**Key Files Modified:**
+- `src/lib/utils.ts` - Added `formatTimeWithZone()` and `formatDateTimeParts()` utilities
+- `src/app/partner/codes/page.tsx` - UI restructure + date formatting
+- `src/app/partner/referrals/page.tsx` - Date formatting
+- `src/app/partner/dashboard/page.tsx` - Date formatting
+- `src/app/admin/codes/page.tsx` - Date formatting
+- `src/app/admin/referrals/page.tsx` - Date formatting
+- `src/app/admin/partners/page.tsx` - Date formatting
+- `src/app/admin/tools/page.tsx` - Date formatting + type fix
+- `pipedream/partner-codes-notification-handler.js` - Partner notification emails
+
+---
+
 ## January 29, 2026 - Order Fulfillment & Admin Enhancements
 
 **Completed:**

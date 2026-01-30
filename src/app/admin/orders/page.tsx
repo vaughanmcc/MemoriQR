@@ -156,12 +156,14 @@ export default function AdminOrdersPage() {
   };
 
   const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString('en-NZ', {
-      day: 'numeric',
-      month: 'short',
+    return new Date(dateStr).toLocaleString('en-NZ', {
+      day: '2-digit',
+      month: '2-digit',
       year: 'numeric',
       hour: '2-digit',
       minute: '2-digit',
+      hour12: true,
+      timeZoneName: 'short'
     });
   };
 

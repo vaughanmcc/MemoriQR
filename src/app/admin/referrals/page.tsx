@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { formatDateOnly, formatTimeWithZone } from '@/lib/utils';
 
 interface Partner {
   id: string;
@@ -483,9 +484,10 @@ export default function AdminReferralsPage() {
                         <h4 className="font-medium text-stone-800">
                           {batch.name || `Batch ${batch.id.slice(0, 8)}`}
                         </h4>
-                        <p className="text-sm text-stone-500">
-                          {batch.partnerName} • Created {new Date(batch.createdAt).toLocaleDateString()}
-                        </p>
+                        <div className="text-sm text-stone-500">
+                          <span>{batch.partnerName} • Created {formatDateOnly(batch.createdAt)}</span>
+                          <span className="text-xs ml-1">{formatTimeWithZone(batch.createdAt)}</span>
+                        </div>
                       </div>
                       <div className="flex items-center gap-6">
                         <div className="text-right">

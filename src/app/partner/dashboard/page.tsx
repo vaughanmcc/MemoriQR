@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { PartnerHeader } from '@/components/layout/PartnerHeader'
+import { formatDateOnly, formatTimeWithZone } from '@/lib/utils'
 import { 
   LayoutDashboard, 
   QrCode, 
@@ -397,9 +398,10 @@ export default function PartnerDashboardPage() {
                     <p className="font-medium text-green-600">
                       +${Number(commission.commission_amount).toFixed(2)}
                     </p>
-                    <p className="text-xs text-gray-500">
-                      {new Date(commission.earned_at).toLocaleDateString('en-NZ')}
-                    </p>
+                    <div className="text-xs text-gray-500">
+                      <div>{formatDateOnly(commission.earned_at)}</div>
+                      <div>{formatTimeWithZone(commission.earned_at)}</div>
+                    </div>
                   </div>
                 </div>
               ))}

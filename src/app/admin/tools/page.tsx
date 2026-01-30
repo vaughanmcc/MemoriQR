@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { formatDateOnly, formatTimeWithZone, formatDateTime } from '@/lib/utils';
 
 interface Order {
   id: string;
@@ -153,6 +154,15 @@ interface CodeLookupResult {
         email: string;
       } | null;
     } | null;
+    activityHistory?: {
+      id: string;
+      activityType: string;
+      fromPartnerName: string | null;
+      toPartnerName: string | null;
+      performedByAdmin: boolean;
+      notes: string | null;
+      createdAt: string;
+    }[];
   };
 }
 
@@ -837,7 +847,10 @@ export default function AdminToolsPage() {
                             {order.order_status}
                           </span>
                         </td>
-                        <td className="py-3 px-2">{new Date(order.created_at).toLocaleDateString()}</td>
+                        <td className="py-3 px-2">
+                          <div>{formatDateOnly(order.created_at)}</div>
+                          <div className="text-xs text-stone-500">{formatTimeWithZone(order.created_at)}</div>
+                        </td>
                         <td className="py-3 px-2">
                           <button
                             onClick={() => {
@@ -1186,12 +1199,9 @@ export default function AdminToolsPage() {
                             </span>
                           </td>
                           <td className="py-3 pr-4 text-xs">
-                            {new Date(m.hosting_expires_at).toLocaleDateString()}
-                            <span className={`block ${
-                              new Date(m.hosting_expires_at) < new Date() 
-                                ? 'text-red-600' 
-                                : 'text-stone-500'
-                            }`}>
+                            <div>{formatDateOnly(m.hosting_expires_at)}</div>
+                            <div className="text-xs">{formatTimeWithZone(m.hosting_expires_at)}</div>
+                            <span className={`block ${new Date(m.hosting_expires_at) < new Date() ? 'text-red-600' : 'text-stone-500'}`}>
                               {new Date(m.hosting_expires_at) < new Date() ? 'Expired' : m.renewal_status}
                             </span>
                           </td>
@@ -1301,7 +1311,7 @@ export default function AdminToolsPage() {
                       <div className="flex justify-between">
                         <span className="text-stone-500">Expires:</span>
                         <span className={new Date(selectedMemorial.hosting_expires_at) < new Date() ? 'text-red-600 font-medium' : ''}>
-                          {new Date(selectedMemorial.hosting_expires_at).toLocaleDateString()}
+                          {formatDateTime(selectedMemorial.hosting_expires_at)}
                         </span>
                       </div>
                       <div className="flex justify-between">
@@ -1314,11 +1324,11 @@ export default function AdminToolsPage() {
                       </div>
                       <div className="flex justify-between">
                         <span className="text-stone-500">Created:</span>
-                        <span>{new Date(selectedMemorial.created_at).toLocaleDateString()}</span>
+                        <span>{formatDateTime(selectedMemorial.created_at)}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-stone-500">Updated:</span>
-                        <span>{new Date(selectedMemorial.updated_at).toLocaleDateString()}</span>
+                        <span>{formatDateTime(selectedMemorial.updated_at)}</span>
                       </div>
                     </div>
 
@@ -1618,11 +1628,7 @@ export default function AdminToolsPage() {
                                 <span className="text-stone-500">Activated:</span>{' '}
                                 <span className="font-medium">
                                   {activation.usedAt 
-                                    ? new Date(activation.usedAt).toLocaleDateString('en-NZ', {
-                                        day: 'numeric',
-                                        month: 'short',
-                                        year: 'numeric',
-                                      })
+                                    ? formatDateTime(activation.usedAt)
                                     : 'N/A'
                                   }
                                 </span>
@@ -1934,7 +1940,7 @@ export default function AdminToolsPage() {
                               </span>
                             </p>
                             <p className="text-xs text-stone-400 mt-1">
-                              {new Date(codeLookupResult.code.order.createdAt).toLocaleDateString('en-NZ')}
+                              {formatDateTime(codeLookupResult.code.order.createdAt)}
                             </p>
                           </div>
                           <Link 
@@ -2014,8 +2020,8 @@ export default function AdminToolsPage() {
                                     )}
                                   </div>
                                   <div className="text-right text-xs text-stone-400 whitespace-nowrap ml-3">
-                                    <div>{new Date(activity.createdAt).toLocaleDateString('en-NZ', { day: '2-digit', month: 'short', year: 'numeric' })}</div>
-                                    <div>{new Date(activity.createdAt).toLocaleTimeString('en-NZ', { hour: '2-digit', minute: '2-digit', timeZoneName: 'short' })}</div>
+                                    <div>{formatDateOnly(activity.createdAt)}</div>
+                                    <div>{formatTimeWithZone(activity.createdAt)}</div>
                                   </div>
                                 </div>
                               </div>
@@ -2082,8 +2088,8 @@ export default function AdminToolsPage() {
                                     )}
                                   </div>
                                   <div className="text-right text-xs text-stone-400 whitespace-nowrap ml-3">
-                                    <div>{new Date(activity.createdAt).toLocaleDateString('en-NZ', { day: '2-digit', month: 'short', year: 'numeric' })}</div>
-                                    <div>{new Date(activity.createdAt).toLocaleTimeString('en-NZ', { hour: '2-digit', minute: '2-digit', timeZoneName: 'short' })}</div>
+                                    <div>{formatDateOnly(activity.createdAt)}</div>
+                                    <div>{formatTimeWithZone(activity.createdAt)}</div>
                                   </div>
                                 </div>
                               </div>
@@ -2215,11 +2221,8 @@ export default function AdminToolsPage() {
                             )}
                           </td>
                           <td className="p-3 text-stone-600 whitespace-nowrap">
-                            {new Date(partner.createdAt).toLocaleDateString('en-NZ', {
-                              day: 'numeric',
-                              month: 'short',
-                              year: 'numeric'
-                            })}
+                            <div>{formatDateOnly(partner.createdAt)}</div>
+                            <div className="text-xs">{formatTimeWithZone(partner.createdAt)}</div>
                           </td>
                           <td className="p-3">
                             <Link

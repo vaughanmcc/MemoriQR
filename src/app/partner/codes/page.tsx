@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { PartnerHeader } from '@/components/layout/PartnerHeader'
+import { formatDateOnly, formatTimeWithZone } from '@/lib/utils'
 import { 
   ArrowLeft, 
   QrCode, 
@@ -231,39 +232,6 @@ export default function PartnerCodesPage() {
           </div>
         </div>
 
-        {/* Selection & Transfer Controls */}
-        {linkedPartners.length > 0 && codes.length > 0 && (
-          <div className="flex items-center justify-between bg-gray-50 rounded-lg p-3 mb-4">
-            <div className="flex items-center gap-4">
-              <button
-                onClick={toggleSelectAll}
-                className="text-sm text-primary-600 hover:text-primary-700 font-medium"
-              >
-                {selectedCodes.size === codes.filter(c => !c.is_used).length && codes.filter(c => !c.is_used).length > 0 
-                  ? 'Deselect All' 
-                  : 'Select All Available'}
-              </button>
-              {selectedCodes.size > 0 && (
-                <button
-                  onClick={cancelSelection}
-                  className="text-sm text-gray-500 hover:text-gray-700"
-                >
-                  Clear Selection ({selectedCodes.size})
-                </button>
-              )}
-            </div>
-            {selectedCodes.size > 0 && (
-              <button
-                onClick={() => setShowTransferModal(true)}
-                className="flex items-center gap-2 px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm"
-              >
-                <ArrowRightLeft className="h-4 w-4" />
-                Transfer to Another Business
-              </button>
-            )}
-          </div>
-        )}
-
         {/* Recent Purchases */}
         {batches.length > 0 && (
           <div className="bg-white rounded-xl shadow-sm p-6 mb-8">
@@ -284,9 +252,10 @@ export default function PartnerCodesPage() {
                   </div>
                   <div className="text-right">
                     {getStatusBadge(batch.status)}
-                    <p className="text-xs text-gray-500 mt-1">
-                      {new Date(batch.created_at).toLocaleDateString('en-NZ')}
-                    </p>
+                    <div className="text-xs text-gray-500 mt-1">
+                      <div>{formatDateOnly(batch.created_at)}</div>
+                      <div>{formatTimeWithZone(batch.created_at)}</div>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -294,25 +263,69 @@ export default function PartnerCodesPage() {
           </div>
         )}
 
-        {/* Filter Tabs */}
-        <div className="flex gap-2 mb-6">
-          {(['all', 'available', 'used'] as const).map((f) => (
-            <button
-              key={f}
-              onClick={() => setFilter(f)}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                filter === f
-                  ? 'bg-primary-600 text-white'
-                  : 'bg-white text-gray-600 hover:bg-gray-100'
-              }`}
-            >
-              {f === 'all' ? 'All Codes' : f === 'available' ? 'Available' : 'Used'}
-            </button>
-          ))}
-        </div>
-
         {/* Codes Table */}
         <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+          {/* Filter Tabs + Actions Header */}
+          <div className="p-4 border-b flex flex-col gap-3">
+            <div className="flex items-center justify-between">
+              <div className="flex gap-2">
+                {(['all', 'available', 'used'] as const).map((f) => (
+                  <button
+                    key={f}
+                    onClick={() => setFilter(f)}
+                    className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                      filter === f
+                        ? 'bg-primary-100 text-primary-700'
+                        : 'text-gray-600 hover:bg-gray-100'
+                    }`}
+                  >
+                    {f === 'all' ? 'All' : f === 'available' ? 'Available' : 'Used'}
+                  </button>
+                ))}
+              </div>
+              <button
+                onClick={downloadCodes}
+                disabled={availableCount === 0}
+                className="flex items-center gap-2 px-3 py-1.5 text-sm bg-gray-100 hover:bg-gray-200 rounded-lg disabled:opacity-50"
+              >
+                <Download className="h-4 w-4" />
+                Download All Available
+              </button>
+            </div>
+            
+            {/* Selection & Transfer Controls */}
+            {linkedPartners.length > 0 && codes.length > 0 && (
+              <div className="flex items-center justify-between bg-gray-50 rounded-lg p-3">
+                <div className="flex items-center gap-4">
+                  <button
+                    onClick={toggleSelectAll}
+                    className="text-sm text-primary-600 hover:text-primary-700 font-medium"
+                  >
+                    {selectedCodes.size === codes.filter(c => !c.is_used).length && codes.filter(c => !c.is_used).length > 0 
+                      ? 'Deselect All' 
+                      : 'Select All Available'}
+                  </button>
+                  {selectedCodes.size > 0 && (
+                    <button
+                      onClick={cancelSelection}
+                      className="text-sm text-gray-500 hover:text-gray-700"
+                    >
+                      Clear Selection ({selectedCodes.size})
+                    </button>
+                  )}
+                </div>
+                {selectedCodes.size > 0 && (
+                  <button
+                    onClick={() => setShowTransferModal(true)}
+                    className="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 text-sm font-medium"
+                  >
+                    <ArrowRightLeft className="h-4 w-4" />
+                    Transfer {selectedCodes.size} Code{selectedCodes.size !== 1 ? 's' : ''}
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
           {codes.length === 0 ? (
             <div className="p-12 text-center">
               <QrCode className="h-12 w-12 text-gray-300 mx-auto mb-4" />
@@ -406,9 +419,16 @@ export default function PartnerCodesPage() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       {code.is_used ? (
-                        <span className="flex items-center gap-1 text-gray-500">
-                          <CheckCircle className="h-4 w-4" />
-                          Used {code.used_at && `on ${new Date(code.used_at).toLocaleDateString('en-NZ')}`}
+                        <span className="flex flex-col text-gray-500">
+                          <span className="flex items-center gap-1">
+                            <CheckCircle className="h-4 w-4" />
+                            Used
+                          </span>
+                          {code.used_at && (
+                            <span className="text-xs">
+                              {formatDateOnly(code.used_at)}<br/>{formatTimeWithZone(code.used_at)}
+                            </span>
+                          )}
                         </span>
                       ) : (
                         <span className="flex items-center gap-1 text-green-600">
@@ -418,7 +438,8 @@ export default function PartnerCodesPage() {
                       )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {new Date(code.created_at).toLocaleDateString('en-NZ')}
+                      <div>{formatDateOnly(code.created_at)}</div>
+                      <div className="text-xs">{formatTimeWithZone(code.created_at)}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right">
                       {!code.is_used && (

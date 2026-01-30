@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { formatDateOnly, formatTimeWithZone } from '@/lib/utils'
 import { 
   ArrowLeft, 
   Tag, 
@@ -321,9 +322,10 @@ export default function PartnerReferralsPage() {
                         <h3 className="font-semibold text-lg">
                           {batch.batch_name || `Batch ${batch.batch_id.slice(0, 8)}`}
                         </h3>
-                        <p className="text-sm text-gray-500">
-                          Created {new Date(batch.created_at).toLocaleDateString()}
-                        </p>
+                        <div className="text-sm text-gray-500">
+                          <div>Created {formatDateOnly(batch.created_at)}</div>
+                          <div className="text-xs">{formatTimeWithZone(batch.created_at)}</div>
+                        </div>
                       </div>
                       <button
                         onClick={() => downloadCodes(batch.batch_id)}
@@ -470,7 +472,7 @@ export default function PartnerReferralsPage() {
                         </p>
                         <p className="text-xs text-gray-500">
                           {code.is_used 
-                            ? `Used ${new Date(code.used_at!).toLocaleDateString()}`
+                            ? <span>Used {formatDateOnly(code.used_at!)}, {formatTimeWithZone(code.used_at!)}</span>
                             : `${code.discount_percent}% discount • ${code.commission_percent}% commission`
                           }
                         </p>
@@ -555,8 +557,8 @@ export default function PartnerReferralsPage() {
                         onClick={() => {
                           setShowTransferModal(false)
                           setTransferResult(null)
-                          setSelectedCodes([])
-                          fetchCodes()
+                          setSelectedCodes(new Set())
+                          fetchReferrals()
                         }}
                         className="mt-3 px-4 py-2 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700"
                       >
