@@ -185,7 +185,7 @@ interface PartnerMissingBanking {
 export default function AdminToolsPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [activeTab, setActiveTab] = useState<'search' | 'order' | 'resend' | 'memorials' | 'code-lookup' | 'missing-banking'>('search');
+  const [activeTab, setActiveTab] = useState<'search' | 'order' | 'resend' | 'memorials' | 'code-lookup' | 'missing-banking' | 'partner-search'>('search');
   
   // Search by customer
   const [searchQuery, setSearchQuery] = useState('');
@@ -241,6 +241,19 @@ export default function AdminToolsPage() {
   const [partnersMissingBanking, setPartnersMissingBanking] = useState<PartnerMissingBanking[]>([]);
   const [isLoadingMissingBanking, setIsLoadingMissingBanking] = useState(false);
   const [missingBankingError, setMissingBankingError] = useState('');
+
+  // Partner search
+  const [partnerSearchQuery, setPartnerSearchQuery] = useState('');
+  const [partnerSearchResults, setPartnerSearchResults] = useState<Array<{
+    id: string;
+    partner_name: string;
+    contact_email: string;
+    partner_type: string;
+    status: string;
+    created_at: string;
+  }>>([]);
+  const [isSearchingPartners, setIsSearchingPartners] = useState(false);
+  const [partnerSearchError, setPartnerSearchError] = useState('');
 
   useEffect(() => {
     checkAuth();
@@ -457,6 +470,30 @@ export default function AdminToolsPage() {
       setMissingBankingError(err instanceof Error ? err.message : 'Failed to fetch partners');
     } finally {
       setIsLoadingMissingBanking(false);
+    }
+  };
+
+  // Search partners
+  const handlePartnerSearch = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!partnerSearchQuery.trim()) return;
+
+    setIsSearchingPartners(true);
+    setPartnerSearchError('');
+
+    try {
+      const res = await fetch(`/api/admin/partners?search=${encodeURIComponent(partnerSearchQuery.trim())}`);
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to search partners');
+      }
+
+      setPartnerSearchResults(data.partners || []);
+    } catch (err) {
+      setPartnerSearchError(err instanceof Error ? err.message : 'Failed to search partners');
+    } finally {
+      setIsSearchingPartners(false);
     }
   };
 
@@ -753,6 +790,16 @@ export default function AdminToolsPage() {
             }`}
           >
             Code Lookup
+          </button>
+          <button
+            onClick={() => setActiveTab('partner-search')}
+            className={`px-4 py-2 rounded-lg font-medium ${
+              activeTab === 'partner-search'
+                ? 'bg-stone-800 text-white'
+                : 'bg-white text-stone-600 hover:bg-stone-50'
+            }`}
+          >
+            Partner Search
           </button>
           <button
             onClick={() => {
@@ -2137,6 +2184,110 @@ export default function AdminToolsPage() {
                 <li><strong>Referral Codes:</strong> REF-XXXXX (e.g., REF-ABC12)</li>
               </ul>
             </div>
+          </div>
+        )}
+
+        {/* Partner Search Tab */}
+        {activeTab === 'partner-search' && (
+          <div className="bg-white rounded-xl shadow p-6">
+            <h3 className="text-lg font-bold text-stone-800 mb-2">Search Partners</h3>
+            <p className="text-sm text-stone-600 mb-4">
+              Search for partners by name, email, or business name.
+            </p>
+            
+            <form onSubmit={handlePartnerSearch} className="mb-6">
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={partnerSearchQuery}
+                  onChange={(e) => setPartnerSearchQuery(e.target.value)}
+                  placeholder="Enter partner name or email..."
+                  className="flex-1 max-w-lg px-4 py-2 border rounded-lg focus:ring-2 focus:ring-stone-500 focus:border-transparent"
+                />
+                <button
+                  type="submit"
+                  disabled={isSearchingPartners}
+                  className="px-6 py-2 bg-stone-800 text-white rounded-lg hover:bg-stone-700 disabled:opacity-50"
+                >
+                  {isSearchingPartners ? 'Searching...' : 'Search'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPartnerSearchQuery('');
+                    setPartnerSearchResults([]);
+                    setPartnerSearchError('');
+                  }}
+                  className="px-4 py-2 bg-stone-200 text-stone-700 rounded-lg hover:bg-stone-300"
+                >
+                  Clear
+                </button>
+              </div>
+            </form>
+
+            {partnerSearchError && (
+              <div className="mb-4 p-4 bg-red-50 text-red-700 rounded-lg">
+                {partnerSearchError}
+              </div>
+            )}
+
+            {partnerSearchResults.length > 0 && (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left">
+                  <thead>
+                    <tr className="border-b text-stone-500 text-sm">
+                      <th className="py-3 pr-4">Partner Name</th>
+                      <th className="py-3 pr-4">Email</th>
+                      <th className="py-3 pr-4">Type</th>
+                      <th className="py-3 pr-4">Status</th>
+                      <th className="py-3 pr-4">Joined</th>
+                      <th className="py-3">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {partnerSearchResults.map((partner) => (
+                      <tr key={partner.id} className="border-b hover:bg-stone-50">
+                        <td className="py-3 pr-4 font-medium">{partner.partner_name}</td>
+                        <td className="py-3 pr-4 text-stone-600">{partner.contact_email}</td>
+                        <td className="py-3 pr-4">
+                          <span className="px-2 py-1 text-xs font-medium bg-stone-100 text-stone-700 rounded-full capitalize">
+                            {partner.partner_type}
+                          </span>
+                        </td>
+                        <td className="py-3 pr-4">
+                          <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                            partner.status === 'active' ? 'bg-green-100 text-green-700' :
+                            partner.status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
+                            partner.status === 'suspended' ? 'bg-red-100 text-red-700' :
+                            'bg-stone-100 text-stone-700'
+                          }`}>
+                            {partner.status}
+                          </span>
+                        </td>
+                        <td className="py-3 pr-4 text-stone-600 whitespace-nowrap">
+                          <div>{formatDateOnly(partner.created_at)}</div>
+                          <div className="text-xs">{formatTimeWithZone(partner.created_at)}</div>
+                        </td>
+                        <td className="py-3">
+                          <Link
+                            href={`/admin/partners?id=${partner.id}`}
+                            className="text-amber-700 hover:text-amber-900 font-medium"
+                          >
+                            View Partner →
+                          </Link>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            {partnerSearchResults.length === 0 && partnerSearchQuery && !isSearchingPartners && !partnerSearchError && (
+              <div className="text-center py-8 text-stone-500">
+                No partners found matching &quot;{partnerSearchQuery}&quot;
+              </div>
+            )}
           </div>
         )}
 
