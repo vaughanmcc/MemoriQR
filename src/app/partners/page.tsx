@@ -356,9 +356,12 @@ export default function PartnersPage() {
                     <option value="crematorium">Pet Crematorium</option>
                     <option value="funeral_home">Funeral Home</option>
                     <option value="pet_store">Pet Store</option>
-                    <option value="groomer">Pet Groomer</option>                    <option value="photo_studio">Photo Studio</option>
+                    <option value="groomer">Pet Groomer</option>
+                    <option value="photo_studio">Photo Studio</option>
                     <option value="photographer">Photographer</option>
-                    <option value="videographer">Videographer</option>                    <option value="other">Other</option>
+                    <option value="videographer">Videographer</option>
+                    <option value="life_insurer">Life Insurer</option>
+                    <option value="other">Other</option>
                   </select>
                 </div>
 
