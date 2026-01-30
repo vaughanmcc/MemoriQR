@@ -98,6 +98,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Try to find as referral code
+    console.log(`[Code Lookup] Searching referral_codes for: "${code}"`)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: referralCode, error: referralError } = await (supabase as any)
       .from('referral_codes')
@@ -125,6 +126,8 @@ export async function GET(request: NextRequest) {
       `)
       .eq('code', code)
       .single()
+
+    console.log(`[Code Lookup] Referral result: found=${!!referralCode}, error=${referralError?.message || 'none'}`)
 
     if (!referralError && referralCode) {
       return NextResponse.json({
