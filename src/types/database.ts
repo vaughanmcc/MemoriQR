@@ -524,6 +524,100 @@ export interface Database {
           completed_at?: string | null
         }
       }
+      referral_code_activity_log: {
+        Row: {
+          id: string
+          referral_code_id: string | null
+          code: string
+          activity_type: 'created' | 'transferred' | 'used' | 'expired'
+          performed_by_partner_id: string | null
+          performed_by_admin: boolean
+          from_partner_id: string | null
+          to_partner_id: string | null
+          from_partner_name: string | null
+          to_partner_name: string | null
+          notes: string | null
+          metadata: Json
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          referral_code_id?: string | null
+          code: string
+          activity_type: 'created' | 'transferred' | 'used' | 'expired'
+          performed_by_partner_id?: string | null
+          performed_by_admin?: boolean
+          from_partner_id?: string | null
+          to_partner_id?: string | null
+          from_partner_name?: string | null
+          to_partner_name?: string | null
+          notes?: string | null
+          metadata?: Json
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          referral_code_id?: string | null
+          code?: string
+          activity_type?: 'created' | 'transferred' | 'used' | 'expired'
+          performed_by_partner_id?: string | null
+          performed_by_admin?: boolean
+          from_partner_id?: string | null
+          to_partner_id?: string | null
+          from_partner_name?: string | null
+          to_partner_name?: string | null
+          notes?: string | null
+          metadata?: Json
+          created_at?: string
+        }
+      }
+      activation_code_activity_log: {
+        Row: {
+          id: string
+          activation_code_id: string | null
+          code: string
+          activity_type: 'created' | 'assigned' | 'unassigned' | 'transferred' | 'used'
+          performed_by_partner_id: string | null
+          performed_by_admin: boolean
+          from_partner_id: string | null
+          to_partner_id: string | null
+          from_partner_name: string | null
+          to_partner_name: string | null
+          notes: string | null
+          metadata: Json
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          activation_code_id?: string | null
+          code: string
+          activity_type: 'created' | 'assigned' | 'unassigned' | 'transferred' | 'used'
+          performed_by_partner_id?: string | null
+          performed_by_admin?: boolean
+          from_partner_id?: string | null
+          to_partner_id?: string | null
+          from_partner_name?: string | null
+          to_partner_name?: string | null
+          notes?: string | null
+          metadata?: Json
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          activation_code_id?: string | null
+          code?: string
+          activity_type?: 'created' | 'assigned' | 'unassigned' | 'transferred' | 'used'
+          performed_by_partner_id?: string | null
+          performed_by_admin?: boolean
+          from_partner_id?: string | null
+          to_partner_id?: string | null
+          from_partner_name?: string | null
+          to_partner_name?: string | null
+          notes?: string | null
+          metadata?: Json
+          created_at?: string
+        }
+      }
       activity_log: {
         Row: {
           id: string

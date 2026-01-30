@@ -3,6 +3,7 @@
  * 
  * Handles partner notification emails for codes generated:
  * - referral_codes_generated: Lead generation referral codes ready
+ * - referral_codes_transferred: Referral codes transferred from another partner
  * - partner_codes_generated: Wholesale activation codes ready
  * - partner_codes_unassigned: Codes removed from partner
  * - activation_code_used: Customer used an activation code
@@ -10,7 +11,7 @@
  * Use this in a SEPARATE Pipedream workflow with its own webhook URL.
  * Env var: PIPEDREAM_PARTNER_CODES_WEBHOOK_URL
  * 
- * Last updated: January 27, 2026
+ * Last updated: January 30, 2026
  */
 
 export default defineComponent({
@@ -23,7 +24,7 @@ export default defineComponent({
     console.log('Body object:', JSON.stringify(body, null, 2));
     console.log('Type:', body?.type);
     
-    const validTypes = ['referral_codes_generated', 'partner_codes_generated', 'partner_codes_unassigned', 'activation_code_used'];
+    const validTypes = ['referral_codes_generated', 'referral_codes_transferred', 'partner_codes_generated', 'partner_codes_unassigned', 'activation_code_used'];
     
     if (!body || !validTypes.includes(body.type)) {
       $.flow.exit(`Not a partner codes notification event: ${body?.type}`);
@@ -96,6 +97,64 @@ ${freeShipping ? '<li>They get <strong>free shipping</strong></li>' : ''}
 </div>
 </div>`,
         text: `Hi ${businessName},\n\n${quantity} referral codes have been generated for your lead generation cards.\n\nDETAILS:\n- Customer Discount: ${discountPercent}%\n- Your Commission: ${commissionPercent}%\n- Free Shipping: ${freeShipping ? 'Yes' : 'No'}\n- Validity: ${expiryText}\n\nYOUR CODES:\n${codesList}${moreCodesNote}\n\nView your Partner Dashboard: ${dashboardUrl}`
+      };
+    }
+
+    // Handle referral codes transferred from another partner
+    if (body.type === 'referral_codes_transferred') {
+      const { 
+        to, 
+        toBusinessName, 
+        fromBusinessName, 
+        quantity, 
+        codesList,
+        notes,
+        dashboardUrl 
+      } = body;
+
+      const notesHtml = notes ? `
+<div style="background: #f9f7f4; padding: 15px; border-radius: 8px; margin: 20px 0;">
+<p style="font-weight: bold; margin: 0 0 5px; color: #333;">Note from ${fromBusinessName}:</p>
+<p style="color: #555; margin: 0; font-style: italic;">${notes}</p>
+</div>
+` : '';
+
+      const notesText = notes ? `\nNote from ${fromBusinessName}: ${notes}\n` : '';
+
+      return {
+        to: to,
+        replyTo: 'partners@memoriqr.co.nz',
+        from_name: 'MemoriQR Partner Program',
+        subject: `📥 ${quantity} Referral Code${quantity > 1 ? 's' : ''} Transferred to Your Account`,
+        html: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+<div style="background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); padding: 30px; text-align: center; border-radius: 8px 8px 0 0;">
+<h1 style="color: #fff; margin: 0; font-size: 24px;">📥 Codes Transferred!</h1>
+<p style="color: rgba(255,255,255,0.9); margin: 10px 0 0; font-size: 14px;">From ${fromBusinessName}</p>
+</div>
+
+<div style="padding: 30px; background: #fff; border: 1px solid #ddd; border-top: none;">
+<p style="color: #333; font-size: 16px;">Hi ${toBusinessName},</p>
+<p style="color: #555; line-height: 1.6;"><strong>${fromBusinessName}</strong> has transferred <strong>${quantity} referral code${quantity > 1 ? 's' : ''}</strong> to your account.</p>
+
+${notesHtml}
+
+<div style="background: #f9f7f4; padding: 20px; border-radius: 8px; margin: 20px 0;">
+<p style="font-weight: bold; margin: 0 0 10px; color: #333;">Your New Referral Codes:</p>
+<pre style="background: #fff; border: 1px solid #ddd; padding: 15px; border-radius: 4px; font-family: monospace; font-size: 14px; white-space: pre-wrap; word-break: break-all; margin: 0;">${codesList}</pre>
+</div>
+
+<p style="color: #555; line-height: 1.6;">These codes are now yours to use. When a customer uses one of these codes, you'll earn the commission!</p>
+
+<div style="text-align: center; margin: 30px 0;">
+<a href="${dashboardUrl}" style="display: inline-block; background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); color: #fff; text-decoration: none; padding: 15px 40px; border-radius: 8px; font-size: 16px;">View Your Referral Codes</a>
+</div>
+</div>
+
+<div style="background: #f5f5f0; padding: 20px; text-align: center; border-radius: 0 0 8px 8px;">
+<p style="color: #888; font-size: 12px; margin: 0;">MemoriQR Partner Program</p>
+</div>
+</div>`,
+        text: `Hi ${toBusinessName},\n\n${fromBusinessName} has transferred ${quantity} referral code${quantity > 1 ? 's' : ''} to your account.${notesText}\n\nYOUR NEW CODES:\n${codesList}\n\nThese codes are now yours to use. When a customer uses one of these codes, you'll earn the commission!\n\nView your referral codes: ${dashboardUrl}`
       };
     }
     
