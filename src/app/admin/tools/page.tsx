@@ -1850,6 +1850,7 @@ export default function AdminToolsPage() {
                               year: 'numeric',
                               hour: '2-digit',
                               minute: '2-digit',
+                              timeZoneName: 'short',
                             })}
                           </dd>
                         </div>
