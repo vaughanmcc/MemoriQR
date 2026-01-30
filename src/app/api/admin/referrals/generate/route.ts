@@ -126,18 +126,38 @@ export async function POST(request: NextRequest) {
             batch_name: batchName,
             expires_at: expiresAt?.toISOString() || null,
           })
+          .select('id, code')
+          .single()
       )
     }
 
     // Execute all inserts
     const results = await Promise.all(insertPromises)
     const failures = results.filter(r => r.error)
+    const successes = results.filter(r => !r.error && r.data)
 
     if (failures.length > 0) {
       console.error('Some referral codes failed to insert:', failures[0].error)
     }
 
     const successCount = codes.length - failures.length
+
+    // Log activity for each created code
+    const activityPromises = successes.map(r => 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (supabase as any)
+        .from('referral_code_activity_log')
+        .insert({
+          referral_code_id: r.data.id,
+          code: r.data.code,
+          activity_type: 'created',
+          to_partner_id: partnerId,
+          to_partner_name: partnerDisplayName,
+          performed_by_admin: true,
+          notes: `Generated in batch ${batchName}`,
+        })
+    )
+    await Promise.all(activityPromises)
 
     console.log(`Generated ${successCount} referral codes for partner ${partnerDisplayName} (batch: ${batchId})`)
 

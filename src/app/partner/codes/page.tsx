@@ -14,7 +14,10 @@ import {
   Package,
   Clock,
   CheckCircle,
-  XCircle
+  XCircle,
+  ArrowRightLeft,
+  Square,
+  CheckSquare
 } from 'lucide-react'
 
 interface Code {
@@ -38,6 +41,13 @@ interface Batch {
   generated_at: string | null
 }
 
+interface LinkedPartner {
+  id: string
+  partner_name: string
+  partner_type: string
+  contact_email: string
+}
+
 export default function PartnerCodesPage() {
   const router = useRouter()
   const [codes, setCodes] = useState<Code[]>([])
@@ -45,12 +55,29 @@ export default function PartnerCodesPage() {
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState<'all' | 'available' | 'used'>('all')
   const [showRequestModal, setShowRequestModal] = useState(false)
+  const [showTransferModal, setShowTransferModal] = useState(false)
   const [copiedCode, setCopiedCode] = useState<string | null>(null)
   const [hasBankingDetails, setHasBankingDetails] = useState(true) // Default to true to avoid flash
+  const [linkedPartners, setLinkedPartners] = useState<LinkedPartner[]>([])
+  const [selectedCodes, setSelectedCodes] = useState<Set<string>>(new Set())
+  const [selectionMode, setSelectionMode] = useState(false)
 
   useEffect(() => {
     fetchCodes()
+    fetchLinkedPartners()
   }, [filter])
+
+  const fetchLinkedPartners = async () => {
+    try {
+      const response = await fetch('/api/partner/codes/transfer')
+      if (response.ok) {
+        const data = await response.json()
+        setLinkedPartners(data.linkedPartners || [])
+      }
+    } catch (err) {
+      console.error('Failed to fetch linked partners:', err)
+    }
+  }
 
   const fetchCodes = async () => {
     try {
@@ -76,6 +103,30 @@ export default function PartnerCodesPage() {
     navigator.clipboard.writeText(code)
     setCopiedCode(code)
     setTimeout(() => setCopiedCode(null), 2000)
+  }
+
+  const toggleCodeSelection = (code: string) => {
+    const newSelected = new Set(selectedCodes)
+    if (newSelected.has(code)) {
+      newSelected.delete(code)
+    } else {
+      newSelected.add(code)
+    }
+    setSelectedCodes(newSelected)
+  }
+
+  const toggleSelectAll = () => {
+    const availableCodes = codes.filter(c => !c.is_used)
+    if (selectedCodes.size === availableCodes.length) {
+      setSelectedCodes(new Set())
+    } else {
+      setSelectedCodes(new Set(availableCodes.map(c => c.activation_code)))
+    }
+  }
+
+  const cancelSelection = () => {
+    setSelectionMode(false)
+    setSelectedCodes(new Set())
   }
 
   const downloadCodes = () => {
@@ -154,7 +205,36 @@ export default function PartnerCodesPage() {
             </p>
           </div>
 
-          <div className="flex gap-3">
+          <div className="flex gap-3 flex-wrap">
+            {linkedPartners.length > 0 && !selectionMode && (
+              <button
+                onClick={() => setSelectionMode(true)}
+                disabled={availableCount === 0}
+                className="flex items-center gap-2 px-4 py-2 border border-blue-300 rounded-lg text-blue-700 hover:bg-blue-50 disabled:opacity-50"
+              >
+                <ArrowRightLeft className="h-4 w-4" />
+                Transfer Codes
+              </button>
+            )}
+            {selectionMode && (
+              <>
+                <button
+                  onClick={cancelSelection}
+                  className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
+                >
+                  <XCircle className="h-4 w-4" />
+                  Cancel
+                </button>
+                <button
+                  onClick={() => setShowTransferModal(true)}
+                  disabled={selectedCodes.size === 0}
+                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                >
+                  <ArrowRightLeft className="h-4 w-4" />
+                  Transfer {selectedCodes.size} Code{selectedCodes.size !== 1 ? 's' : ''}
+                </button>
+              </>
+            )}
             <button
               onClick={downloadCodes}
               disabled={availableCount === 0}
@@ -237,6 +317,21 @@ export default function PartnerCodesPage() {
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
+                  {selectionMode && (
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <button
+                        onClick={toggleSelectAll}
+                        className="flex items-center gap-1 hover:text-gray-700"
+                        title="Select all available codes"
+                      >
+                        {selectedCodes.size === codes.filter(c => !c.is_used).length && codes.filter(c => !c.is_used).length > 0 ? (
+                          <CheckSquare className="h-5 w-5 text-blue-600" />
+                        ) : (
+                          <Square className="h-5 w-5" />
+                        )}
+                      </button>
+                    </th>
+                  )}
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Code
                   </th>
@@ -259,7 +354,30 @@ export default function PartnerCodesPage() {
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {codes.map((code) => (
-                  <tr key={code.activation_code} className={code.is_used ? 'bg-gray-50' : ''}>
+                  <tr 
+                    key={code.activation_code} 
+                    className={`${code.is_used ? 'bg-gray-50' : ''} ${selectionMode && selectedCodes.has(code.activation_code) ? 'bg-blue-50' : ''}`}
+                  >
+                    {selectionMode && (
+                      <td className="px-4 py-4 whitespace-nowrap">
+                        {!code.is_used ? (
+                          <button
+                            onClick={() => toggleCodeSelection(code.activation_code)}
+                            className="flex items-center"
+                          >
+                            {selectedCodes.has(code.activation_code) ? (
+                              <CheckSquare className="h-5 w-5 text-blue-600" />
+                            ) : (
+                              <Square className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+                            )}
+                          </button>
+                        ) : (
+                          <span className="text-gray-300">
+                            <Square className="h-5 w-5" />
+                          </span>
+                        )}
+                      </td>
+                    )}
                     <td className="px-6 py-4 whitespace-nowrap">
                       <code 
                         className="font-mono text-sm bg-gray-100 px-2 py-1 rounded cursor-pointer hover:bg-gray-200"
@@ -322,6 +440,21 @@ export default function PartnerCodesPage() {
             fetchCodes()
           }}
           hasBankingDetails={hasBankingDetails}
+        />
+      )}
+
+      {/* Transfer Modal */}
+      {showTransferModal && (
+        <TransferCodesModal
+          selectedCodes={Array.from(selectedCodes)}
+          linkedPartners={linkedPartners}
+          onClose={() => setShowTransferModal(false)}
+          onSuccess={() => {
+            setShowTransferModal(false)
+            setSelectionMode(false)
+            setSelectedCodes(new Set())
+            fetchCodes()
+          }}
         />
       )}
     </div>
@@ -519,6 +652,181 @@ function RequestCodesModal({
               </button>
             </div>
           </form>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function TransferCodesModal({
+  selectedCodes,
+  linkedPartners,
+  onClose,
+  onSuccess
+}: {
+  selectedCodes: string[]
+  linkedPartners: LinkedPartner[]
+  onClose: () => void
+  onSuccess: () => void
+}) {
+  const [targetPartnerId, setTargetPartnerId] = useState('')
+  const [notes, setNotes] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+  const [success, setSuccess] = useState('')
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!targetPartnerId) {
+      setError('Please select a business to transfer to')
+      return
+    }
+
+    setLoading(true)
+    setError('')
+
+    try {
+      const response = await fetch('/api/partner/codes/transfer', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          codes: selectedCodes,
+          toPartnerId: targetPartnerId,
+          notes
+        })
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to transfer codes')
+      }
+
+      setSuccess(`Successfully transferred ${data.transferred} code${data.transferred !== 1 ? 's' : ''} to ${data.toPartnerName}`)
+      setTimeout(() => {
+        onSuccess()
+      }, 2000)
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Transfer failed')
+      setLoading(false)
+    }
+  }
+
+  const targetPartner = linkedPartners.find(p => p.id === targetPartnerId)
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+      <div className="bg-white rounded-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
+        <div className="p-6">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="bg-blue-100 rounded-full p-2">
+              <ArrowRightLeft className="h-6 w-6 text-blue-600" />
+            </div>
+            <h2 className="text-xl font-bold text-gray-900">Transfer Activation Codes</h2>
+          </div>
+
+          {success ? (
+            <div className="text-center py-8">
+              <div className="bg-green-100 rounded-full p-4 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                <Check className="h-8 w-8 text-green-600" />
+              </div>
+              <p className="text-lg font-medium text-gray-900">{success}</p>
+            </div>
+          ) : (
+            <>
+              <div className="bg-blue-50 rounded-lg p-4 mb-4">
+                <p className="text-sm text-blue-800">
+                  Transfer <strong>{selectedCodes.length} activation code{selectedCodes.length !== 1 ? 's' : ''}</strong> to another business you own.
+                </p>
+                <p className="text-xs text-blue-600 mt-1">
+                  The codes will be moved and no longer visible in this business.
+                </p>
+              </div>
+
+              {error && (
+                <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+                  {error}
+                </div>
+              )}
+
+              <form onSubmit={handleSubmit}>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Transfer to
+                    </label>
+                    <select
+                      value={targetPartnerId}
+                      onChange={(e) => setTargetPartnerId(e.target.value)}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                      required
+                    >
+                      <option value="">Select a business...</option>
+                      {linkedPartners.map(partner => (
+                        <option key={partner.id} value={partner.id}>
+                          {partner.partner_name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {targetPartner && (
+                    <div className="bg-gray-50 rounded-lg p-3">
+                      <p className="text-sm font-medium text-gray-900">{targetPartner.partner_name}</p>
+                      <p className="text-xs text-gray-500">{targetPartner.partner_type} • {targetPartner.contact_email}</p>
+                    </div>
+                  )}
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Notes (optional)
+                    </label>
+                    <textarea
+                      value={notes}
+                      onChange={(e) => setNotes(e.target.value)}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                      rows={2}
+                      placeholder="Reason for transfer..."
+                    />
+                  </div>
+
+                  <div className="bg-gray-50 rounded-lg p-3">
+                    <p className="text-sm font-medium text-gray-700 mb-2">Codes to transfer:</p>
+                    <div className="flex flex-wrap gap-1">
+                      {selectedCodes.slice(0, 5).map(code => (
+                        <code key={code} className="text-xs bg-white px-2 py-1 rounded border">
+                          {code}
+                        </code>
+                      ))}
+                      {selectedCodes.length > 5 && (
+                        <span className="text-xs text-gray-500 px-2 py-1">
+                          +{selectedCodes.length - 5} more
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex gap-3 mt-6">
+                  <button
+                    type="button"
+                    onClick={onClose}
+                    disabled={loading}
+                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={loading || !targetPartnerId}
+                    className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                  >
+                    {loading ? 'Transferring...' : `Transfer ${selectedCodes.length} Code${selectedCodes.length !== 1 ? 's' : ''}`}
+                  </button>
+                </div>
+              </form>
+            </>
+          )}
         </div>
       </div>
     </div>

@@ -64,6 +64,23 @@ export async function GET(request: NextRequest) {
         customer = customerData
       }
 
+      // Fetch activity history for this activation code
+      const { data: activityLog } = await (supabase as any)
+        .from('activation_code_activity_log')
+        .select(`
+          id,
+          activity_type,
+          from_partner_id,
+          to_partner_id,
+          from_partner_name,
+          to_partner_name,
+          performed_by_admin,
+          notes,
+          created_at
+        `)
+        .eq('activation_code', activationCode.activation_code)
+        .order('created_at', { ascending: true })
+
       return NextResponse.json({
         found: true,
         type: 'activation',
@@ -92,7 +109,18 @@ export async function GET(request: NextRequest) {
               name: customer.full_name,
               email: customer.email
             } : null
-          } : null
+          } : null,
+          activityHistory: activityLog?.map((log: { id: string; activity_type: string; from_partner_id: string | null; to_partner_id: string | null; from_partner_name: string | null; to_partner_name: string | null; performed_by_admin: boolean; notes: string | null; created_at: string }) => ({
+            id: log.id,
+            activityType: log.activity_type,
+            fromPartnerId: log.from_partner_id,
+            toPartnerId: log.to_partner_id,
+            fromPartnerName: log.from_partner_name,
+            toPartnerName: log.to_partner_name,
+            performedByAdmin: log.performed_by_admin,
+            notes: log.notes,
+            createdAt: log.created_at
+          })) || []
         }
       })
     }
@@ -130,6 +158,24 @@ export async function GET(request: NextRequest) {
     console.log(`[Code Lookup] Referral result: found=${!!referralCode}, error=${referralError?.message || 'none'}`)
 
     if (!referralError && referralCode) {
+      // Fetch activity history for this referral code
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: activityLog } = await (supabase as any)
+        .from('referral_code_activity_log')
+        .select(`
+          id,
+          activity_type,
+          from_partner_id,
+          to_partner_id,
+          from_partner_name,
+          to_partner_name,
+          performed_by_admin,
+          notes,
+          created_at
+        `)
+        .eq('referral_code_id', referralCode.id)
+        .order('created_at', { ascending: true })
+
       return NextResponse.json({
         found: true,
         type: 'referral',
@@ -159,7 +205,18 @@ export async function GET(request: NextRequest) {
               name: referralCode.order.customer.full_name,
               email: referralCode.order.customer.email
             } : null
-          } : null
+          } : null,
+          activityHistory: activityLog?.map((log: { id: string; activity_type: string; from_partner_id: string | null; to_partner_id: string | null; from_partner_name: string | null; to_partner_name: string | null; performed_by_admin: boolean; notes: string | null; created_at: string }) => ({
+            id: log.id,
+            activityType: log.activity_type,
+            fromPartnerId: log.from_partner_id,
+            toPartnerId: log.to_partner_id,
+            fromPartnerName: log.from_partner_name,
+            toPartnerName: log.to_partner_name,
+            performedByAdmin: log.performed_by_admin,
+            notes: log.notes,
+            createdAt: log.created_at
+          })) || []
         }
       })
     }

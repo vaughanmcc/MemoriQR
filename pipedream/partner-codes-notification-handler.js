@@ -24,7 +24,7 @@ export default defineComponent({
     console.log('Body object:', JSON.stringify(body, null, 2));
     console.log('Type:', body?.type);
     
-    const validTypes = ['referral_codes_generated', 'referral_codes_transferred', 'partner_codes_generated', 'partner_codes_unassigned', 'activation_code_used'];
+    const validTypes = ['referral_codes_generated', 'referral_codes_transferred', 'partner_codes_generated', 'partner_codes_unassigned', 'activation_codes_transferred', 'activation_code_used'];
     
     if (!body || !validTypes.includes(body.type)) {
       $.flow.exit(`Not a partner codes notification event: ${body?.type}`);
@@ -246,6 +246,64 @@ ${notesHtml}
 </div>
 </div>`,
         text: `Hi ${partner_name},\n\nThis is to inform you that ${quantity} activation code${quantity > 1 ? 's have' : ' has'} been removed from your partner account.\n\nREMOVED CODES:\n${codes_list}\n\nIf you believe this is an error, please contact our partner support team.\n\nView Partner Portal: ${portal_url}`
+      };
+    }
+
+    // Handle activation codes transferred between partner's businesses
+    if (body.type === 'activation_codes_transferred') {
+      const { 
+        to, 
+        toBusinessName, 
+        fromBusinessName, 
+        quantity, 
+        codesList,
+        notes,
+        dashboardUrl 
+      } = body;
+
+      const notesHtml = notes ? `
+<div style="background: #f9f7f4; padding: 15px; border-radius: 8px; margin: 20px 0;">
+<p style="font-weight: bold; margin: 0 0 5px; color: #333;">Note from ${fromBusinessName}:</p>
+<p style="color: #555; margin: 0; font-style: italic;">${notes}</p>
+</div>
+` : '';
+
+      const notesText = notes ? `\nNote from ${fromBusinessName}: ${notes}\n` : '';
+
+      return {
+        to: to,
+        replyTo: 'partners@memoriqr.co.nz',
+        from_name: 'MemoriQR Partner Portal',
+        subject: `📥 ${quantity} Activation Code${quantity > 1 ? 's' : ''} Transferred to Your Account`,
+        html: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+<div style="background: linear-gradient(135deg, #2d5a27 0%, #3d7a35 100%); padding: 30px; text-align: center; border-radius: 8px 8px 0 0;">
+<h1 style="color: #fff; margin: 0; font-size: 24px;">📥 Codes Transferred!</h1>
+<p style="color: rgba(255,255,255,0.9); margin: 10px 0 0; font-size: 14px;">From ${fromBusinessName}</p>
+</div>
+
+<div style="padding: 30px; background: #fff; border: 1px solid #ddd; border-top: none;">
+<p style="color: #333; font-size: 16px;">Hi ${toBusinessName},</p>
+<p style="color: #555; line-height: 1.6;"><strong>${fromBusinessName}</strong> has transferred <strong>${quantity} activation code${quantity > 1 ? 's' : ''}</strong> to your account.</p>
+
+${notesHtml}
+
+<div style="background: #f9f7f4; padding: 20px; border-radius: 8px; margin: 20px 0;">
+<p style="font-weight: bold; margin: 0 0 10px; color: #333;">Your Transferred Activation Codes:</p>
+<pre style="background: #fff; border: 1px solid #ddd; padding: 15px; border-radius: 4px; font-family: monospace; font-size: 14px; white-space: pre-wrap; word-break: break-all; margin: 0;">${codesList}</pre>
+</div>
+
+<p style="color: #555; line-height: 1.6;">These codes are now available in your account. Customers can use them to activate their MemoriQR products.</p>
+
+<div style="text-align: center; margin: 30px 0;">
+<a href="${dashboardUrl}" style="display: inline-block; background: linear-gradient(135deg, #2d5a27 0%, #3d7a35 100%); color: #fff; text-decoration: none; padding: 15px 40px; border-radius: 8px; font-size: 16px;">View Your Activation Codes</a>
+</div>
+</div>
+
+<div style="background: #f5f5f0; padding: 20px; text-align: center; border-radius: 0 0 8px 8px;">
+<p style="color: #888; font-size: 12px; margin: 0;">MemoriQR Partner Portal</p>
+</div>
+</div>`,
+        text: `Hi ${toBusinessName},\n\n${fromBusinessName} has transferred ${quantity} activation code${quantity > 1 ? 's' : ''} to your account.${notesText}\n\nYOUR TRANSFERRED CODES:\n${codesList}\n\nThese codes are now available in your account. Customers can use them to activate their MemoriQR products.\n\nView your activation codes: ${dashboardUrl}`
       };
     }
 

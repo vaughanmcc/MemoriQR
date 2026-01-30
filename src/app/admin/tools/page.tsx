@@ -1954,6 +1954,156 @@ export default function AdminToolsPage() {
                         )}
                       </div>
                     )}
+
+                    {/* Activity History for Referral Codes */}
+                    {codeLookupResult.type === 'referral' && codeLookupResult.code.activityHistory && codeLookupResult.code.activityHistory.length > 0 && (
+                      <div className="mt-4">
+                        <h4 className="text-sm font-semibold text-stone-700 mb-2 flex items-center gap-2">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          ASSIGNMENT HISTORY
+                        </h4>
+                        <div className="bg-white rounded-lg border border-stone-200 overflow-hidden">
+                          <div className="divide-y divide-stone-100">
+                            {codeLookupResult.code.activityHistory.map((activity: { id: string; activityType: string; fromPartnerName: string | null; toPartnerName: string | null; performedByAdmin: boolean; notes: string | null; createdAt: string }) => (
+                              <div key={activity.id} className="p-3 hover:bg-stone-50">
+                                <div className="flex justify-between items-start">
+                                  <div className="flex-1">
+                                    <div className="flex items-center gap-2">
+                                      <span className={`px-2 py-0.5 rounded text-xs font-medium ${
+                                        activity.activityType === 'created' ? 'bg-green-100 text-green-800' :
+                                        activity.activityType === 'transferred' ? 'bg-blue-100 text-blue-800' :
+                                        activity.activityType === 'assigned' ? 'bg-purple-100 text-purple-800' :
+                                        activity.activityType === 'unassigned' ? 'bg-orange-100 text-orange-800' :
+                                        activity.activityType === 'used' ? 'bg-emerald-100 text-emerald-800' :
+                                        'bg-stone-100 text-stone-800'
+                                      }`}>
+                                        {activity.activityType.charAt(0).toUpperCase() + activity.activityType.slice(1)}
+                                      </span>
+                                      {activity.performedByAdmin && (
+                                        <span className="px-1.5 py-0.5 rounded text-xs bg-amber-100 text-amber-700">Admin</span>
+                                      )}
+                                    </div>
+                                    <div className="mt-1 text-sm text-stone-600">
+                                      {activity.activityType === 'created' && activity.toPartnerName && (
+                                        <span>Created for <strong>{activity.toPartnerName}</strong></span>
+                                      )}
+                                      {activity.activityType === 'created' && !activity.toPartnerName && (
+                                        <span>Code created (unassigned)</span>
+                                      )}
+                                      {activity.activityType === 'transferred' && (
+                                        <span>
+                                          {activity.fromPartnerName || 'Unassigned'} → <strong>{activity.toPartnerName || 'Unassigned'}</strong>
+                                        </span>
+                                      )}
+                                      {activity.activityType === 'assigned' && (
+                                        <span>Assigned to <strong>{activity.toPartnerName}</strong></span>
+                                      )}
+                                      {activity.activityType === 'unassigned' && (
+                                        <span>Unassigned from <strong>{activity.fromPartnerName}</strong></span>
+                                      )}
+                                      {activity.activityType === 'used' && (
+                                        <span>Code redeemed</span>
+                                      )}
+                                    </div>
+                                    {activity.notes && (
+                                      <p className="mt-1 text-xs text-stone-500 italic">{activity.notes}</p>
+                                    )}
+                                  </div>
+                                  <div className="text-right text-xs text-stone-400 whitespace-nowrap ml-3">
+                                    <div>{new Date(activity.createdAt).toLocaleDateString('en-NZ', { day: '2-digit', month: 'short', year: 'numeric' })}</div>
+                                    <div>{new Date(activity.createdAt).toLocaleTimeString('en-NZ', { hour: '2-digit', minute: '2-digit' })}</div>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* No activity history message for Referral Codes */}
+                    {codeLookupResult.type === 'referral' && (!codeLookupResult.code.activityHistory || codeLookupResult.code.activityHistory.length === 0) && (
+                      <div className="mt-4 p-3 bg-stone-50 rounded-lg text-center">
+                        <p className="text-sm text-stone-500">No assignment history recorded for this code.</p>
+                      </div>
+                    )}
+
+                    {/* Activity History for Activation Codes */}
+                    {codeLookupResult.type === 'activation' && codeLookupResult.code.activityHistory && codeLookupResult.code.activityHistory.length > 0 && (
+                      <div className="mt-4">
+                        <h4 className="text-sm font-semibold text-stone-700 mb-2 flex items-center gap-2">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          ASSIGNMENT HISTORY
+                        </h4>
+                        <div className="bg-white rounded-lg border border-stone-200 overflow-hidden">
+                          <div className="divide-y divide-stone-100">
+                            {codeLookupResult.code.activityHistory.map((activity: { id: string; activityType: string; fromPartnerName: string | null; toPartnerName: string | null; performedByAdmin: boolean; notes: string | null; createdAt: string }) => (
+                              <div key={activity.id} className="p-3 hover:bg-stone-50">
+                                <div className="flex justify-between items-start">
+                                  <div className="flex-1">
+                                    <div className="flex items-center gap-2">
+                                      <span className={`px-2 py-0.5 rounded text-xs font-medium ${
+                                        activity.activityType === 'created' ? 'bg-green-100 text-green-800' :
+                                        activity.activityType === 'transferred' ? 'bg-blue-100 text-blue-800' :
+                                        activity.activityType === 'assigned' ? 'bg-purple-100 text-purple-800' :
+                                        activity.activityType === 'unassigned' ? 'bg-orange-100 text-orange-800' :
+                                        activity.activityType === 'used' ? 'bg-emerald-100 text-emerald-800' :
+                                        'bg-stone-100 text-stone-800'
+                                      }`}>
+                                        {activity.activityType.charAt(0).toUpperCase() + activity.activityType.slice(1)}
+                                      </span>
+                                      {activity.performedByAdmin && (
+                                        <span className="px-1.5 py-0.5 rounded text-xs bg-amber-100 text-amber-700">Admin</span>
+                                      )}
+                                    </div>
+                                    <div className="mt-1 text-sm text-stone-600">
+                                      {activity.activityType === 'created' && activity.toPartnerName && (
+                                        <span>Created for <strong>{activity.toPartnerName}</strong></span>
+                                      )}
+                                      {activity.activityType === 'created' && !activity.toPartnerName && (
+                                        <span>Code created (unassigned)</span>
+                                      )}
+                                      {activity.activityType === 'transferred' && (
+                                        <span>
+                                          {activity.fromPartnerName || 'Unassigned'} → <strong>{activity.toPartnerName || 'Unassigned'}</strong>
+                                        </span>
+                                      )}
+                                      {activity.activityType === 'assigned' && (
+                                        <span>Assigned to <strong>{activity.toPartnerName}</strong></span>
+                                      )}
+                                      {activity.activityType === 'unassigned' && (
+                                        <span>Unassigned from <strong>{activity.fromPartnerName}</strong></span>
+                                      )}
+                                      {activity.activityType === 'used' && (
+                                        <span>Code activated</span>
+                                      )}
+                                    </div>
+                                    {activity.notes && (
+                                      <p className="mt-1 text-xs text-stone-500 italic">{activity.notes}</p>
+                                    )}
+                                  </div>
+                                  <div className="text-right text-xs text-stone-400 whitespace-nowrap ml-3">
+                                    <div>{new Date(activity.createdAt).toLocaleDateString('en-NZ', { day: '2-digit', month: 'short', year: 'numeric' })}</div>
+                                    <div>{new Date(activity.createdAt).toLocaleTimeString('en-NZ', { hour: '2-digit', minute: '2-digit' })}</div>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* No activity history message for Activation Codes */}
+                    {codeLookupResult.type === 'activation' && (!codeLookupResult.code.activityHistory || codeLookupResult.code.activityHistory.length === 0) && (
+                      <div className="mt-4 p-3 bg-stone-50 rounded-lg text-center">
+                        <p className="text-sm text-stone-500">No assignment history recorded for this code.</p>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
