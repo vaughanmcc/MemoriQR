@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { formatDateOnly, formatTimeWithZone, formatDateTime } from '@/lib/utils';
 
@@ -184,6 +184,7 @@ interface PartnerMissingBanking {
 
 export default function AdminToolsPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState<'search' | 'order' | 'resend' | 'memorials' | 'code-lookup' | 'missing-banking'>('search');
   
   // Search by customer
@@ -244,6 +245,33 @@ export default function AdminToolsPage() {
   useEffect(() => {
     checkAuth();
   }, []);
+
+  // Handle URL parameters for tab and slug
+  useEffect(() => {
+    const tab = searchParams.get('tab');
+    const slug = searchParams.get('slug');
+    
+    if (tab === 'memorial' || tab === 'memorials') {
+      setActiveTab('memorials');
+      if (slug) {
+        setMemorialSearchQuery(slug);
+        // Auto-search for the memorial
+        handleSelectMemorial(slug);
+      }
+    } else if (tab === 'order') {
+      setActiveTab('order');
+      const orderNum = searchParams.get('order');
+      if (orderNum) {
+        setOrderNumber(orderNum);
+      }
+    } else if (tab === 'code-lookup' || tab === 'code') {
+      setActiveTab('code-lookup');
+      const code = searchParams.get('code');
+      if (code) {
+        setCodeLookupQuery(code);
+      }
+    }
+  }, [searchParams]);
 
   const checkAuth = async () => {
     const res = await fetch('/api/admin/session');
