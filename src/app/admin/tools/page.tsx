@@ -254,6 +254,15 @@ export default function AdminToolsPage() {
   }>>([]);
   const [isSearchingPartners, setIsSearchingPartners] = useState(false);
   const [partnerSearchError, setPartnerSearchError] = useState('');
+  const [allPartners, setAllPartners] = useState<Array<{
+    id: string;
+    partner_name: string;
+    contact_email: string;
+    partner_type: string;
+    status: string;
+    created_at: string;
+  }>>([]);
+  const [isLoadingAllPartners, setIsLoadingAllPartners] = useState(false);
 
   useEffect(() => {
     checkAuth();
@@ -495,6 +504,32 @@ export default function AdminToolsPage() {
     } finally {
       setIsSearchingPartners(false);
     }
+  };
+
+  const loadAllPartners = async () => {
+    setIsLoadingAllPartners(true);
+    setPartnerSearchError('');
+
+    try {
+      const res = await fetch('/api/admin/partners?all=true');
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to load partners');
+      }
+
+      setAllPartners(data.partners || []);
+    } catch (err) {
+      setPartnerSearchError(err instanceof Error ? err.message : 'Failed to load partners');
+    } finally {
+      setIsLoadingAllPartners(false);
+    }
+  };
+
+  const selectPartner = (partner: typeof allPartners[0]) => {
+    setPartnerSearchQuery(partner.partner_name);
+    setPartnerSearchResults([partner]);
+    setAllPartners([]);
   };
 
   // Resend activation/memorial emails
@@ -2192,17 +2227,17 @@ export default function AdminToolsPage() {
           <div className="bg-white rounded-xl shadow p-6">
             <h3 className="text-lg font-bold text-stone-800 mb-2">Search Partners</h3>
             <p className="text-sm text-stone-600 mb-4">
-              Search for partners by name, email, or business name.
+              Search for partners by name, email, or business name. Use <code className="bg-stone-100 px-1 rounded">*</code> as a wildcard.
             </p>
             
             <form onSubmit={handlePartnerSearch} className="mb-6">
-              <div className="flex gap-2">
+              <div className="flex gap-2 flex-wrap">
                 <input
                   type="text"
                   value={partnerSearchQuery}
                   onChange={(e) => setPartnerSearchQuery(e.target.value)}
                   placeholder="Enter partner name or email..."
-                  className="flex-1 max-w-lg px-4 py-2 border rounded-lg focus:ring-2 focus:ring-stone-500 focus:border-transparent"
+                  className="flex-1 min-w-[200px] max-w-lg px-4 py-2 border rounded-lg focus:ring-2 focus:ring-stone-500 focus:border-transparent"
                 />
                 <button
                   type="submit"
@@ -2213,10 +2248,19 @@ export default function AdminToolsPage() {
                 </button>
                 <button
                   type="button"
+                  onClick={loadAllPartners}
+                  disabled={isLoadingAllPartners}
+                  className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 disabled:opacity-50"
+                >
+                  {isLoadingAllPartners ? 'Loading...' : 'Show All'}
+                </button>
+                <button
+                  type="button"
                   onClick={() => {
                     setPartnerSearchQuery('');
                     setPartnerSearchResults([]);
                     setPartnerSearchError('');
+                    setAllPartners([]);
                   }}
                   className="px-4 py-2 bg-stone-200 text-stone-700 rounded-lg hover:bg-stone-300"
                 >
@@ -2224,6 +2268,42 @@ export default function AdminToolsPage() {
                 </button>
               </div>
             </form>
+
+            {/* All Partners Dropdown */}
+            {allPartners.length > 0 && (
+              <div className="mb-6 p-4 bg-stone-50 rounded-lg">
+                <div className="flex justify-between items-center mb-3">
+                  <h4 className="font-medium text-stone-800">All Partners ({allPartners.length})</h4>
+                  <button
+                    onClick={() => setAllPartners([])}
+                    className="text-sm text-stone-500 hover:text-stone-700"
+                  >
+                    Close
+                  </button>
+                </div>
+                <div className="max-h-64 overflow-y-auto space-y-1">
+                  {allPartners.map((partner) => (
+                    <button
+                      key={partner.id}
+                      onClick={() => selectPartner(partner)}
+                      className="w-full text-left px-3 py-2 rounded hover:bg-white flex items-center justify-between group"
+                    >
+                      <span>
+                        <span className="font-medium text-stone-800">{partner.partner_name}</span>
+                        <span className="text-stone-500 ml-2 text-sm">{partner.contact_email}</span>
+                      </span>
+                      <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${
+                        partner.status === 'active' ? 'bg-green-100 text-green-700' :
+                        partner.status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
+                        'bg-stone-100 text-stone-700'
+                      }`}>
+                        {partner.status}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {partnerSearchError && (
               <div className="mb-4 p-4 bg-red-50 text-red-700 rounded-lg">

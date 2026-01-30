@@ -24,6 +24,8 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const status = searchParams.get('status');
+    const search = searchParams.get('search');
+    const all = searchParams.get('all');
 
     let query = supabase
       .from('partners')
@@ -37,6 +39,15 @@ export async function GET(request: Request) {
       } else {
         query = query.eq('status', status);
       }
+    }
+
+    // Handle search with wildcard support (* becomes %)
+    if (search && search.trim()) {
+      // Convert * to % for SQL LIKE patterns
+      const searchPattern = search.trim().replace(/\*/g, '%');
+      // If no wildcards, wrap with % for partial matching
+      const pattern = searchPattern.includes('%') ? searchPattern : `%${searchPattern}%`;
+      query = query.or(`partner_name.ilike.${pattern},contact_email.ilike.${pattern}`);
     }
 
     const { data: partners, error } = await query;
