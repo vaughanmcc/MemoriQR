@@ -414,22 +414,22 @@ export default function PartnerReferralsPage() {
                     >
                       Select All Available
                     </button>
-                    {selectedCodes.length > 0 && (
+                    {selectedCodes.size > 0 && (
                       <button
                         onClick={clearSelection}
                         className="text-sm text-gray-500 hover:text-gray-700"
                       >
-                        Clear Selection ({selectedCodes.length})
+                        Clear Selection ({selectedCodes.size})
                       </button>
                     )}
                   </div>
-                  {selectedCodes.length > 0 && (
+                  {selectedCodes.size > 0 && (
                     <button
                       onClick={() => setShowTransferModal(true)}
                       className="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 text-sm font-medium"
                     >
                       <Send className="h-4 w-4" />
-                      Transfer {selectedCodes.length} Code{selectedCodes.length > 1 ? 's' : ''}
+                      Transfer {selectedCodes.size} Code{selectedCodes.size > 1 ? 's' : ''}
                     </button>
                   )}
                 </div>
@@ -447,14 +447,14 @@ export default function PartnerReferralsPage() {
                     key={code.id} 
                     className={`p-4 flex items-center justify-between ${
                       code.is_used ? 'bg-gray-50' : ''
-                    } ${selectedCodes.includes(code.id) ? 'bg-primary-50' : ''}`}
+                    } ${selectedCodes.has(code.id) ? 'bg-primary-50' : ''}`}
                   >
                     <div className="flex items-center gap-4">
                       {/* Checkbox for available codes when transfer is possible */}
                       {linkedPartners.length > 0 && !code.is_used && (
                         <input
                           type="checkbox"
-                          checked={selectedCodes.includes(code.id)}
+                          checked={selectedCodes.has(code.id)}
                           onChange={() => toggleCodeSelection(code.id)}
                           className="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
                         />
@@ -567,7 +567,7 @@ export default function PartnerReferralsPage() {
                 ) : (
                   <>
                     <p className="text-gray-600 mb-4">
-                      Transfer {selectedCodes.length} selected code{selectedCodes.length > 1 ? 's' : ''} to another business.
+                      Transfer {selectedCodes.size} selected code{selectedCodes.size > 1 ? 's' : ''} to another business.
                     </p>
                     
                     <div className="space-y-4">
