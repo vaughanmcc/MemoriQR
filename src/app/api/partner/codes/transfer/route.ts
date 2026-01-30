@@ -48,6 +48,8 @@ export async function GET() {
   try {
     const supabase = createAdminClient()
     
+    console.log(`[Activation Transfer] Looking for linked partners for ${partner.partner_name} with email ${partner.contact_email}`)
+    
     // Find other partners with the same contact email (same owner, different businesses)
     const { data: linkedPartners, error } = await supabase
       .from('partners')
@@ -55,6 +57,8 @@ export async function GET() {
       .ilike('contact_email', partner.contact_email || '')
       .eq('is_active', true)
       .neq('id', partner.id) // Exclude current partner
+
+    console.log(`[Activation Transfer] Found ${linkedPartners?.length || 0} linked partners, error: ${error?.message || 'none'}`)
 
     if (error) {
       console.error('Error fetching linked partners:', error)
