@@ -1844,7 +1844,13 @@ export default function AdminToolsPage() {
                         <div className="flex justify-between">
                           <dt className="text-stone-500">Created:</dt>
                           <dd className="font-medium text-stone-800">
-                            {new Date(codeLookupResult.code.createdAt).toLocaleDateString('en-NZ')}
+                            {new Date(codeLookupResult.code.createdAt).toLocaleString('en-NZ', {
+                              day: '2-digit',
+                              month: '2-digit',
+                              year: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit',
+                            })}
                           </dd>
                         </div>
                       </dl>

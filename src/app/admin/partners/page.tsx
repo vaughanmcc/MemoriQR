@@ -45,6 +45,7 @@ const PARTNER_TYPE_LABELS: Record<string, string> = {
   photo_studio: 'Photo Studio',
   photographer: 'Photographer',
   videographer: 'Videographer',
+  life_insurer: 'Life Insurer',
   other: 'Other',
 };
 

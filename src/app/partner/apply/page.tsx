@@ -9,6 +9,7 @@ const PARTNER_TYPES = [
   { value: 'funeral_director', label: 'Funeral Director' },
   { value: 'cemetery', label: 'Cemetery / Memorial Park' },
   { value: 'pet_cremation', label: 'Pet Cremation / Veterinary' },
+  { value: 'life_insurer', label: 'Life Insurer' },
   { value: 'retailer', label: 'Retail Partner' },
   { value: 'other', label: 'Other' },
 ];
