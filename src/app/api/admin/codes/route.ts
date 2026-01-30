@@ -42,6 +42,8 @@ export async function GET(request: NextRequest) {
       query = query.eq('is_used', false)
     } else if (status === 'used') {
       query = query.eq('is_used', true)
+    } else if (status === 'unassigned') {
+      query = query.is('partner_id', null)
     }
 
     const { data: codes, error, count } = await query

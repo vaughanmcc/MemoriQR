@@ -840,6 +840,7 @@ export default function AdminCodesPage() {
                   <option value="all">All Codes</option>
                   <option value="unused">Unused Only</option>
                   <option value="used">Used Only</option>
+                  <option value="unassigned">Unassigned</option>
                 </select>
               </div>
               <p className="text-sm text-stone-500 mt-2">
