@@ -308,7 +308,7 @@ export async function POST(request: NextRequest) {
               if (PIPEDREAM_REFERRAL_WEBHOOK_URL) {
                 const { data: partnerData } = await supabase
                   .from('partners')
-                  .select('id, partner_name, contact_email, notify_referral_redemption')
+                  .select('id, partner_name, contact_email, notify_referral_redemption, bank_name, bank_account_number')
                   .eq('id', refCodeData.partner_id)
                   .single()
 
@@ -318,6 +318,7 @@ export async function POST(request: NextRequest) {
                   // Use NEXT_PUBLIC_APP_URL for dev/staging, fall back to BASE_URL for prod
                   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_BASE_URL || 'https://memoriqr.com'
                   const optOutUrl = `${baseUrl}/api/partner/notifications/unsubscribe?partner=${partnerData.id}&token=${optOutToken}`
+                  const hasBankingDetails = !!(partnerData.bank_name && partnerData.bank_account_number)
 
                   try {
                     await fetch(PIPEDREAM_REFERRAL_WEBHOOK_URL, {
@@ -334,6 +335,8 @@ export async function POST(request: NextRequest) {
                         orderTotal: (orderTotal + referralDiscount).toFixed(2),
                         optOutUrl,
                         dashboardUrl: `${baseUrl}/partner/settings`,
+                        hasBankingDetails,
+                        settingsUrl: `${baseUrl}/partner/settings`,
                       }),
                     })
                     console.log(`Referral redemption email sent to ${partnerData.contact_email}`)
