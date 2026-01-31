@@ -403,7 +403,7 @@ ${qr_code_url ? `<div style="border: 1px solid #ddd; border-radius: 8px; padding
 </td>
 </tr>
 </table>
-<p style="color: #888; font-size: 13px; margin: 12px 0 0; font-style: italic;">💝 Share this link with family and friends so they can visit the memorial.</p>
+<p style="color: #888; font-size: 13px; margin: 12px 0 0; font-style: italic;">💝 Share this link with family and friends so they can visit the digital memorial.</p>
 </div>
 
 <div style="text-align: center; margin: 25px 0;">
@@ -455,7 +455,7 @@ We're honoured to let you know that the memorial page for ${memorialName} has be
 MEMORIAL PAGE:
 ${memorialUrl}
 
-💝 Share this link with family and friends so they can visit the memorial.
+💝 Share this link with family and friends so they can visit the digital memorial.
 
 QR CODE (download):
 ${qrCodeUrl}
