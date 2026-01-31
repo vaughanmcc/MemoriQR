@@ -35,10 +35,35 @@ let isScriptLoading = false
 let isScriptLoaded = false
 const callbacks: (() => void)[] = []
 
+function waitForPlacesLibrary(): Promise<void> {
+  return new Promise((resolve) => {
+    const checkPlaces = () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const google = (window as any).google
+      if (google?.maps?.places?.AutocompleteService) {
+        console.log('AddressAutocomplete: Places library ready')
+        resolve()
+      } else {
+        setTimeout(checkPlaces, 100)
+      }
+    }
+    checkPlaces()
+  })
+}
+
 function loadGooglePlacesScript(apiKey: string): Promise<void> {
   return new Promise((resolve) => {
-    if (isScriptLoaded) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const google = (window as any).google
+    if (google?.maps?.places?.AutocompleteService) {
+      // Already loaded and ready
       resolve()
+      return
+    }
+
+    if (isScriptLoaded) {
+      // Script loaded but Places not ready yet, wait for it
+      waitForPlacesLibrary().then(resolve)
       return
     }
 
@@ -50,15 +75,18 @@ function loadGooglePlacesScript(apiKey: string): Promise<void> {
     isScriptLoading = true
 
     const script = document.createElement('script')
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&loading=async`
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places`
     script.async = true
     script.defer = true
     script.onload = () => {
       isScriptLoaded = true
       isScriptLoading = false
-      resolve()
-      callbacks.forEach((cb) => cb())
-      callbacks.length = 0
+      // Wait for Places library to be fully initialized
+      waitForPlacesLibrary().then(() => {
+        resolve()
+        callbacks.forEach((cb) => cb())
+        callbacks.length = 0
+      })
     }
     script.onerror = () => {
       isScriptLoading = false
