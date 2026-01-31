@@ -95,12 +95,14 @@ export function AddressAutocomplete({
   // Initialize services
   useEffect(() => {
     const apiKey = process.env.NEXT_PUBLIC_GOOGLE_PLACES_API_KEY
+    console.log('AddressAutocomplete: API key present:', !!apiKey)
     if (!apiKey) {
       console.warn('Google Places API key not configured')
       return
     }
 
     loadGooglePlacesScript(apiKey).then(() => {
+      console.log('AddressAutocomplete: Google script loaded')
       setIsLoaded(true)
     })
   }, [])
@@ -109,17 +111,22 @@ export function AddressAutocomplete({
     if (isLoaded) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const google = (window as any).google
+      console.log('AddressAutocomplete: google.maps.places available:', !!google?.maps?.places)
       if (google?.maps?.places) {
         autocompleteServiceRef.current = new google.maps.places.AutocompleteService()
         // Create a dummy div for PlacesService
         const dummyDiv = document.createElement('div')
         placesServiceRef.current = new google.maps.places.PlacesService(dummyDiv)
+        console.log('AddressAutocomplete: Services initialized')
       }
     }
   }, [isLoaded])
 
   // Fetch predictions
   const fetchPredictions = useCallback((input: string) => {
+    console.log('AddressAutocomplete: fetchPredictions called with:', input)
+    console.log('AddressAutocomplete: autocompleteService available:', !!autocompleteServiceRef.current)
+    
     if (!autocompleteServiceRef.current || input.length < 2) {
       setPredictions([])
       return
@@ -133,6 +140,7 @@ export function AddressAutocomplete({
       },
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (results: any[], status: string) => {
+        console.log('AddressAutocomplete: getPlacePredictions callback, status:', status, 'results:', results?.length)
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const google = (window as any).google
         if (status === google.maps.places.PlacesServiceStatus.OK && results) {
@@ -146,7 +154,9 @@ export function AddressAutocomplete({
             }))
           )
           setShowDropdown(true)
+          console.log('AddressAutocomplete: Showing dropdown with', results.length, 'predictions')
         } else {
+          console.log('AddressAutocomplete: No results or error status')
           setPredictions([])
         }
       }
