@@ -354,21 +354,13 @@ export function MemorialUploadForm({
   }
 
   useEffect(() => {
+    // Always scroll to the top of the form container to show title and progress
     const scrollToTarget = () => {
-      // For step 2, get the element fresh from the DOM since it may not be mounted yet
-      const target = step === 2 
-        ? document.getElementById('upload-section') 
-        : formRef.current
+      const target = formRef.current
       
       if (target) {
         const top = target.getBoundingClientRect().top + window.scrollY
-        window.scrollTo({ top: Math.max(top - 80, 0), behavior: 'smooth' })
-        if (target instanceof HTMLElement) {
-          target.focus({ preventScroll: true })
-        }
-      } else if (step === 2) {
-        // Retry if upload section not found yet (component still rendering)
-        window.setTimeout(scrollToTarget, 50)
+        window.scrollTo({ top: Math.max(top - 20, 0), behavior: 'smooth' })
       } else {
         window.scrollTo({ top: 0, behavior: 'smooth' })
       }
