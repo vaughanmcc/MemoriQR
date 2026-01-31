@@ -360,7 +360,8 @@ export function MemorialUploadForm({
       
       if (target) {
         const top = target.getBoundingClientRect().top + window.scrollY
-        window.scrollTo({ top: Math.max(top - 20, 0), behavior: 'smooth' })
+        // Offset by 100px to account for header and give breathing room
+        window.scrollTo({ top: Math.max(top - 100, 0), behavior: 'smooth' })
       } else {
         window.scrollTo({ top: 0, behavior: 'smooth' })
       }
