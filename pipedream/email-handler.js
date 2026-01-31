@@ -514,7 +514,9 @@ memoriqr.co.nz`
     
     // Partner login code (magic link OTP)
     if (type === 'partner_login_code') {
-      const { partner_email, partner_name, login_code, expires_in } = body;
+      const { partner_email, partner_name, contact_name, login_code, expires_in } = body;
+      // Use contact_name if available, otherwise extract from partner_name or use partner_name
+      const greeting = contact_name || partner_name?.match(/\(([^)]+)\)/)?.[1] || partner_name || 'Partner';
       return {
         to: partner_email,
         replyTo: 'partners@memoriqr.co.nz',
@@ -525,7 +527,7 @@ memoriqr.co.nz`
 <h1 style="color: #fff; margin: 0; font-size: 24px;">🔐 Partner Portal Login</h1>
 </div>
 <div style="padding: 30px; background: #fff; border: 1px solid #ddd; border-top: none;">
-<p style="color: #333; font-size: 16px;">Hi ${partner_name},</p>
+<p style="color: #333; font-size: 16px;">Hi ${greeting},</p>
 <p style="color: #555; line-height: 1.6;">Use this code to log in to your MemoriQR Partner Portal:</p>
 
 <div style="background: #f5f5f0; border: 2px dashed #2d5a27; padding: 30px; text-align: center; margin: 25px 0; border-radius: 8px;">
@@ -543,7 +545,7 @@ memoriqr.co.nz`
 <p style="color: #888; font-size: 12px; margin: 0;">MemoriQR Partner Portal</p>
 </div>
 </div>`,
-        text: `Hi ${partner_name},\n\nYour MemoriQR Partner Portal login code is:\n\n    ${login_code}\n\nThis code expires in ${expires_in}.\n\nIf you didn't request this code, please ignore this email.`
+        text: `Hi ${greeting},\n\nYour MemoriQR Partner Portal login code is:\n\n    ${login_code}\n\nThis code expires in ${expires_in}.\n\nIf you didn't request this code, please ignore this email.`
       };
     }
     

@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
     // Find partner by email
     const { data: partners, error: partnerError } = await supabase
       .from('partners')
-      .select('id, partner_name, contact_email, is_active, created_at')
+      .select('id, partner_name, contact_name, contact_email, is_active, created_at')
       .ilike('contact_email', normalizedEmail)
       .order('created_at', { ascending: false })
       .limit(1)
@@ -118,6 +118,7 @@ export async function POST(request: NextRequest) {
             type: 'partner_login_code',
             partner_email: partner.contact_email,
             partner_name: partner.partner_name,
+            contact_name: partner.contact_name || partner.partner_name?.match(/\(([^)]+)\)/)?.[1] || partner.partner_name,
             login_code: loginCode,
             expires_in: '15 minutes',
             expires_at: expiresAt.toLocaleString('en-NZ', { timeZone: 'Pacific/Auckland' }),
