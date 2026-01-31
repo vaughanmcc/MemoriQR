@@ -109,10 +109,16 @@ export function AddressAutocomplete({
       autocompleteElement.addEventListener('gmp-placeselect', async (event: Event) => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const place = (event as any).place
+        console.log('Place selected:', place)
         if (!place) return
 
         // Fetch full place details
-        await place.fetchFields({ fields: ['addressComponents', 'formattedAddress'] })
+        try {
+          await place.fetchFields({ fields: ['addressComponents', 'formattedAddress'] })
+          console.log('Address components:', place.addressComponents)
+        } catch (err) {
+          console.error('Error fetching place fields:', err)
+        }
 
         const components: AddressComponents = {
           line1: '',
@@ -128,6 +134,7 @@ export function AddressAutocomplete({
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         for (const component of (place.addressComponents || [])) {
           const type = component.types[0]
+          console.log('Component:', type, component.longText || component.long_name)
           
           switch (type) {
             case 'street_number':
