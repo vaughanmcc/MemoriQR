@@ -222,26 +222,19 @@ export default function PartnerReferralsPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <PartnerHeader />
-      
-      {/* Sub Header */}
-      <div className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 py-4">
-          <div className="flex items-center gap-4">
-            <Link 
-              href="/partner/dashboard" 
-              className="text-gray-600 hover:text-gray-900"
-            >
-              <ArrowLeft className="h-5 w-5" />
-            </Link>
-            <div>
-              <h1 className="text-xl font-bold text-gray-900">Referral Codes</h1>
-              <p className="text-sm text-gray-600">Referral codes for your customers</p>
-            </div>
-          </div>
-        </div>
-      </div>
 
       <main className="max-w-7xl mx-auto px-4 py-8">
+        {/* Back link */}
+        <Link href="/partner/dashboard" className="inline-flex items-center gap-2 text-emerald-600 hover:text-emerald-700 mb-6">
+          <ArrowLeft className="h-5 w-5" />
+          Back to Dashboard
+        </Link>
+
+        {/* Page Header */}
+        <div className="mb-8">
+          <h1 className="text-2xl font-bold text-gray-900">Referral Codes</h1>
+          <p className="text-gray-600">Referral codes for your customers</p>
+        </div>
         {/* Summary Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <div className="bg-white rounded-lg shadow p-6">

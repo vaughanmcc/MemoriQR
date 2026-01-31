@@ -190,7 +190,7 @@ export default function PartnerCodesPage() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Back link */}
-        <Link href="/partner/dashboard" className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-6">
+        <Link href="/partner/dashboard" className="inline-flex items-center gap-2 text-emerald-600 hover:text-emerald-700 mb-6">
           <ArrowLeft className="h-5 w-5" />
           Back to Dashboard
         </Link>
