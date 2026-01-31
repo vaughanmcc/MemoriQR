@@ -96,6 +96,7 @@ export async function POST(request: Request) {
       .from('partners')
       .insert({
         partner_name: `${businessName} (${contactName})`,
+        contact_name: contactName, // Store contact name separately for emails
         contact_email: email.toLowerCase(),
         contact_phone: phone || null,
         partner_type: resolvedPartnerType,
