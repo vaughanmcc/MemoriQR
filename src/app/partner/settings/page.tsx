@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { PartnerHeader } from '@/components/layout/PartnerHeader'
 import { ArrowLeft, Save, Building, CreditCard, AlertCircle, CheckCircle, User, MapPin, Shield, Smartphone, Bell, Eye, EyeOff } from 'lucide-react'
+import { AddressAutocomplete } from '@/components/shared/AddressAutocomplete'
 
 interface PartnerAddress {
   street?: string
@@ -295,11 +296,24 @@ export default function PartnerSettingsPage() {
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Street Address
                   </label>
-                  <input
-                    type="text"
+                  <AddressAutocomplete
                     value={formData.address.street}
-                    onChange={(e) => setFormData({ ...formData, address: { ...formData.address, street: e.target.value } })}
-                    placeholder="123 Main Street"
+                    onChange={(value) => setFormData({ ...formData, address: { ...formData.address, street: value } })}
+                    onAddressSelect={(address) => {
+                      setFormData({
+                        ...formData,
+                        address: {
+                          ...formData.address,
+                          street: address.line1,
+                          city: address.city,
+                          region: address.region,
+                          postcode: address.postalCode,
+                          country: address.country === 'NZ' ? 'New Zealand' : address.country === 'AU' ? 'Australia' : address.country,
+                        },
+                      })
+                    }}
+                    placeholder="Start typing your address..."
+                    countries={['nz', 'au']}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                   />
                 </div>

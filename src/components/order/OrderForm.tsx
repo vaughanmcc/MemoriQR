@@ -6,6 +6,7 @@ import { Check, ChevronRight, Loader2, Tag, X } from 'lucide-react'
 import { DEFAULT_PRICING, formatPriceNZD } from '@/lib/pricing'
 import { PRICING_LABELS, DURATION_LABELS, PRODUCT_DESCRIPTIONS, SPECIES_OPTIONS } from '@/types'
 import type { HostingDuration, ProductType } from '@/types/database'
+import { AddressAutocomplete } from '@/components/shared/AddressAutocomplete'
 
 const durations: HostingDuration[] = [5, 10, 25]
 const productTypes: ProductType[] = ['nfc_only', 'qr_only', 'both']
@@ -571,17 +572,25 @@ export function OrderForm() {
 
               <div className="mb-4">
                 <label className="label">Street Address <span className="text-red-500">*</span></label>
-                <input
-                  ref={addressRef}
-                  type="text"
+                <AddressAutocomplete
+                  inputRef={addressRef as React.RefObject<HTMLInputElement>}
                   value={addressLine1}
-                  onChange={(e) => { setAddressLine1(e.target.value); setErrors(prev => ({ ...prev, addressLine1: '' })) }}
-                  onBlur={(e) => setAddressLine1(e.target.value)}
-                  placeholder="123 Main Street"
-                  className={`input ${errors.addressLine1 ? 'border-red-500 ring-2 ring-red-200' : ''}`}
+                  onChange={(value) => { setAddressLine1(value); setErrors(prev => ({ ...prev, addressLine1: '' })) }}
+                  onAddressSelect={(address) => {
+                    setAddressLine1(address.line1)
+                    if (address.line2) setAddressLine2(address.line2)
+                    setCity(address.city)
+                    setRegion(address.region)
+                    setPostalCode(address.postalCode)
+                    if (address.country === 'AU') setCountry('AU')
+                    else if (address.country === 'NZ') setCountry('NZ')
+                    setErrors(prev => ({ ...prev, addressLine1: '', city: '', postalCode: '' }))
+                  }}
+                  placeholder="Start typing your address..."
                   required
+                  error={errors.addressLine1}
+                  countries={['nz', 'au']}
                 />
-                {errors.addressLine1 && <p className="text-sm text-red-500 mt-1">{errors.addressLine1}</p>}
               </div>
 
               <div className="mb-4">

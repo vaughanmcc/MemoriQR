@@ -18,6 +18,7 @@ import {
 import type { HostingDuration, ProductType } from '@/types/database'
 import { SPECIES_OPTIONS } from '@/types'
 import { TIER_LIMITS } from '@/lib/pricing'
+import { AddressAutocomplete } from '@/components/shared/AddressAutocomplete'
 
 // Normalize species value - moved outside component to avoid stale closures
 const speciesOptionsArray = SPECIES_OPTIONS as readonly string[]
@@ -964,13 +965,20 @@ export function MemorialUploadForm({
                   
                   <div>
                     <label className="label">Address Line 1</label>
-                    <input
-                      type="text"
+                    <AddressAutocomplete
                       value={shippingLine1}
-                      onChange={(e) => setShippingLine1(e.target.value)}
-                      className="input"
-                      placeholder="123 Main Street"
+                      onChange={(value) => setShippingLine1(value)}
+                      onAddressSelect={(address) => {
+                        setShippingLine1(address.line1)
+                        if (address.line2) setShippingLine2(address.line2)
+                        setShippingCity(address.city)
+                        setShippingPostalCode(address.postalCode)
+                        if (address.country === 'AU') setShippingCountry('Australia')
+                        else if (address.country === 'NZ') setShippingCountry('New Zealand')
+                      }}
+                      placeholder="Start typing your address..."
                       required
+                      countries={['nz', 'au']}
                     />
                   </div>
                   

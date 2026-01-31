@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { formatDateOnly, formatTimeWithZone } from '@/lib/utils';
+import { AddressAutocomplete } from '@/components/shared/AddressAutocomplete';
 
 interface Partner {
   id: string;
@@ -823,10 +824,24 @@ function AdminPartnersContent() {
                 <div className="space-y-3">
                   <div>
                     <label className="block text-sm font-medium text-stone-700 mb-1">Street Address</label>
-                    <input
-                      type="text"
+                    <AddressAutocomplete
                       value={editForm.address.street}
-                      onChange={(e) => setEditForm({ ...editForm, address: { ...editForm.address, street: e.target.value } })}
+                      onChange={(value) => setEditForm({ ...editForm, address: { ...editForm.address, street: value } })}
+                      onAddressSelect={(address) => {
+                        setEditForm({
+                          ...editForm,
+                          address: {
+                            ...editForm.address,
+                            street: address.line1,
+                            city: address.city,
+                            region: address.region,
+                            postcode: address.postalCode,
+                            country: address.country === 'NZ' ? 'New Zealand' : address.country === 'AU' ? 'Australia' : address.country,
+                          },
+                        })
+                      }}
+                      placeholder="Start typing address..."
+                      countries={['nz', 'au']}
                       className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary"
                     />
                   </div>
