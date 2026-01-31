@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { PartnerHeader } from '@/components/layout/PartnerHeader'
 import { formatDateOnly, formatTimeWithZone } from '@/lib/utils'
 import { 
   ArrowLeft, 
@@ -220,8 +221,10 @@ export default function PartnerReferralsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b">
+      <PartnerHeader />
+      
+      {/* Sub Header */}
+      <div className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex items-center gap-4">
             <Link 
@@ -236,7 +239,7 @@ export default function PartnerReferralsPage() {
             </div>
           </div>
         </div>
-      </header>
+      </div>
 
       <main className="max-w-7xl mx-auto px-4 py-8">
         {/* Summary Cards */}
