@@ -393,7 +393,17 @@ ${qr_code_url ? `<div style="border: 1px solid #ddd; border-radius: 8px; padding
 
 <div style="background: #f9f7f4; border-left: 4px solid #8B7355; padding: 20px; margin: 20px 0;">
 <p style="color: #666; margin: 0 0 10px; font-size: 13px; text-transform: uppercase; letter-spacing: 1px;">Memorial Page</p>
-<a href="${memorialUrl}" style="color: #8B7355; font-size: 16px; text-decoration: none;">${memorialUrl}</a>
+<table style="width: 100%; border-collapse: collapse;">
+<tr>
+<td style="padding: 0;">
+<a href="${memorialUrl}" style="color: #8B7355; font-size: 16px; text-decoration: none; word-break: break-all;">${memorialUrl}</a>
+</td>
+<td style="width: 80px; text-align: right; vertical-align: middle;">
+<a href="${memorialUrl}" onclick="navigator.clipboard.writeText('${memorialUrl}'); return false;" style="display: inline-block; background: #8B7355; color: #fff; text-decoration: none; padding: 8px 12px; border-radius: 4px; font-size: 12px; font-weight: bold;">📋 Copy</a>
+</td>
+</tr>
+</table>
+<p style="color: #888; font-size: 13px; margin: 12px 0 0; font-style: italic;">💝 Share this link with family and friends so they can visit the memorial.</p>
 </div>
 
 <div style="text-align: center; margin: 25px 0;">
@@ -444,6 +454,8 @@ We're honoured to let you know that the memorial page for ${memorialName} has be
 
 MEMORIAL PAGE:
 ${memorialUrl}
+
+💝 Share this link with family and friends so they can visit the memorial.
 
 QR CODE (download):
 ${qrCodeUrl}
