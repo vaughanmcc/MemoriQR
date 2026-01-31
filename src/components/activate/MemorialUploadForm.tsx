@@ -348,13 +348,38 @@ export function MemorialUploadForm({
   const { species: normalizedInitialSpecies, speciesOther: normalizedInitialSpeciesOther } =
     normalizeSpeciesValue(initialSpecies)
 
-  // Change step and scroll to form section for better UX
+  // Change step and scroll to top for better UX
   const goToStep = (newStep: number) => {
     setStep(newStep)
-    setTimeout(() => {
-      formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-    }, 0)
   }
+
+  useEffect(() => {
+    const scrollToTarget = () => {
+      // For step 2, get the element fresh from the DOM since it may not be mounted yet
+      const target = step === 2 
+        ? document.getElementById('upload-section') 
+        : formRef.current
+      
+      if (target) {
+        const top = target.getBoundingClientRect().top + window.scrollY
+        window.scrollTo({ top: Math.max(top - 80, 0), behavior: 'smooth' })
+        if (target instanceof HTMLElement) {
+          target.focus({ preventScroll: true })
+        }
+      } else if (step === 2) {
+        // Retry if upload section not found yet (component still rendering)
+        window.setTimeout(scrollToTarget, 50)
+      } else {
+        window.scrollTo({ top: 0, behavior: 'smooth' })
+      }
+    }
+
+    // Small delay to allow React to render the new step content
+    const timeout = window.setTimeout(scrollToTarget, 50)
+    return () => {
+      window.clearTimeout(timeout)
+    }
+  }, [step])
 
   // Form state - use lazy initializers to ensure hydration matches
   const [deceasedName, setDeceasedName] = useState(() => initialName || '')
@@ -1008,7 +1033,7 @@ export function MemorialUploadForm({
             )}
 
             <button
-              onClick={() => setStep(2)}
+              onClick={() => goToStep(2)}
               disabled={
                 !deceasedName
                 || (activationType === 'retail' && !initialEmail && !contactEmail)
@@ -1024,7 +1049,7 @@ export function MemorialUploadForm({
 
         {/* Step 2: Photos */}
         {step === 2 && (
-          <div className="space-y-6">
+          <div id="upload-section" tabIndex={-1} className="space-y-6 outline-none">
             <div>
               <div className="flex items-center justify-between mb-2">
                 <label className="label mb-0">Upload Photos</label>
@@ -1120,11 +1145,11 @@ export function MemorialUploadForm({
             )}
 
             <div className="flex gap-4">
-              <button onClick={() => setStep(1)} className="btn-outline flex-1">
+              <button onClick={() => goToStep(1)} className="btn-outline flex-1">
                 Back
               </button>
               <button
-                onClick={() => setStep(3)}
+                onClick={() => goToStep(3)}
                 disabled={photos.length === 0}
                 className="btn-primary flex-1"
               >
