@@ -168,11 +168,15 @@ export function AddressAutocomplete({
           ? `${streetNumber} ${streetName}` 
           : streetName
 
+        console.log('Final components:', JSON.stringify(components, null, 2))
+        
         // Update the value
         onChange(components.line1)
         
         // Notify parent of all address components
         onAddressSelect(components)
+        
+        console.log('onAddressSelect called with:', components)
       })
 
       // Clear any existing content and append
