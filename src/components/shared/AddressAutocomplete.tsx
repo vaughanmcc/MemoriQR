@@ -43,7 +43,6 @@ function loadGooglePlacesScript(apiKey: string): Promise<void> {
     isScriptLoading = true
 
     const script = document.createElement('script')
-    // Use the new Places API (New) which includes PlaceAutocompleteElement
     script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&loading=async`
     script.async = true
     script.defer = true
@@ -76,126 +75,170 @@ export function AddressAutocomplete({
   const internalRef = useRef<HTMLInputElement>(null)
   const inputRef = externalRef || internalRef
   const containerRef = useRef<HTMLDivElement>(null)
-  const autocompleteElementRef = useRef<Element | null>(null)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const autocompleteRef = useRef<any>(null)
   const [isLoaded, setIsLoaded] = useState(false)
-  const [isFocused, setIsFocused] = useState(false)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [hasNewAPI, setHasNewAPI] = useState(false)
+
+  // Parse address components from Google Place result
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const parseAddressComponents = useCallback((addressComponents: any[]): AddressComponents => {
+    const components: AddressComponents = {
+      line1: '',
+      city: '',
+      region: '',
+      postalCode: '',
+      country: '',
+    }
+
+    let streetNumber = ''
+    let streetName = ''
+
+    for (const component of addressComponents) {
+      // Handle both old API (types array) and new API (types array)
+      const types = component.types || []
+      const longName = component.longText || component.long_name || ''
+      const shortName = component.shortText || component.short_name || ''
+
+      if (types.includes('street_number')) {
+        streetNumber = longName
+      } else if (types.includes('route')) {
+        streetName = longName
+      } else if (types.includes('subpremise')) {
+        components.line2 = longName
+      } else if (types.includes('locality') || types.includes('sublocality_level_1') || types.includes('postal_town')) {
+        if (!components.city) components.city = longName
+      } else if (types.includes('administrative_area_level_1')) {
+        components.region = longName
+      } else if (types.includes('postal_code')) {
+        components.postalCode = longName
+      } else if (types.includes('country')) {
+        components.country = shortName
+      }
+    }
+
+    components.line1 = streetNumber ? `${streetNumber} ${streetName}` : streetName
+
+    return components
+  }, [])
 
   const initAutocomplete = useCallback(() => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const google = (window as any).google
-    if (!containerRef.current || !google?.maps?.places?.PlaceAutocompleteElement || autocompleteElementRef.current) {
-      return
-    }
+    if (!google?.maps?.places) return
 
-    try {
-      // Create the new PlaceAutocompleteElement
-      const autocompleteElement = new google.maps.places.PlaceAutocompleteElement({
-        componentRestrictions: { country: countries },
-        types: ['address'],
-      })
+    // Check if we have the new PlaceAutocompleteElement
+    if (google.maps.places.PlaceAutocompleteElement && containerRef.current) {
+      setHasNewAPI(true)
+      
+      if (autocompleteRef.current) return // Already initialized
 
-      // Style the element to match our input styling
-      autocompleteElement.style.cssText = `
-        width: 100%;
-        height: 100%;
-        border: none;
-        outline: none;
-        font-size: inherit;
-        font-family: inherit;
-        background: transparent;
-      `
+      try {
+        // Create PlaceAutocompleteElement with proper options
+        const placeAutocomplete = new google.maps.places.PlaceAutocompleteElement({
+          componentRestrictions: { country: countries },
+          types: ['address'],
+        })
 
-      // Listen for place selection
-      autocompleteElement.addEventListener('gmp-placeselect', async (event: Event) => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const place = (event as any).place
-        console.log('Place selected:', place)
-        if (!place) return
+        // Apply custom styles to make it look like our input
+        placeAutocomplete.setAttribute('style', `
+          width: 100%;
+          --gmpx-color-surface: transparent;
+          --gmpx-color-on-surface: inherit;
+          --gmpx-font-family-base: inherit;
+          --gmpx-font-size-base: inherit;
+        `)
 
-        // Fetch full place details
-        try {
-          await place.fetchFields({ fields: ['addressComponents', 'formattedAddress'] })
-          console.log('Address components:', place.addressComponents)
-        } catch (err) {
-          console.error('Error fetching place fields:', err)
-        }
-
-        const components: AddressComponents = {
-          line1: '',
-          city: '',
-          region: '',
-          postalCode: '',
-          country: '',
-        }
-
-        let streetNumber = ''
-        let streetName = ''
-
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        for (const component of (place.addressComponents || [])) {
-          const type = component.types[0]
-          console.log('Component:', type, component.longText || component.long_name)
+        // Handle place selection - the event is 'gmp-placeselect'
+        placeAutocomplete.addEventListener('gmp-placeselect', async (e: Event) => {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const placeEvent = e as any
+          const place = placeEvent.place
           
-          switch (type) {
-            case 'street_number':
-              streetNumber = component.longText || component.long_name || ''
-              break
-            case 'route':
-              streetName = component.longText || component.long_name || ''
-              break
-            case 'subpremise':
-              components.line2 = component.longText || component.long_name || ''
-              break
-            case 'locality':
-            case 'sublocality_level_1':
-            case 'postal_town':
-              if (!components.city) components.city = component.longText || component.long_name || ''
-              break
-            case 'administrative_area_level_1':
-              components.region = component.longText || component.long_name || ''
-              break
-            case 'postal_code':
-              components.postalCode = component.longText || component.long_name || ''
-              break
-            case 'country':
-              components.country = component.shortText || component.short_name || ''
-              break
+          console.log('gmp-placeselect fired, place:', place)
+
+          if (!place) {
+            console.log('No place in event')
+            return
           }
+
+          try {
+            // Fetch the address components
+            await place.fetchFields({ fields: ['addressComponents', 'formattedAddress'] })
+            
+            console.log('Place details fetched:', {
+              formattedAddress: place.formattedAddress,
+              addressComponents: place.addressComponents,
+            })
+
+            if (place.addressComponents) {
+              const components = parseAddressComponents(place.addressComponents)
+              console.log('Parsed components:', components)
+              
+              // Update the street value
+              onChange(components.line1 || place.formattedAddress || '')
+              
+              // Notify parent of all address components
+              onAddressSelect(components)
+            }
+          } catch (err) {
+            console.error('Error fetching place details:', err)
+          }
+        })
+
+        // Also try listening to 'gmp-select' as alternative
+        placeAutocomplete.addEventListener('gmp-select', (e: Event) => {
+          console.log('gmp-select fired:', e)
+        })
+
+        // Mount the element
+        const wrapper = containerRef.current.querySelector('.autocomplete-wrapper')
+        if (wrapper) {
+          wrapper.innerHTML = ''
+          wrapper.appendChild(placeAutocomplete)
         }
 
-        // Construct line1 from street number and name
-        components.line1 = streetNumber 
-          ? `${streetNumber} ${streetName}` 
-          : streetName
-
-        console.log('Final components:', JSON.stringify(components, null, 2))
-        
-        // Update the value
-        onChange(components.line1)
-        
-        // Notify parent of all address components
-        onAddressSelect(components)
-        
-        console.log('onAddressSelect called with:', components)
-      })
-
-      // Clear any existing content and append
-      const wrapper = containerRef.current.querySelector('.autocomplete-wrapper')
-      if (wrapper) {
-        wrapper.innerHTML = ''
-        wrapper.appendChild(autocompleteElement)
+        autocompleteRef.current = placeAutocomplete
+        console.log('PlaceAutocompleteElement initialized successfully')
+      } catch (err) {
+        console.error('Error creating PlaceAutocompleteElement:', err)
+        setHasNewAPI(false)
       }
+    } else if (inputRef.current && google.maps.places.Autocomplete) {
+      // Fall back to legacy Autocomplete if available
+      if (autocompleteRef.current) return
 
-      autocompleteElementRef.current = autocompleteElement
-    } catch (err) {
-      console.error('Error initializing PlaceAutocompleteElement:', err)
+      try {
+        const autocomplete = new google.maps.places.Autocomplete(inputRef.current, {
+          componentRestrictions: { country: countries },
+          fields: ['address_components', 'formatted_address'],
+          types: ['address'],
+        })
+
+        autocomplete.addListener('place_changed', () => {
+          const place = autocomplete.getPlace()
+          console.log('Legacy place_changed:', place)
+
+          if (place.address_components) {
+            const components = parseAddressComponents(place.address_components)
+            onChange(components.line1 || place.formatted_address || '')
+            onAddressSelect(components)
+          }
+        })
+
+        autocompleteRef.current = autocomplete
+        console.log('Legacy Autocomplete initialized')
+      } catch (err) {
+        console.error('Error creating legacy Autocomplete:', err)
+      }
     }
-  }, [countries, onChange, onAddressSelect])
+  }, [countries, onChange, onAddressSelect, parseAddressComponents, inputRef])
 
   useEffect(() => {
     const apiKey = process.env.NEXT_PUBLIC_GOOGLE_PLACES_API_KEY
     if (!apiKey) {
-      console.warn('Google Places API key not configured. Address autocomplete disabled.')
+      console.warn('Google Places API key not configured')
       return
     }
 
@@ -206,45 +249,54 @@ export function AddressAutocomplete({
 
   useEffect(() => {
     if (isLoaded) {
-      initAutocomplete()
+      // Small delay to ensure Google Maps is fully ready
+      const timer = setTimeout(initAutocomplete, 100)
+      return () => clearTimeout(timer)
     }
   }, [isLoaded, initAutocomplete])
 
   // Cleanup on unmount
   useEffect(() => {
     return () => {
-      if (autocompleteElementRef.current) {
-        autocompleteElementRef.current.remove()
-        autocompleteElementRef.current = null
+      if (autocompleteRef.current) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const google = (window as any).google
+        if (google?.maps?.event) {
+          google.maps.event.clearInstanceListeners(autocompleteRef.current)
+        }
+        if (autocompleteRef.current.remove) {
+          autocompleteRef.current.remove()
+        }
+        autocompleteRef.current = null
       }
     }
   }, [])
 
   const inputClassName = `input ${error ? 'border-red-500 ring-2 ring-red-200' : ''} ${className}`
 
-  // If API is loaded and PlaceAutocompleteElement is available, use the Google element
-  // Otherwise fall back to regular input
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const hasNewPlacesAPI = isLoaded && (window as any).google?.maps?.places?.PlaceAutocompleteElement
-
-  if (hasNewPlacesAPI) {
+  // Use the new PlaceAutocompleteElement if available
+  if (hasNewAPI && isLoaded) {
     return (
       <div ref={containerRef} className="relative">
-        <div 
-          className={`${inputClassName} ${isFocused ? 'ring-2 ring-primary-500 border-primary-500' : ''}`}
-          onFocus={() => setIsFocused(true)}
-          onBlur={() => setIsFocused(false)}
-        >
-          <div className="autocomplete-wrapper" style={{ width: '100%', minHeight: '24px' }} />
+        <div className={inputClassName} style={{ padding: 0, overflow: 'hidden' }}>
+          <div 
+            className="autocomplete-wrapper" 
+            style={{ 
+              width: '100%', 
+              minHeight: '42px',
+              display: 'flex',
+              alignItems: 'center',
+            }} 
+          />
         </div>
         {error && <p className="text-sm text-red-500 mt-1">{error}</p>}
       </div>
     )
   }
 
-  // Fallback to regular input when API not loaded
+  // Fallback to regular input (for legacy API or when not loaded)
   return (
-    <div className="relative">
+    <div ref={containerRef} className="relative">
       <input
         ref={inputRef as React.RefObject<HTMLInputElement>}
         type="text"
