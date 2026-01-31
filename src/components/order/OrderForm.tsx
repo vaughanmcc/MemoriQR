@@ -436,7 +436,7 @@ export function OrderForm() {
               {/* Name */}
               <div className="mb-6">
                 <label className="label">
-                  {deceasedType === 'pet' ? "Pet's Name" : 'Full Name'}
+                  {deceasedType === 'pet' ? "Pet's Name" : 'Full Name'} <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
@@ -451,7 +451,7 @@ export function OrderForm() {
               {/* Species (for pets) */}
               {deceasedType === 'pet' && (
                 <div className="mb-6">
-                  <label className="label">Species</label>
+                  <label className="label">Species <span className="text-red-500">*</span></label>
                   <select
                     value={species}
                     onChange={(e) => {
@@ -470,7 +470,7 @@ export function OrderForm() {
                   </select>
                   {species === 'Other' && (
                     <div className="mt-3">
-                      <label className="label">Please specify</label>
+                      <label className="label">Please specify <span className="text-red-500">*</span></label>
                       <input
                         type="text"
                         value={speciesOther}
