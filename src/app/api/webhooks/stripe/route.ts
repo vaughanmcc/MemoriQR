@@ -306,11 +306,14 @@ export async function POST(request: NextRequest) {
 
               // Send email notification to partner if they haven't opted out
               if (PIPEDREAM_REFERRAL_WEBHOOK_URL) {
+                console.log('PIPEDREAM_REFERRAL_WEBHOOK_URL is set, fetching partner data...')
                 const { data: partnerData } = await supabase
                   .from('partners')
                   .select('id, partner_name, contact_email, notify_referral_redemption, bank_name, bank_account_number')
                   .eq('id', refCodeData.partner_id)
                   .single()
+
+                console.log('Partner data:', partnerData?.contact_email, 'notify:', partnerData?.notify_referral_redemption)
 
                 if (partnerData && partnerData.notify_referral_redemption !== false && partnerData.contact_email) {
                   const businessName = partnerData.partner_name?.replace(/\s*\([^)]+\)\s*$/, '') || 'Partner'
@@ -321,7 +324,8 @@ export async function POST(request: NextRequest) {
                   const hasBankingDetails = !!(partnerData.bank_name && partnerData.bank_account_number)
 
                   try {
-                    await fetch(PIPEDREAM_REFERRAL_WEBHOOK_URL, {
+                    console.log('Sending referral_redeemed email to:', PIPEDREAM_REFERRAL_WEBHOOK_URL)
+                    const emailResponse = await fetch(PIPEDREAM_REFERRAL_WEBHOOK_URL, {
                       method: 'POST',
                       headers: { 'Content-Type': 'application/json' },
                       body: JSON.stringify({
@@ -339,11 +343,13 @@ export async function POST(request: NextRequest) {
                         settingsUrl: `${baseUrl}/partner/settings`,
                       }),
                     })
-                    console.log(`Referral redemption email sent to ${partnerData.contact_email}`)
+                    console.log(`Referral redemption email response: ${emailResponse.status} ${emailResponse.statusText}`)
                   } catch (emailError) {
                     console.error('Failed to send referral redemption email:', emailError)
                   }
                 }
+              } else {
+                console.log('PIPEDREAM_REFERRAL_WEBHOOK_URL is not set!')
               }
             }
           }
