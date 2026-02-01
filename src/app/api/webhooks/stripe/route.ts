@@ -454,7 +454,7 @@ export async function POST(request: NextRequest) {
                 // Referral code discount info
                 referral_code: referralCode || null,
                 discount_amount: referralDiscount || 0,
-                discount_percent: referralDiscount > 0 ? Math.round((referralDiscount / (orderTotal + referralDiscount)) * 100) : 0,
+                discount_percent: referralDiscount > 0 ? Math.round((referralDiscount / ((session.amount_total ? session.amount_total / 100 : 0) + referralDiscount)) * 100) : 0,
               }),
             })
 
