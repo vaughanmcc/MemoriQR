@@ -350,6 +350,111 @@ export async function POST(request: NextRequest) {
         }
       }
 
+      // Handle referral invite commission (INV-* codes)
+      const referralInviteId = session.metadata?.referral_invite_id
+      if (referralInviteId && !referralCodeId) {
+        // Get the invite details
+        const { data: inviteData } = await supabase
+          .from('partner_referral_invites')
+          .select('id, partner_id, recipient_email')
+          .eq('id', referralInviteId)
+          .single()
+
+        if (inviteData) {
+          // Get the order ID for the commission record
+          const { data: orderData } = await supabase
+            .from('orders')
+            .select('id')
+            .eq('order_number', orderNumber)
+            .single()
+
+          if (orderData) {
+            const orderTotal = session.amount_total ? session.amount_total / 100 : 0
+            const commissionAmount = Math.round(orderTotal * (referralCommissionPercent / 100) * 100) / 100
+
+            // Create commission record for the invite
+            const { data: commission, error: commissionError } = await supabase
+              .from('partner_commissions')
+              .insert({
+                partner_id: inviteData.partner_id,
+                order_id: orderData.id,
+                order_total: orderTotal,
+                discount_amount: 0,
+                commission_percent: referralCommissionPercent,
+                order_value: orderTotal,
+                commission_rate: referralCommissionPercent,
+                commission_amount: commissionAmount,
+                status: 'pending',
+              })
+              .select('id')
+              .single()
+
+            if (commissionError) {
+              console.error('Failed to create invite commission record:', commissionError)
+            } else if (commission) {
+              // Update order with commission ID
+              await supabase
+                .from('orders')
+                .update({ partner_commission_id: commission.id })
+                .eq('id', orderData.id)
+
+              // Mark invite as converted
+              await supabase
+                .from('partner_referral_invites')
+                .update({
+                  converted_at: new Date().toISOString(),
+                  status: 'converted',
+                  order_id: orderData.id,
+                })
+                .eq('id', referralInviteId)
+
+              console.log(`Invite commission of $${commissionAmount} recorded for partner ${inviteData.partner_id}`)
+
+              // Send notification email to partner
+              if (PIPEDREAM_REFERRAL_WEBHOOK_URL) {
+                const { data: partnerData } = await supabase
+                  .from('partners')
+                  .select('id, partner_name, contact_email, notify_referral_redemption, bank_name, bank_account_number')
+                  .eq('id', inviteData.partner_id)
+                  .single()
+
+                if (partnerData && partnerData.notify_referral_redemption !== false && partnerData.contact_email) {
+                  const businessName = partnerData.partner_name?.replace(/\s*\([^)]+\)\s*$/, '') || 'Partner'
+                  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_BASE_URL || 'https://memoriqr.com'
+                  const optOutToken = generateOptOutToken(partnerData.id)
+                  const optOutUrl = `${baseUrl}/api/partner/notifications/unsubscribe?partner=${partnerData.id}&token=${optOutToken}`
+                  const hasBankingDetails = !!(partnerData.bank_name && partnerData.bank_account_number)
+
+                  try {
+                    await fetch(PIPEDREAM_REFERRAL_WEBHOOK_URL, {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        type: 'referral_redeemed',
+                        to: partnerData.contact_email,
+                        businessName,
+                        referralCode: `Invite to ${inviteData.recipient_email}`,
+                        orderNumber,
+                        discountPercent: 0,
+                        commissionAmount: commissionAmount.toFixed(2),
+                        orderTotal: orderTotal.toFixed(2),
+                        optOutUrl,
+                        dashboardUrl: `${baseUrl}/partner/settings`,
+                        hasBankingDetails,
+                        settingsUrl: `${baseUrl}/partner/settings`,
+                      }),
+                    })
+                    console.log(`Invite conversion email sent to ${partnerData.contact_email}`)
+                  } catch (emailError) {
+                    console.error('Failed to send invite conversion email:', emailError)
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+
       // Update customer shipping address if provided
       if (session.shipping_details?.address && customerId) {
         await supabase

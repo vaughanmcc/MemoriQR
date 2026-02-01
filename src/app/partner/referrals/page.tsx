@@ -63,6 +63,19 @@ interface LinkedPartner {
   partner_type: string
 }
 
+interface ReferralInvite {
+  id: string
+  recipient_email: string
+  recipient_name: string | null
+  message: string | null
+  invite_code: string
+  sent_at: string
+  clicked_at: string | null
+  converted_at: string | null
+  status: 'sent' | 'clicked' | 'converted' | 'expired'
+  expires_at: string
+}
+
 export default function PartnerReferralsPage() {
   const router = useRouter()
   const [codes, setCodes] = useState<ReferralCode[]>([])
@@ -71,7 +84,7 @@ export default function PartnerReferralsPage() {
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState<'all' | 'available' | 'used'>('all')
   const [copiedCode, setCopiedCode] = useState<string | null>(null)
-  const [activeTab, setActiveTab] = useState<'batches' | 'codes'>('batches')
+  const [activeTab, setActiveTab] = useState<'batches' | 'codes' | 'invites'>('batches')
   
   // Transfer state
   const [linkedPartners, setLinkedPartners] = useState<LinkedPartner[]>([])
@@ -93,6 +106,15 @@ export default function PartnerReferralsPage() {
   const [sortField, setSortField] = useState<'created_at' | 'used_at' | 'code'>('created_at')
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc')
 
+  // Invite state
+  const [invites, setInvites] = useState<ReferralInvite[]>([])
+  const [inviteEmail, setInviteEmail] = useState('')
+  const [inviteName, setInviteName] = useState('')
+  const [inviteMessage, setInviteMessage] = useState('')
+  const [isSendingInvite, setIsSendingInvite] = useState(false)
+  const [inviteResult, setInviteResult] = useState<{ success: boolean; message: string } | null>(null)
+  const [loadingInvites, setLoadingInvites] = useState(false)
+
   // Extend session while user is active
   useSessionExtension()
 
@@ -100,6 +122,12 @@ export default function PartnerReferralsPage() {
     fetchReferrals()
     fetchLinkedPartners()
   }, [filter])
+
+  useEffect(() => {
+    if (activeTab === 'invites') {
+      fetchInvites()
+    }
+  }, [activeTab])
 
   const fetchLinkedPartners = async () => {
     try {
@@ -130,6 +158,57 @@ export default function PartnerReferralsPage() {
       console.error('Failed to fetch referral codes:', err)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const fetchInvites = async () => {
+    setLoadingInvites(true)
+    try {
+      const response = await fetch('/api/partner/referrals/invite')
+      if (response.ok) {
+        const data = await response.json()
+        setInvites(data.invites || [])
+      }
+    } catch (err) {
+      console.error('Failed to fetch invites:', err)
+    } finally {
+      setLoadingInvites(false)
+    }
+  }
+
+  const sendInvite = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!inviteEmail.trim()) return
+
+    setIsSendingInvite(true)
+    setInviteResult(null)
+
+    try {
+      const response = await fetch('/api/partner/referrals/invite', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          recipientEmail: inviteEmail.trim(),
+          recipientName: inviteName.trim() || null,
+          message: inviteMessage.trim() || null,
+        }),
+      })
+
+      const data = await response.json()
+
+      if (response.ok) {
+        setInviteResult({ success: true, message: data.message || 'Invite sent successfully!' })
+        setInviteEmail('')
+        setInviteName('')
+        setInviteMessage('')
+        fetchInvites()
+      } else {
+        setInviteResult({ success: false, message: data.error || 'Failed to send invite' })
+      }
+    } catch (err) {
+      setInviteResult({ success: false, message: 'Failed to send invite' })
+    } finally {
+      setIsSendingInvite(false)
     }
   }
 
@@ -350,9 +429,20 @@ export default function PartnerReferralsPage() {
           >
             Individual Codes
           </button>
+          <button
+            onClick={() => setActiveTab('invites')}
+            className={`px-4 py-2 rounded-lg font-medium flex items-center gap-2 ${
+              activeTab === 'invites'
+                ? 'bg-primary-600 text-white'
+                : 'bg-white text-gray-700 hover:bg-gray-50'
+            }`}
+          >
+            <Send className="h-4 w-4" />
+            Send Invite
+          </button>
         </div>
 
-        {activeTab === 'batches' ? (
+        {activeTab === 'batches' && (
           /* Batches View */
           <div className="bg-white rounded-lg shadow">
             {batches.length === 0 ? (
@@ -424,7 +514,9 @@ export default function PartnerReferralsPage() {
               </div>
             )}
           </div>
-        ) : (
+        )}
+
+        {activeTab === 'codes' && (
           /* Individual Codes View */
           <div className="bg-white rounded-lg shadow">
             <div className="p-4 border-b flex flex-col gap-3">
@@ -611,6 +703,143 @@ export default function PartnerReferralsPage() {
                 </div>
               </div>
             )}
+          </div>
+        )}
+
+        {activeTab === 'invites' && (
+          /* Send Invite View */
+          <div className="space-y-6">
+            {/* Send Invite Form */}
+            <div className="bg-white rounded-lg shadow p-6">
+              <h3 className="font-semibold text-lg mb-4">Send Referral Invite</h3>
+              <p className="text-gray-600 text-sm mb-6">
+                Send a personalized referral link via email. When they order using your link, you earn commission!
+              </p>
+              
+              <form onSubmit={sendInvite} className="space-y-4">
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Recipient Email <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="email"
+                      value={inviteEmail}
+                      onChange={(e) => setInviteEmail(e.target.value)}
+                      placeholder="friend@example.com"
+                      className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Recipient Name (optional)
+                    </label>
+                    <input
+                      type="text"
+                      value={inviteName}
+                      onChange={(e) => setInviteName(e.target.value)}
+                      placeholder="John Smith"
+                      className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    />
+                  </div>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Personal Message (optional)
+                  </label>
+                  <textarea
+                    value={inviteMessage}
+                    onChange={(e) => setInviteMessage(e.target.value)}
+                    placeholder="I thought you might be interested in MemoriQR..."
+                    rows={3}
+                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  />
+                </div>
+
+                {inviteResult && (
+                  <div className={`p-4 rounded-lg ${inviteResult.success ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
+                    {inviteResult.message}
+                  </div>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={isSendingInvite || !inviteEmail.trim()}
+                  className="w-full md:w-auto px-6 py-2.5 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  {isSendingInvite ? (
+                    <>Sending...</>
+                  ) : (
+                    <>
+                      <Send className="h-4 w-4" />
+                      Send Invite
+                    </>
+                  )}
+                </button>
+              </form>
+            </div>
+
+            {/* Sent Invites List */}
+            <div className="bg-white rounded-lg shadow">
+              <div className="p-4 border-b">
+                <h3 className="font-semibold">Sent Invites</h3>
+                <p className="text-sm text-gray-500">Track who you&apos;ve invited and their status</p>
+              </div>
+              
+              {loadingInvites ? (
+                <div className="p-8 text-center text-gray-500">Loading invites...</div>
+              ) : invites.length === 0 ? (
+                <div className="p-8 text-center text-gray-500">
+                  <Send className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+                  <p className="font-medium">No invites sent yet</p>
+                  <p className="text-sm mt-1">Send your first referral invite above!</p>
+                </div>
+              ) : (
+                <div className="divide-y">
+                  {invites.map(invite => (
+                    <div key={invite.id} className="p-4 flex items-center justify-between">
+                      <div>
+                        <div className="font-medium">
+                          {invite.recipient_name || invite.recipient_email}
+                        </div>
+                        {invite.recipient_name && (
+                          <div className="text-sm text-gray-500">{invite.recipient_email}</div>
+                        )}
+                        <div className="text-xs text-gray-400 mt-1">
+                          Sent {formatDateOnly(invite.sent_at)} at {formatTimeWithZone(invite.sent_at)}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                          invite.status === 'converted' ? 'bg-green-100 text-green-700' :
+                          invite.status === 'clicked' ? 'bg-blue-100 text-blue-700' :
+                          invite.status === 'expired' ? 'bg-gray-100 text-gray-600' :
+                          'bg-amber-100 text-amber-700'
+                        }`}>
+                          {invite.status === 'converted' ? 'Converted' :
+                           invite.status === 'clicked' ? 'Clicked' :
+                           invite.status === 'expired' ? 'Expired' :
+                           'Sent'}
+                        </span>
+                        <button
+                          onClick={() => copyOrderLink(invite.invite_code)}
+                          className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded"
+                          title="Copy invite link"
+                        >
+                          {copiedCode === `link-${invite.invite_code}` ? (
+                            <Check className="h-4 w-4 text-green-600" />
+                          ) : (
+                            <Copy className="h-4 w-4" />
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         )}
 

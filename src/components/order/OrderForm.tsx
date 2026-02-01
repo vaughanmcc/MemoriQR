@@ -113,6 +113,17 @@ export function OrderForm() {
     if (refCode) {
       setReferralCode(refCode.toUpperCase())
       validateReferralCode(refCode)
+      
+      // Track invite link clicks (INV-* codes)
+      if (refCode.toUpperCase().startsWith('INV-')) {
+        fetch('/api/partner/referrals/invite/track', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ inviteCode: refCode.toUpperCase() }),
+        }).catch(() => {
+          // Silent fail - tracking is not critical
+        })
+      }
     }
   }, [searchParams, validateReferralCode])
 
