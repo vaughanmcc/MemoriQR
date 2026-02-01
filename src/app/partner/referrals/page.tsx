@@ -796,17 +796,15 @@ function RequestCodesModal({
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Number of Codes
                   </label>
-                  <select
+                  <input
+                    type="number"
+                    min={1}
+                    max={100}
                     value={quantity}
-                    onChange={(e) => setQuantity(parseInt(e.target.value))}
+                    onChange={(e) => setQuantity(Math.max(1, Math.min(100, parseInt(e.target.value) || 1)))}
                     className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-primary-500 focus:border-primary-500"
-                  >
-                    <option value={5}>5 codes</option>
-                    <option value={10}>10 codes</option>
-                    <option value={20}>20 codes (requires approval)</option>
-                    <option value={50}>50 codes (requires approval)</option>
-                    <option value={100}>100 codes (requires approval)</option>
-                  </select>
+                    placeholder="Enter number of codes (1-100)"
+                  />
                   <p className="text-xs text-gray-500 mt-1">
                     {quantity <= 10 
                       ? '✓ Up to 10 codes are generated instantly!' 
