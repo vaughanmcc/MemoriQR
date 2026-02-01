@@ -4,6 +4,24 @@
 
 ---
 
+## February 1, 2026 (Evening) - Referral Request Bug Fix
+
+**Bug Fixed:**
+- ✅ **Admin Referral Requests API Auth Issue**:
+  - The `/api/admin/referral-requests` endpoint was using incorrect auth method
+  - Was checking `admin_auth` cookie with `ADMIN_AUTH_TOKEN` env var
+  - Fixed to use `admin-session` cookie with `ADMIN_PASSWORD` (consistent with all other admin APIs)
+  - This was causing the "Requests" tab in admin to show "No pending requests" even when requests existed
+
+**Root Cause:**
+- Inconsistent auth pattern copied when creating the new route
+- All other admin routes use `admin-session` cookie pattern
+
+**Key Files Modified:**
+- `src/app/api/admin/referral-requests/route.ts` - Fixed auth check in GET and POST handlers
+
+---
+
 ## February 1, 2026 - Partner Portal Enhancements & Email Handlers
 
 **Completed:**
