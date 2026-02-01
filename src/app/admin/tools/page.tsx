@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { formatDateOnly, formatTimeWithZone, formatDateTime } from '@/lib/utils';
+import { AdminNav } from '@/components/admin/AdminNav';
 
 interface Order {
   id: string;
@@ -733,33 +734,7 @@ export default function AdminToolsPage() {
 
   return (
     <div className="min-h-screen bg-stone-100">
-      {/* Header */}
-      <header className="bg-stone-800 text-white shadow-lg">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <a href={process.env.NEXT_PUBLIC_BASE_URL || 'https://memoriqr.co.nz'} target="_blank" rel="noopener noreferrer" className="text-xl font-bold text-amber-200 hover:text-amber-100">MemoriQR</a>
-            <span className="text-white/50 mx-2">|</span>
-            <span className="text-lg font-semibold">Admin</span>
-            <nav className="hidden md:flex gap-4 ml-8">
-              <Link href="/admin/dashboard" className="text-white/70 hover:text-white px-3 py-1 rounded hover:bg-white/10">
-                Dashboard
-              </Link>
-              <Link href="/admin/partners" className="text-white/70 hover:text-white px-3 py-1 rounded hover:bg-white/10">
-                Partners
-              </Link>
-              <Link href="/admin/orders" className="text-white/70 hover:text-white px-3 py-1 rounded hover:bg-white/10">
-                Orders
-              </Link>
-              <Link href="/admin/tools" className="text-white/90 hover:text-white px-3 py-1 rounded bg-white/10">
-                Tools
-              </Link>
-            </nav>
-          </div>
-          <button onClick={handleLogout} className="text-white/70 hover:text-white text-sm">
-            Log Out
-          </button>
-        </div>
-      </header>
+      <AdminNav onLogout={handleLogout} />
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 py-8">

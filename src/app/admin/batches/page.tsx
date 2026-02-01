@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { AdminNav } from '@/components/admin/AdminNav'
 
 interface Partner {
   id: string
@@ -85,6 +86,11 @@ export default function AdminBatchesPage() {
     fetchBatches()
   }, [fetchBatches])
 
+  const handleLogout = async () => {
+    await fetch('/api/admin/session', { method: 'DELETE' })
+    router.push('/admin')
+  }
+
   const handleAction = async (batchId: string, action: 'approve' | 'reject' | 'generate') => {
     setProcessingId(batchId)
     setError('')
@@ -130,6 +136,8 @@ export default function AdminBatchesPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      <AdminNav onLogout={handleLogout} />
+
       <div className="max-w-7xl mx-auto px-4 py-8">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
@@ -137,12 +145,6 @@ export default function AdminBatchesPage() {
             <h1 className="text-2xl font-bold text-gray-900">Partner Code Batches</h1>
             <p className="text-gray-600 mt-1">View partner wholesale code purchases (auto-generated after Stripe payment)</p>
           </div>
-          <Link
-            href="/admin/dashboard"
-            className="text-stone-600 hover:text-stone-800"
-          >
-            ← Back to Dashboard
-          </Link>
         </div>
 
         {/* Summary Cards */}

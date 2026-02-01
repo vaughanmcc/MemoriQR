@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { AdminNav } from '@/components/admin/AdminNav';
 
 interface Customer {
   id: string;
@@ -185,53 +186,7 @@ export default function AdminOrdersPage() {
 
   return (
     <div className="min-h-screen bg-stone-100">
-      {/* Header */}
-      <header className="bg-stone-800 text-white shadow-lg">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <a href={process.env.NEXT_PUBLIC_BASE_URL || 'https://memoriqr.co.nz'} target="_blank" rel="noopener noreferrer" className="text-xl font-bold text-amber-200 hover:text-amber-100">MemoriQR</a>
-            <span className="text-white/50 mx-2">|</span>
-            <span className="text-lg font-semibold">Admin</span>
-            <nav className="hidden md:flex gap-4 ml-8">
-              <Link href="/admin/dashboard" className="text-white/70 hover:text-white px-3 py-1 rounded hover:bg-white/10">
-                Dashboard
-              </Link>
-              <Link href="/admin/codes" className="text-white/70 hover:text-white px-3 py-1 rounded hover:bg-white/10">
-                Activation Codes
-              </Link>
-              <Link href="/admin/referrals" className="text-white/70 hover:text-white px-3 py-1 rounded hover:bg-white/10">
-                Referral Codes
-              </Link>
-              <Link href="/admin/batches" className="text-white/70 hover:text-white px-3 py-1 rounded hover:bg-white/10">
-                Partner Batches
-              </Link>
-              <Link href="/admin/partners" className="text-white/70 hover:text-white px-3 py-1 rounded hover:bg-white/10">
-                Partners
-              </Link>
-              <Link href="/admin/commissions" className="text-white/70 hover:text-white px-3 py-1 rounded hover:bg-white/10">
-                Commissions
-              </Link>
-              <Link href="/admin/orders" className="text-white/90 hover:text-white px-3 py-1 rounded bg-white/10 relative">
-                Orders
-                {counts.needs_fulfillment > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-orange-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
-                    {counts.needs_fulfillment}
-                  </span>
-                )}
-              </Link>
-              <Link href="/admin/memorials" className="text-white/70 hover:text-white px-3 py-1 rounded hover:bg-white/10">
-                Memorials
-              </Link>
-              <Link href="/admin/tools" className="text-white/70 hover:text-white px-3 py-1 rounded hover:bg-white/10">
-                Tools
-              </Link>
-            </nav>
-          </div>
-          <button onClick={handleLogout} className="text-white/70 hover:text-white text-sm">
-            Log Out
-          </button>
-        </div>
-      </header>
+      <AdminNav onLogout={handleLogout} />
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 py-8">
