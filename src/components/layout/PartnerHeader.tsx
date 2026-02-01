@@ -82,13 +82,13 @@ export function PartnerHeader({ partnerName: propPartnerName, linkedPartners: pr
   return (
     <header className="bg-white shadow-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
+        <div className="flex justify-between items-center h-20">
           <div className="flex items-center gap-4">
-            <Link href="/" className="text-2xl font-serif text-primary-700">
+            <Link href="/" className="text-2xl md:text-3xl font-serif text-primary-700">
               MemoriQR
             </Link>
             <span className="text-gray-300">|</span>
-            <Link href="/partner/dashboard" className="text-gray-600 hover:text-gray-900">
+            <Link href="/partner/dashboard" className="text-base text-gray-600 hover:text-gray-900">
               Partner Portal
             </Link>
           </div>
@@ -99,16 +99,16 @@ export function PartnerHeader({ partnerName: propPartnerName, linkedPartners: pr
                 {hasMultipleBusinesses ? (
                   <button
                     onClick={() => setShowSwitcher(!showSwitcher)}
-                    className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 px-3 py-1.5 rounded-md hover:bg-gray-100 transition-colors"
+                    className="flex items-center gap-2 text-base text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md hover:bg-gray-100 transition-colors"
                     disabled={switching}
                   >
-                    <Building2 className="h-4 w-4" />
+                    <Building2 className="h-5 w-5" />
                     <span className="max-w-[200px] truncate">{partnerName}</span>
                     <ChevronDown className={`h-4 w-4 transition-transform ${showSwitcher ? 'rotate-180' : ''}`} />
                   </button>
                 ) : (
-                  <span className="flex items-center gap-2 text-sm text-gray-600">
-                    <Building2 className="h-4 w-4" />
+                  <span className="flex items-center gap-2 text-base text-gray-600">
+                    <Building2 className="h-5 w-5" />
                     <span className="max-w-[200px] truncate">{partnerName}</span>
                   </span>
                 )}
@@ -141,9 +141,9 @@ export function PartnerHeader({ partnerName: propPartnerName, linkedPartners: pr
             )}
             <button
               onClick={handleLogout}
-              className="flex items-center gap-1 text-gray-500 hover:text-gray-700 text-sm"
+              className="flex items-center gap-2 text-gray-500 hover:text-gray-700 text-base"
             >
-              <LogOut className="h-4 w-4" />
+              <LogOut className="h-5 w-5" />
               Logout
             </button>
           </div>

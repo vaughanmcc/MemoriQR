@@ -10,8 +10,8 @@ export function HeroSection() {
       <div className="container-wide py-20 md:py-32 relative">
         <div className="max-w-3xl mx-auto text-center">
           {/* Badge */}
-          <div className="inline-flex items-center gap-2 bg-primary-50 text-primary-700 px-4 py-2 rounded-full text-sm font-medium mb-8">
-            <Sparkles className="h-4 w-4" />
+          <div className="inline-flex items-center gap-2 bg-primary-50 text-primary-700 px-5 py-2.5 rounded-full text-base font-medium mb-8">
+            <Sparkles className="h-5 w-5" />
             <span>Now serving New Zealand & Australia</span>
           </div>
 
@@ -40,7 +40,7 @@ export function HeroSection() {
           </div>
 
           {/* Trust indicators */}
-          <div className="flex flex-wrap justify-center gap-8 text-sm text-gray-500">
+          <div className="flex flex-wrap justify-center gap-8 text-base text-gray-500">
             <div className="flex items-center gap-2">
               <Heart className="h-5 w-5 text-memorial-gold" />
               <span>5-25 Year Hosting</span>
