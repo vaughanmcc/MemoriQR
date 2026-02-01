@@ -136,10 +136,16 @@ export async function POST(request: Request) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               type: 'referral_codes_generated',
-              partner_email: partner.contact_email,
-              partner_name: partner.partner_name,
+              to: partner.contact_email,
+              businessName: partner.partner_name,
               quantity,
-              codes_list: codes.map(c => c.code)
+              totalCodes: quantity,
+              codes: codes.map(c => c.code),
+              discountPercent: partner.default_discount_percent ?? 10,
+              commissionPercent: partner.default_commission_percent ?? 15,
+              freeShipping: partner.default_free_shipping ?? false,
+              expiresAt: null,
+              dashboardUrl: `${process.env.NEXT_PUBLIC_BASE_URL || 'https://memoriqr.co.nz'}/partner/referrals`
             })
           })
         }
