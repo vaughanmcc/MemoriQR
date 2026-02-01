@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { PartnerHeader } from '@/components/layout/PartnerHeader'
 import { formatDateOnly, formatTimeWithZone } from '@/lib/utils'
@@ -63,28 +63,34 @@ interface LinkedPartner {
   partner_type: string
 }
 
-interface ReferralInvite {
+interface ReferralCodeShare {
   id: string
   recipient_email: string
   recipient_name: string | null
   message: string | null
-  invite_code: string
   sent_at: string
-  clicked_at: string | null
-  converted_at: string | null
-  status: 'sent' | 'clicked' | 'converted' | 'expired'
-  expires_at: string
+  referral_code_id: string
+  referral_codes: {
+    code: string
+    is_used: boolean
+    used_at: string | null
+  }
 }
 
 export default function PartnerReferralsPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [codes, setCodes] = useState<ReferralCode[]>([])
   const [batches, setBatches] = useState<Batch[]>([])
   const [summary, setSummary] = useState<Summary>({ total: 0, available: 0, used: 0 })
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState<'all' | 'available' | 'used'>('all')
   const [copiedCode, setCopiedCode] = useState<string | null>(null)
-  const [activeTab, setActiveTab] = useState<'batches' | 'codes' | 'invites'>('batches')
+  
+  // Check for tab URL param
+  const tabParam = searchParams.get('tab')
+  const initialTab = tabParam === 'share' ? 'share' : tabParam === 'codes' ? 'codes' : 'batches'
+  const [activeTab, setActiveTab] = useState<'batches' | 'codes' | 'share'>(initialTab)
   
   // Transfer state
   const [linkedPartners, setLinkedPartners] = useState<LinkedPartner[]>([])
@@ -106,14 +112,15 @@ export default function PartnerReferralsPage() {
   const [sortField, setSortField] = useState<'created_at' | 'used_at' | 'code'>('created_at')
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc')
 
-  // Invite state
-  const [invites, setInvites] = useState<ReferralInvite[]>([])
-  const [inviteEmail, setInviteEmail] = useState('')
-  const [inviteName, setInviteName] = useState('')
-  const [inviteMessage, setInviteMessage] = useState('')
-  const [isSendingInvite, setIsSendingInvite] = useState(false)
-  const [inviteResult, setInviteResult] = useState<{ success: boolean; message: string } | null>(null)
-  const [loadingInvites, setLoadingInvites] = useState(false)
+  // Share code state
+  const [shares, setShares] = useState<ReferralCodeShare[]>([])
+  const [selectedShareCodeId, setSelectedShareCodeId] = useState('')
+  const [shareEmail, setShareEmail] = useState('')
+  const [shareName, setShareName] = useState('')
+  const [shareMessage, setShareMessage] = useState('')
+  const [isSendingShare, setIsSendingShare] = useState(false)
+  const [shareResult, setShareResult] = useState<{ success: boolean; message: string } | null>(null)
+  const [loadingShares, setLoadingShares] = useState(false)
 
   // Extend session while user is active
   useSessionExtension()
@@ -124,8 +131,8 @@ export default function PartnerReferralsPage() {
   }, [filter])
 
   useEffect(() => {
-    if (activeTab === 'invites') {
-      fetchInvites()
+    if (activeTab === 'share') {
+      fetchShares()
     }
   }, [activeTab])
 
@@ -161,54 +168,56 @@ export default function PartnerReferralsPage() {
     }
   }
 
-  const fetchInvites = async () => {
-    setLoadingInvites(true)
+  const fetchShares = async () => {
+    setLoadingShares(true)
     try {
-      const response = await fetch('/api/partner/referrals/invite')
+      const response = await fetch('/api/partner/referrals/share')
       if (response.ok) {
         const data = await response.json()
-        setInvites(data.invites || [])
+        setShares(data.shares || [])
       }
     } catch (err) {
-      console.error('Failed to fetch invites:', err)
+      console.error('Failed to fetch shares:', err)
     } finally {
-      setLoadingInvites(false)
+      setLoadingShares(false)
     }
   }
 
-  const sendInvite = async (e: React.FormEvent) => {
+  const sendShare = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!inviteEmail.trim()) return
+    if (!selectedShareCodeId || !shareEmail.trim()) return
 
-    setIsSendingInvite(true)
-    setInviteResult(null)
+    setIsSendingShare(true)
+    setShareResult(null)
 
     try {
-      const response = await fetch('/api/partner/referrals/invite', {
+      const response = await fetch('/api/partner/referrals/share', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          recipientEmail: inviteEmail.trim(),
-          recipientName: inviteName.trim() || null,
-          message: inviteMessage.trim() || null,
+          referralCodeId: selectedShareCodeId,
+          recipientEmail: shareEmail.trim(),
+          recipientName: shareName.trim() || null,
+          message: shareMessage.trim() || null,
         }),
       })
 
       const data = await response.json()
 
       if (response.ok) {
-        setInviteResult({ success: true, message: data.message || 'Invite sent successfully!' })
-        setInviteEmail('')
-        setInviteName('')
-        setInviteMessage('')
-        fetchInvites()
+        setShareResult({ success: true, message: data.message || 'Code shared successfully!' })
+        setShareEmail('')
+        setShareName('')
+        setShareMessage('')
+        setSelectedShareCodeId('')
+        fetchShares()
       } else {
-        setInviteResult({ success: false, message: data.error || 'Failed to send invite' })
+        setShareResult({ success: false, message: data.error || 'Failed to share code' })
       }
-    } catch (err) {
-      setInviteResult({ success: false, message: 'Failed to send invite' })
+    } catch {
+      setShareResult({ success: false, message: 'Failed to share code' })
     } finally {
-      setIsSendingInvite(false)
+      setIsSendingShare(false)
     }
   }
 
@@ -430,15 +439,15 @@ export default function PartnerReferralsPage() {
             Individual Codes
           </button>
           <button
-            onClick={() => setActiveTab('invites')}
+            onClick={() => setActiveTab('share')}
             className={`px-4 py-2 rounded-lg font-medium flex items-center gap-2 ${
-              activeTab === 'invites'
+              activeTab === 'share'
                 ? 'bg-primary-600 text-white'
                 : 'bg-white text-gray-700 hover:bg-gray-50'
             }`}
           >
             <Send className="h-4 w-4" />
-            Send Invite
+            Share Code
           </button>
         </div>
 
@@ -706,129 +715,162 @@ export default function PartnerReferralsPage() {
           </div>
         )}
 
-        {activeTab === 'invites' && (
-          /* Send Invite View */
+        {activeTab === 'share' && (
+          /* Share Code View */
           <div className="space-y-6">
-            {/* Send Invite Form */}
+            {/* Share Code Form */}
             <div className="bg-white rounded-lg shadow p-6">
-              <h3 className="font-semibold text-lg mb-4">Send Referral Invite</h3>
+              <h3 className="font-semibold text-lg mb-4">Share a Referral Code</h3>
               <p className="text-gray-600 text-sm mb-6">
-                Send a personalized referral link via email. When they order using your link, you earn commission!
+                Select one of your available referral codes and send it to a potential customer via email.
               </p>
               
-              <form onSubmit={sendInvite} className="space-y-4">
-                <div className="grid md:grid-cols-2 gap-4">
+              {codes.filter(c => !c.is_used).length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  <Tag className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+                  <p className="font-medium">No available codes to share</p>
+                  <p className="text-sm mt-1">Request more codes or wait for used codes to become available.</p>
+                </div>
+              ) : (
+                <form onSubmit={sendShare} className="space-y-4">
+                  {/* Code Selection */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Recipient Email <span className="text-red-500">*</span>
+                      Select Referral Code <span className="text-red-500">*</span>
                     </label>
-                    <input
-                      type="email"
-                      value={inviteEmail}
-                      onChange={(e) => setInviteEmail(e.target.value)}
-                      placeholder="friend@example.com"
+                    <select
+                      value={selectedShareCodeId}
+                      onChange={(e) => setSelectedShareCodeId(e.target.value)}
                       className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                       required
-                    />
+                    >
+                      <option value="">Choose a code...</option>
+                      {codes.filter(c => !c.is_used).map(code => (
+                        <option key={code.id} value={code.id}>
+                          {code.code} ({code.discount_percent}% discount)
+                        </option>
+                      ))}
+                    </select>
+                    <p className="text-xs text-gray-500 mt-1">
+                      {codes.filter(c => !c.is_used).length} codes available
+                    </p>
                   </div>
+
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Recipient Email <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="email"
+                        value={shareEmail}
+                        onChange={(e) => setShareEmail(e.target.value)}
+                        placeholder="customer@example.com"
+                        className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Recipient Name (optional)
+                      </label>
+                      <input
+                        type="text"
+                        value={shareName}
+                        onChange={(e) => setShareName(e.target.value)}
+                        placeholder="John Smith"
+                        className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                      />
+                    </div>
+                  </div>
+                  
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Recipient Name (optional)
+                      Personal Message (optional)
                     </label>
-                    <input
-                      type="text"
-                      value={inviteName}
-                      onChange={(e) => setInviteName(e.target.value)}
-                      placeholder="John Smith"
+                    <textarea
+                      value={shareMessage}
+                      onChange={(e) => setShareMessage(e.target.value)}
+                      placeholder="I thought you might be interested in MemoriQR for creating a lasting memorial..."
+                      rows={3}
                       className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                     />
                   </div>
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Personal Message (optional)
-                  </label>
-                  <textarea
-                    value={inviteMessage}
-                    onChange={(e) => setInviteMessage(e.target.value)}
-                    placeholder="I thought you might be interested in MemoriQR..."
-                    rows={3}
-                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                  />
-                </div>
 
-                {inviteResult && (
-                  <div className={`p-4 rounded-lg ${inviteResult.success ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
-                    {inviteResult.message}
-                  </div>
-                )}
-
-                <button
-                  type="submit"
-                  disabled={isSendingInvite || !inviteEmail.trim()}
-                  className="w-full md:w-auto px-6 py-2.5 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50 flex items-center justify-center gap-2"
-                >
-                  {isSendingInvite ? (
-                    <>Sending...</>
-                  ) : (
-                    <>
-                      <Send className="h-4 w-4" />
-                      Send Invite
-                    </>
+                  {shareResult && (
+                    <div className={`p-4 rounded-lg ${shareResult.success ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
+                      {shareResult.message}
+                    </div>
                   )}
-                </button>
-              </form>
+
+                  <button
+                    type="submit"
+                    disabled={isSendingShare || !selectedShareCodeId || !shareEmail.trim()}
+                    className="w-full md:w-auto px-6 py-2.5 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50 flex items-center justify-center gap-2"
+                  >
+                    {isSendingShare ? (
+                      <>Sending...</>
+                    ) : (
+                      <>
+                        <Send className="h-4 w-4" />
+                        Share Code
+                      </>
+                    )}
+                  </button>
+                </form>
+              )}
             </div>
 
-            {/* Sent Invites List */}
+            {/* Shared Codes List */}
             <div className="bg-white rounded-lg shadow">
               <div className="p-4 border-b">
-                <h3 className="font-semibold">Sent Invites</h3>
-                <p className="text-sm text-gray-500">Track who you&apos;ve invited and their status</p>
+                <h3 className="font-semibold">Shared Codes History</h3>
+                <p className="text-sm text-gray-500">Track who you&apos;ve shared codes with</p>
               </div>
               
-              {loadingInvites ? (
-                <div className="p-8 text-center text-gray-500">Loading invites...</div>
-              ) : invites.length === 0 ? (
+              {loadingShares ? (
+                <div className="p-8 text-center text-gray-500">Loading shared codes...</div>
+              ) : shares.length === 0 ? (
                 <div className="p-8 text-center text-gray-500">
                   <Send className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-                  <p className="font-medium">No invites sent yet</p>
-                  <p className="text-sm mt-1">Send your first referral invite above!</p>
+                  <p className="font-medium">No codes shared yet</p>
+                  <p className="text-sm mt-1">Share your first referral code above!</p>
                 </div>
               ) : (
                 <div className="divide-y">
-                  {invites.map(invite => (
-                    <div key={invite.id} className="p-4 flex items-center justify-between">
+                  {shares.map(share => (
+                    <div key={share.id} className="p-4 flex items-center justify-between">
                       <div>
-                        <div className="font-medium">
-                          {invite.recipient_name || invite.recipient_email}
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono font-medium text-primary-600">
+                            {share.referral_codes?.code}
+                          </span>
+                          <span className="text-gray-400">→</span>
+                          <span className="font-medium">
+                            {share.recipient_name || share.recipient_email}
+                          </span>
                         </div>
-                        {invite.recipient_name && (
-                          <div className="text-sm text-gray-500">{invite.recipient_email}</div>
+                        {share.recipient_name && (
+                          <div className="text-sm text-gray-500">{share.recipient_email}</div>
                         )}
                         <div className="text-xs text-gray-400 mt-1">
-                          Sent {formatDateOnly(invite.sent_at)} at {formatTimeWithZone(invite.sent_at)}
+                          Sent {formatDateOnly(share.sent_at)} at {formatTimeWithZone(share.sent_at)}
                         </div>
                       </div>
                       <div className="flex items-center gap-3">
                         <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          invite.status === 'converted' ? 'bg-green-100 text-green-700' :
-                          invite.status === 'clicked' ? 'bg-blue-100 text-blue-700' :
-                          invite.status === 'expired' ? 'bg-gray-100 text-gray-600' :
-                          'bg-amber-100 text-amber-700'
+                          share.referral_codes?.is_used 
+                            ? 'bg-green-100 text-green-700' 
+                            : 'bg-amber-100 text-amber-700'
                         }`}>
-                          {invite.status === 'converted' ? 'Converted' :
-                           invite.status === 'clicked' ? 'Clicked' :
-                           invite.status === 'expired' ? 'Expired' :
-                           'Sent'}
+                          {share.referral_codes?.is_used ? 'Redeemed' : 'Pending'}
                         </span>
                         <button
-                          onClick={() => copyOrderLink(invite.invite_code)}
+                          onClick={() => copyOrderLink(share.referral_codes?.code || '')}
                           className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded"
-                          title="Copy invite link"
+                          title="Copy order link"
                         >
-                          {copiedCode === `link-${invite.invite_code}` ? (
+                          {copiedCode === `link-${share.referral_codes?.code}` ? (
                             <Check className="h-4 w-4 text-green-600" />
                           ) : (
                             <Copy className="h-4 w-4" />

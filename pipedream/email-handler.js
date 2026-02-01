@@ -549,12 +549,16 @@ memoriqr.co.nz`
       };
     }
 
-    // Partner referral invite email (sent by partner to potential customer)
-    if (type === 'partner_referral_invite') {
-      const { to, recipientName, partnerName, personalMessage, referralLink, inviteCode, expiresAt } = body;
+    // Referral code share email (sent by partner to potential customer)
+    if (type === 'referral_code_share') {
+      const { to, recipientName, partnerName, personalMessage, referralCode, discountPercent, freeShipping, orderUrl } = body;
       
       const greeting = recipientName ? `Hi ${recipientName}` : 'Hello';
-      const expiryDate = new Date(expiresAt).toLocaleDateString('en-NZ', { day: 'numeric', month: 'long', year: 'numeric' });
+      
+      const discountText = discountPercent > 0 ? `${discountPercent}% discount` : '';
+      const freeShippingText = freeShipping ? 'free shipping' : '';
+      const benefits = [discountText, freeShippingText].filter(Boolean).join(' + ');
+      const benefitsDisplay = benefits ? ` with ${benefits}` : '';
       
       const personalMessageHtml = personalMessage 
         ? `<div style="background: #f5f5f0; border-left: 4px solid #8B7355; padding: 20px; margin: 20px 0; border-radius: 4px; font-style: italic;">
@@ -567,18 +571,24 @@ memoriqr.co.nz`
         to,
         replyTo: 'info@memoriqr.co.nz',
         from_name: 'MemoriQR',
-        subject: `${partnerName} thinks you'd love MemoriQR`,
+        subject: `${partnerName} has shared a MemoriQR referral code with you`,
         html: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; font-size: 18px; line-height: 1.6; color: #333;">
 <div style="background: linear-gradient(135deg, #8B7355 0%, #A08060 100%); padding: 30px; text-align: center; border-radius: 8px 8px 0 0;">
-<h1 style="color: #fff; margin: 0; font-size: 24px;">You've Been Invited! 💝</h1>
+<h1 style="color: #fff; margin: 0; font-size: 24px;">You've Received a Referral Code! 💝</h1>
 </div>
 
 <div style="padding: 30px; background: #fff; border: 1px solid #ddd; border-top: none;">
 <p style="color: #333; font-size: 18px; margin-top: 0;">${greeting},</p>
 
-<p style="color: #555; line-height: 1.7;"><strong>${partnerName}</strong> thought you might be interested in MemoriQR – a beautiful way to create lasting digital memorials for loved ones.</p>
+<p style="color: #555; line-height: 1.7;"><strong>${partnerName}</strong> thought you might be interested in MemoriQR and has shared their referral code with you${benefitsDisplay}!</p>
 
 ${personalMessageHtml}
+
+<div style="background: #f9f7f4; border: 2px dashed #8B7355; border-radius: 8px; padding: 20px; text-align: center; margin: 25px 0;">
+<p style="color: #666; font-size: 14px; margin: 0 0 10px;">Your referral code:</p>
+<p style="font-family: monospace; font-size: 28px; font-weight: bold; color: #8B7355; margin: 0; letter-spacing: 2px;">${referralCode}</p>
+${benefits ? `<p style="color: #2d5a27; font-size: 14px; margin: 10px 0 0;">✓ ${benefits}</p>` : ''}
+</div>
 
 <p style="color: #555; line-height: 1.7;">MemoriQR creates premium NFC tags and QR code plates that link to beautiful online memorials, perfect for:</p>
 
@@ -590,12 +600,12 @@ ${personalMessageHtml}
 </ul>
 
 <div style="text-align: center; margin: 30px 0;">
-<a href="${referralLink}" style="display: inline-block; background: linear-gradient(135deg, #8B7355 0%, #A08060 100%); color: #fff; text-decoration: none; padding: 16px 32px; border-radius: 8px; font-weight: bold; font-size: 18px;">
-View MemoriQR Options →
+<a href="${orderUrl}" style="display: inline-block; background: linear-gradient(135deg, #8B7355 0%, #A08060 100%); color: #fff; text-decoration: none; padding: 16px 32px; border-radius: 8px; font-weight: bold; font-size: 18px;">
+Use Code & View Options →
 </a>
 </div>
 
-<p style="color: #888; font-size: 14px; text-align: center;">This invite link is valid until ${expiryDate}</p>
+<p style="color: #888; font-size: 14px; text-align: center;">Your code will be automatically applied when you click the link above</p>
 </div>
 
 <div style="background: #f5f5f0; padding: 20px; text-align: center; border-radius: 0 0 8px 8px;">
@@ -603,7 +613,7 @@ View MemoriQR Options →
 <p style="color: #888; font-size: 12px; margin: 0;">MemoriQR • memoriqr.co.nz</p>
 </div>
 </div>`,
-        text: `${greeting},\n\n${partnerName} thought you might be interested in MemoriQR – a beautiful way to create lasting digital memorials for loved ones.\n\n${personalMessage ? `"${personalMessage}"\n— ${partnerName}\n\n` : ''}MemoriQR creates premium NFC tags and QR code plates that link to beautiful online memorials.\n\nView MemoriQR Options: ${referralLink}\n\nThis invite link is valid until ${expiryDate}.\n\n---\nMemoriQR • memoriqr.co.nz`
+        text: `${greeting},\n\n${partnerName} thought you might be interested in MemoriQR and has shared their referral code with you${benefitsDisplay}!\n\n${personalMessage ? `"${personalMessage}"\n— ${partnerName}\n\n` : ''}Your referral code: ${referralCode}\n${benefits ? `Benefits: ${benefits}\n` : ''}\nMemoriQR creates premium NFC tags and QR code plates that link to beautiful online memorials.\n\nUse your code here: ${orderUrl}\n\n---\nMemoriQR • memoriqr.co.nz`
       };
     }
     

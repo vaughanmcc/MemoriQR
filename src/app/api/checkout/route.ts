@@ -78,55 +78,26 @@ export async function POST(request: NextRequest) {
     let referralCommissionPercent = 0
     let applyFreeShipping = false
     let referralCodeId: string | null = null
-    let referralInviteId: string | null = null
 
     if (referralCode) {
       const codeUpper = referralCode.toUpperCase()
       
-      // Check if it's an invite code (INV-*)
-      if (codeUpper.startsWith('INV-')) {
-        const { data: inviteCode } = await supabase
-          .from('partner_referral_invites')
-          .select('id, partner_id, status, expires_at')
-          .eq('invite_code', codeUpper)
-          .single()
+      // Look up referral code (REF-*)
+      const { data: refCode } = await supabase
+        .from('referral_codes')
+        .select('id, discount_percent, commission_percent, free_shipping, is_used, expires_at')
+        .eq('code', codeUpper)
+        .single()
 
-        if (inviteCode && inviteCode.status !== 'expired' && inviteCode.status !== 'converted') {
-          const isExpired = inviteCode.expires_at && new Date(inviteCode.expires_at) < new Date()
-          if (!isExpired) {
-            // Valid invite code - get partner's commission rate
-            const { data: partner } = await supabase
-              .from('partners')
-              .select('id, default_commission_rate')
-              .eq('id', inviteCode.partner_id)
-              .single()
-
-            if (partner) {
-              validatedReferralCode = codeUpper
-              referralInviteId = inviteCode.id
-              referralCommissionPercent = partner.default_commission_rate || 10 // Default 10% commission for invites
-              // No discount for invite codes - partner earns commission on full price
-            }
-          }
-        }
-      } else {
-        // Regular referral code (REF-*)
-        const { data: refCode } = await supabase
-          .from('referral_codes')
-          .select('id, discount_percent, commission_percent, free_shipping, is_used, expires_at')
-          .eq('code', codeUpper)
-          .single()
-
-        if (refCode && !refCode.is_used) {
-          const isExpired = refCode.expires_at && new Date(refCode.expires_at) < new Date()
-          if (!isExpired) {
-            // Valid referral code
-            validatedReferralCode = codeUpper
-            referralCodeId = refCode.id
-            referralDiscount = Math.round(price * (refCode.discount_percent / 100))
-            referralCommissionPercent = refCode.commission_percent
-            applyFreeShipping = refCode.free_shipping
-          }
+      if (refCode && !refCode.is_used) {
+        const isExpired = refCode.expires_at && new Date(refCode.expires_at) < new Date()
+        if (!isExpired) {
+          // Valid referral code
+          validatedReferralCode = codeUpper
+          referralCodeId = refCode.id
+          referralDiscount = Math.round(price * (refCode.discount_percent / 100))
+          referralCommissionPercent = refCode.commission_percent
+          applyFreeShipping = refCode.free_shipping
         }
       }
     }
@@ -373,7 +344,6 @@ export async function POST(request: NextRequest) {
         customer_id: customerId,
         referral_code: validatedReferralCode || '',
         referral_code_id: referralCodeId || '',
-        referral_invite_id: referralInviteId || '',
         referral_discount: referralDiscount.toString(),
         referral_commission_percent: referralCommissionPercent.toString(),
       },

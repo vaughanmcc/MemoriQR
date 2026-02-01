@@ -19,7 +19,8 @@ import {
   Tag,
   Settings,
   HelpCircle,
-  AlertTriangle
+  AlertTriangle,
+  Send
 } from 'lucide-react'
 
 interface DashboardData {
@@ -230,6 +231,22 @@ export default function PartnerDashboardPage() {
               <div>
                 <h3 className="font-medium text-gray-900 text-lg">Referral Codes</h3>
                 <p className="text-base text-gray-500">Referral codes</p>
+              </div>
+            </div>
+            <ChevronRight className="h-5 w-5 text-gray-400" />
+          </Link>
+
+          <Link
+            href="/partner/referrals?tab=share"
+            className="bg-white rounded-xl shadow-sm p-6 hover:shadow-md transition-shadow flex items-center justify-between"
+          >
+            <div className="flex items-center gap-4">
+              <div className="bg-cyan-100 rounded-lg p-3">
+                <Send className="h-6 w-6 text-cyan-600" />
+              </div>
+              <div>
+                <h3 className="font-medium text-gray-900 text-lg">Share Code</h3>
+                <p className="text-base text-gray-500">Email a referral code</p>
               </div>
             </div>
             <ChevronRight className="h-5 w-5 text-gray-400" />
