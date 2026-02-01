@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { PartnerHeader } from '@/components/layout/PartnerHeader'
+import { useSessionExtension } from '@/lib/useSessionExtension'
 import { ArrowLeft, Save, Building, CreditCard, AlertCircle, CheckCircle, User, MapPin, Shield, Smartphone, Bell, Eye, EyeOff } from 'lucide-react'
 import { AddressAutocomplete } from '@/components/shared/AddressAutocomplete'
 
@@ -63,6 +64,9 @@ export default function PartnerSettingsPage() {
     // Notification preferences
     notify_referral_redemption: true,
   })
+
+  // Extend session while user is active
+  useSessionExtension()
 
   useEffect(() => {
     fetchSettings()

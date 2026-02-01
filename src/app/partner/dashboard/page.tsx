@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { PartnerHeader } from '@/components/layout/PartnerHeader'
 import { formatDateOnly, formatTimeWithZone } from '@/lib/utils'
+import { useSessionExtension } from '@/lib/useSessionExtension'
 import { 
   LayoutDashboard, 
   QrCode, 
@@ -52,49 +53,11 @@ export default function PartnerDashboardPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
+  // Extend session while user is active
+  useSessionExtension()
+
   useEffect(() => {
     fetchDashboard()
-  }, [])
-
-  // Activity-based session extension for non-trusted device sessions
-  // Extends session every 30 minutes while user is active
-  useEffect(() => {
-    let activityTimeout: NodeJS.Timeout
-    let extensionInterval: NodeJS.Timeout
-    let lastActivity = Date.now()
-
-    const extendSession = async () => {
-      // Only extend if there was activity in the last 5 minutes
-      if (Date.now() - lastActivity < 5 * 60 * 1000) {
-        try {
-          await fetch('/api/partner/session/extend', { method: 'POST' })
-        } catch (e) {
-          // Silently fail - user will be logged out when session expires
-        }
-      }
-    }
-
-    const trackActivity = () => {
-      lastActivity = Date.now()
-    }
-
-    // Track user activity
-    window.addEventListener('mousemove', trackActivity)
-    window.addEventListener('keydown', trackActivity)
-    window.addEventListener('click', trackActivity)
-    window.addEventListener('scroll', trackActivity)
-
-    // Extend session every 30 minutes
-    extensionInterval = setInterval(extendSession, 30 * 60 * 1000)
-
-    return () => {
-      window.removeEventListener('mousemove', trackActivity)
-      window.removeEventListener('keydown', trackActivity)
-      window.removeEventListener('click', trackActivity)
-      window.removeEventListener('scroll', trackActivity)
-      clearTimeout(activityTimeout)
-      clearInterval(extensionInterval)
-    }
   }, [])
 
   const fetchDashboard = async () => {

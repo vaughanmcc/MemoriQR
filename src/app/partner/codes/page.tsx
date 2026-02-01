@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { PartnerHeader } from '@/components/layout/PartnerHeader'
 import { formatDateOnly, formatTimeWithZone } from '@/lib/utils'
+import { useSessionExtension } from '@/lib/useSessionExtension'
 import { 
   ArrowLeft, 
   QrCode, 
@@ -61,6 +62,9 @@ export default function PartnerCodesPage() {
   const [hasBankingDetails, setHasBankingDetails] = useState(true) // Default to true to avoid flash
   const [linkedPartners, setLinkedPartners] = useState<LinkedPartner[]>([])
   const [selectedCodes, setSelectedCodes] = useState<Set<string>>(new Set())
+
+  // Extend session while user is active
+  useSessionExtension()
 
   useEffect(() => {
     fetchCodes()

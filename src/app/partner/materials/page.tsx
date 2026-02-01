@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { PartnerHeader } from '@/components/layout/PartnerHeader'
+import { useSessionExtension } from '@/lib/useSessionExtension'
 
 interface Partner {
   business_name: string
@@ -157,6 +158,9 @@ export default function PartnerMaterialsPage() {
   const [loading, setLoading] = useState(true)
   const [partner, setPartner] = useState<Partner | null>(null)
   const [selectedCategory, setSelectedCategory] = useState<string>('all')
+
+  // Extend session while user is active
+  useSessionExtension()
 
   useEffect(() => {
     async function checkSession() {

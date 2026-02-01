@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { PartnerHeader } from '@/components/layout/PartnerHeader'
+import { useSessionExtension } from '@/lib/useSessionExtension'
 import { ArrowLeft, ChevronDown, ChevronUp, HelpCircle } from 'lucide-react'
 
 interface FAQItem {
@@ -158,6 +159,9 @@ export default function PartnerFAQPage() {
   const [loading, setLoading] = useState(true)
   const [partnerName, setPartnerName] = useState('')
   const [openItems, setOpenItems] = useState<Set<string>>(new Set())
+
+  // Extend session while user is active
+  useSessionExtension()
 
   useEffect(() => {
     checkAuth()

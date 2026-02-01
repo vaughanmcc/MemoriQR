@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { PartnerHeader } from '@/components/layout/PartnerHeader'
+import { useSessionExtension } from '@/lib/useSessionExtension'
 
 interface Commission {
   id: string
@@ -65,6 +66,9 @@ export default function PartnerCommissionsPage() {
   const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'approved' | 'paid'>('all')
   const [periodFilter, setPeriodFilter] = useState<'all' | 'month' | 'year'>('all')
   const [activeTab, setActiveTab] = useState<'commissions' | 'payouts' | 'reports'>('commissions')
+
+  // Extend session while user is active
+  useSessionExtension()
 
   const fetchCommissions = useCallback(async () => {
     try {

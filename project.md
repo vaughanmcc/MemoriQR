@@ -14,7 +14,7 @@ Digital memorial service with QR plates and NFC tags for pets and people.
 - **Frontend:** Next.js 14, Tailwind CSS
 - **Database:** Supabase (PostgreSQL)
 - **Payments:** Stripe
-- **Emails:** Pipedream → SendGrid
+- **Emails:** Pipedream → Gmail SMTP
 - **Hosting:** Vercel
 
 ## Development Workflow
@@ -34,20 +34,84 @@ stripe listen --forward-to localhost:3000/api/webhooks/stripe
 
 ## Key Paths
 
+### Customer Routes
 | Route | Purpose |
 |-------|---------|
-| `/order` | Customer checkout |
+| `/order` | Customer checkout flow |
 | `/activate/[code]` | Memorial activation wizard |
 | `/memorial/[slug]` | Public memorial page |
-| `/memorial/edit` | Edit existing memorial |
-| `/partner/dashboard` | Partner portal |
-| `/admin/codes` | Admin code generator |
-| `/admin/referrals` | Referral code management |
-| `/partners` | Public partner application |
+| `/memorial/edit` | Edit existing memorial (requires verification) |
+| `/renew` | Hosting renewal flow |
+
+### Partner Routes
+| Route | Purpose |
+|-------|---------|
+| `/partners` | Public partner application form |
+| `/partner/login` | Partner login (email verification) |
+| `/partner/dashboard` | Partner portal with stats, codes, commissions |
+| `/partner/settings` | Partner profile and notification settings |
+| `/partner/faq` | Partner FAQ |
+| `/partner/codes` | View and manage assigned activation codes |
+
+### Admin Routes
+| Route | Purpose |
+|-------|---------|
+| `/admin` | Admin login |
+| `/admin/dashboard` | Admin dashboard overview |
+| `/admin/orders` | Order management |
+| `/admin/codes` | Activation code generator (wholesale) |
+| `/admin/referrals` | Referral code management (lead gen) |
+| `/admin/partners` | Partner management |
+| `/admin/commissions` | Commission payout workflow |
+| `/admin/tools` | Search orders, resend emails, memorial management |
+| `/admin/memorials` | Memorial management |
+
+## Partner System
+
+### Partner Types
+- `vet` - Veterinary clinics
+- `pet_store` - Pet stores
+- `crematorium` - Pet crematoriums
+- `groomer` - Pet groomers
+- `breeder` - Breeders
+- `shelter` - Animal shelters
+- `funeral_home` - Human funeral homes
+- `cemetery` - Cemeteries
+- `hospice` - Hospices
+- `other` - Other businesses
+
+### Partner Code Types
+1. **Wholesale Activation Codes** - Partner buys codes at wholesale, sells to customers
+   - Format: `MQR-5N-XXXXXX` (5 year), `MQR-10N-XXXXXX` (10 year), etc.
+   - Generated via Admin → Codes tab
+   - Partner pays upfront, keeps markup
+
+2. **Lead Generation Referral Codes** - Customer gets discount, partner gets commission
+   - Format: `REF-XXXXX`
+   - Generated via Admin → Referrals tab
+   - No upfront cost to partner
+   - Commission paid after customer purchases
+
+### Partner Email Notifications
+Partners can receive emails for:
+- Welcome/approval emails
+- Referral code redemption (with opt-out toggle in Settings)
+- Codes generated notifications
+- Terms update notifications
+- Suspension notifications
+
+## Pipedream Email Workflows
+
+| Workflow | Env Var | Purpose |
+|----------|---------|---------|
+| Main Handler | `PIPEDREAM_WEBHOOK_URL` | Contact form, order emails, memorial emails, partner emails |
+| Referral Redeemed | `PIPEDREAM_REFERRAL_WEBHOOK_URL` | Commission notification when referral used |
+| Partner Codes | `PIPEDREAM_PARTNER_CODES_WEBHOOK_URL` | Codes generated notification |
 
 ## Documentation
 
 - [Business Plan](docs/business-plan.md) - Pricing, costs, strategy
+- [Preview Branch Summary](docs/preview-smoke-summary.md) - Feature implementation details
 - [Session Log](docs/session-log.md) - Development progress
 - [WordPress Integration](docs/wordpress-integration.md) - Embed instructions
 - [Pipedream](pipedream/README.md) - Email handler reference
@@ -55,23 +119,58 @@ stripe listen --forward-to localhost:3000/api/webhooks/stripe
 ## Environment Variables
 
 Required in `.env.local`:
-```
+```bash
+# Supabase
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
 SUPABASE_SERVICE_ROLE_KEY=
+
+# Stripe
 STRIPE_SECRET_KEY=
 STRIPE_WEBHOOK_SECRET=
 NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=
-PIPEDREAM_WEBHOOK_URL=
-NEXT_PUBLIC_BASE_URL=
+
+# Pipedream Webhooks
+PIPEDREAM_WEBHOOK_URL=https://eo7epxu5aypc0vj.m.pipedream.net
+PIPEDREAM_REFERRAL_WEBHOOK_URL=https://eo5xpf69y0qbaul.m.pipedream.net
+PIPEDREAM_PARTNER_CODES_WEBHOOK_URL=https://eop33i8rs8xu5av.m.pipedream.net
+
+# App URLs
+NEXT_PUBLIC_BASE_URL=https://dev.memoriqr.co.nz
+NEXT_PUBLIC_APP_URL=https://dev.memoriqr.co.nz
+
+# Admin
+ADMIN_PASSWORD=
 ```
 
-## Migrations Pending
+## Database Migrations
 
-- [ ] 009: generation_batch_id columns
-- [ ] 010: referral_codes + partner_commissions
-- [x] 011: expected_qr_sales, expected_nfc_sales (applied Jan 21)
+Applied migrations (in order):
+1. `001_initial_schema.sql` - Base tables
+2. `002_add_frame_column.sql` - Profile frame options
+3. `003_add_contact_email.sql` - Customer contact email
+4. `004_add_stripe_customer_id.sql` - Stripe integration
+5. `005_partner_portal.sql` - Partner system base
+6. `005_edit_verification_codes.sql` - Memorial edit verification
+7. `006_optional_hosting_duration.sql` - Flexible hosting
+8. `007_partner_application_fields.sql` - Partner application
+9. `008_retail_fulfillment.sql` - Retail activation codes
+10. `009_admin_batch_tracking.sql` - Batch tracking
+11. `010_referral_system.sql` - Referral codes + commissions
+12. `011_partner_expected_sales.sql` - Sales forecasting
+13. `012_partner_status_constraint.sql` - Status validation
+14. `012_code_activity_log.sql` - Code usage tracking
+15. `013_partner_suspension_reason.sql` - Suspension workflow
+16. `014_partner_rejection_reason.sql` - Rejection workflow
+17. `015_partner_trusted_device.sql` - Session security
+18. `016_partner_referral_notifications.sql` - Notification preferences
+19. `017_pii_encryption_audit.sql` - Security audit
+20. `018_partner_batch_stripe_payment.sql` - Batch payments
+21. `019_referral_codes_order_fk.sql` - Foreign key fix
+22. `020_partner_contact_name.sql` - Contact name field
 
 ## Current Branch
 
 `preview-smoke` → deploys to dev.memoriqr.co.nz
+
+*Last updated: February 1, 2026*

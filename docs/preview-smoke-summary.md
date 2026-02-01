@@ -3,8 +3,7 @@
 This document summarizes all features and fixes implemented on the `preview-smoke` branch that are pending merge to `main` (production).
 
 **Branch:** `preview-smoke`  
-**Commits pending:** 82  
-**Date:** January 25, 2026
+**Date:** February 1, 2026
 
 ---
 
@@ -33,83 +32,81 @@ This document summarizes all features and fixes implemented on the `preview-smok
 
 ### 1.4 Trusted Device Management
 - **Partner Settings**: New "Security" section to view and revoke trusted device sessions
-  - Shows if partner has active trusted device sessions
-  - "Revoke All" button ends all 24-hour sessions
-  - Converts current session to standard 1-hour if revoked
-  - Clears localStorage acknowledgment so warning shows again next time
-- **Admin Controls**: "Security" section in partner edit modal
-  - Admin can revoke all trusted sessions for any active partner
-  - Sends email notification to partner when admin revokes sessions
-- **Warning Re-display**: If partner or admin revokes trust, warning modal appears again on next login when re-enabling "Stay signed in longer"
+- **Admin Controls**: "Security" section in partner edit modal - admin can revoke all trusted sessions
+- **Warning Re-display**: If partner or admin revokes trust, warning modal appears again on next login
 
-**Files:** `src/app/partner/page.tsx`, `src/app/api/partner/verify/route.ts`, `src/app/api/partner/session/extend/route.ts`, `src/app/partner/dashboard/page.tsx`, `src/app/partner/settings/page.tsx`, `src/app/api/partner/settings/route.ts`, `src/app/api/partner/settings/revoke-trust/route.ts`, `src/app/admin/partners/page.tsx`, `src/app/api/admin/partners/[id]/revoke-trust/route.ts`
+**Files:** `src/app/partner/page.tsx`, `src/app/api/partner/verify/route.ts`, `src/app/api/partner/session/extend/route.ts`, `src/app/partner/settings/page.tsx`
 
-**Migration:** `015_partner_trusted_device.sql` - Adds `is_trusted_device` column
+**Migration:** `015_partner_trusted_device.sql`
 
 ---
 
-## 2. Partner FAQ
+## 2. Partner Email Notifications
 
-### 2.1 Comprehensive FAQ Page
+### 2.1 Referral Redemption Notifications
+- Partners receive email when their referral code is used
+- Shows referral code, order number, commission earned
+- Opt-out toggle in Partner Settings → Email Notifications
+- One-click unsubscribe link in email (signed URL)
+- Separate Pipedream workflow: `PIPEDREAM_REFERRAL_WEBHOOK_URL`
+
+### 2.2 Partner Codes Generated Notifications
+- Email sent when admin generates referral codes or activation codes for partner
+- Lists generated codes, discount/commission percentages
+- Separate Pipedream workflow: `PIPEDREAM_PARTNER_CODES_WEBHOOK_URL`
+
+### 2.3 Notification Settings UI
+- New "Email Notifications" section in Partner Settings
+- Toggle for "Referral code redemption notifications"
+- Defaults to enabled (opt-out model)
+
+**Files:** `src/app/partner/settings/page.tsx`, `src/app/api/partner/settings/route.ts`, `src/app/api/partner/notifications/unsubscribe/route.ts`, `src/app/api/webhooks/stripe/route.ts`
+
+**Migration:** `016_partner_referral_notifications.sql`
+
+---
+
+## 3. Partner FAQ
+
+### 3.1 Comprehensive FAQ Page
 - Created `/partner/faq` page with searchable FAQ
 - Categories: Getting Started, Your Dashboard, Commissions & Payments, Sharing & Tracking, Account Management, Login & Security
-
-### 2.2 Login & Security Section
-Added 5 Q&As covering:
-- Session duration
-- "Stay signed in longer" explanation
-- Security recommendations
-- Why verification codes are used
-- How to log out
 
 **Files:** `src/app/partner/faq/page.tsx`
 
 ---
 
-## 3. Partner Dashboard Enhancements
+## 4. Partner Dashboard Enhancements
 
-### 3.1 Display Partner Terms
-- Show discount percentage on dashboard
-- Show commission percentage on dashboard
-- Show free shipping status on dashboard
+### 4.1 Display Partner Terms
+- Show discount percentage, commission percentage, free shipping status
 
-### 3.2 Partner Terms Update Notifications
+### 4.2 Partner Terms Update Notifications
 - Email sent when admin updates discount, commission, or shipping terms
 - Clear before/after comparison in email
 
-### 3.3 Banking Details Reminder
+### 4.3 Banking Details Reminder
 - Prominent amber warning banner when banking details are missing
-- Displays on dashboard login if bank_name, bank_account_name, or bank_account_number is empty
 - Links directly to Settings page
-- Ensures partners provide banking info before expecting payouts
 
-**Files:** `src/app/partner/dashboard/page.tsx`, `src/app/api/partner/stats/route.ts`, `src/app/api/admin/partners/[id]/route.ts`
+**Files:** `src/app/partner/dashboard/page.tsx`, `src/app/api/partner/stats/route.ts`
 
 ---
 
-## 4. Partner Application & Approval Flow
+## 5. Partner Application & Approval Flow
 
-### 4.1 Duplicate Detection
+### 5.1 Duplicate Detection
 - Prevents duplicate applications by email + business name + type
-- Exact business name matching (not substring)
-- Duplicate checks for partner reactivation
 
-### 4.2 Rejection Handling
-- Added rejection reason field for partners
-- Modal for entering rejection reason when rejecting
-- Auto-approve rejected partners when their details are edited
-- Rejection reason stored and displayed in admin
+### 5.2 Rejection Handling
+- Rejection reason field with modal for entering reason
+- Auto-approve rejected partners when edited
 
-### 4.3 Email Notifications
-- Welcome email when partner approved
-- Welcome back email when partner reactivated
-- Approval email when admin creates active partner
-- Reminder to enter business address and banking details
-- Direct link to pending applications in new application emails
-- Dynamic baseUrl for admin links (uses request origin, not hardcoded)
-
-### 4.4 Partner Types
-- Added all partner types to validation: vet, pet_store, crematorium, groomer, breeder, shelter, etc.
+### 5.3 Email Notifications
+- Welcome email when approved
+- Welcome back when reactivated
+- Rejection notification with reason
+- Suspension notification with reason
 
 **Files:** `src/app/api/admin/partners/route.ts`, `src/app/api/admin/partners/[id]/route.ts`, `src/app/api/partner/apply/route.ts`
 
@@ -117,181 +114,139 @@ Added 5 Q&As covering:
 
 ---
 
-## 5. Admin Dashboard Improvements
+## 6. Admin Dashboard Improvements
 
-### 5.1 Partner Management
+### 6.1 Partner Management
 - Edit partner functionality with modal
-- Display default_commission_percent (correct field)
-- Display discount column
-- Make Save Changes button more visible
+- View and update all partner fields
 - Auto-approve pending partners when edited
 
-### 5.2 Commission Display
-- Fixed commission table to show correct fields
-- Improved error reporting
+### 6.2 Sortable Tables
+- Click column headers to sort ascending/descending
+- Visual indicator shows current sort column and direction
+
+### 6.3 Navigation
+- "← Back to Dashboard" link on all admin pages
 
 **Files:** `src/app/admin/partners/page.tsx`
 
 ---
 
-## 6. Commission Payout Workflow (Phase 1)
+## 7. Commission Payout Workflow
 
-### 6.1 Admin Commission Management
+### 7.1 Admin Commission Management
 - View pending commissions by partner
 - Approve/reject individual commission claims
 - Mark commissions as paid
 - Filter by status
 
-### 6.2 Cookie/Session Fixes
-- Fixed admin cookie path issue
-- Use NextResponse.cookies pattern
-- Fixed partner verify to use most recent code first
-
 **Files:** `src/app/api/admin/commissions/route.ts`, `src/app/admin/commissions/page.tsx`
 
 ---
 
-## 7. Retail Activation Code System
+## 8. Retail Activation Code System
 
-### 7.1 Admin Code Generator
-- Generate activation codes for retail partners
-- Batch tracking for admin-generated codes
-- Expand batch to view individual codes
-- Code management tab in admin
+### 8.1 Admin Code Generator (`/admin/codes`)
+- Generate wholesale activation codes for partners
+- Batch tracking with expand to view individual codes
+- Partner assignment at generation time
 
-### 7.2 Scratch Card Fulfillment
-- Retail scratch card workflow implementation
-- Placeholder pages for orders and memorials
+### 8.2 Bulk Assign/Unassign
+- Select codes → assign to partner
+- Select assigned codes → unassign
 
-**Files:** `src/app/admin/codes/page.tsx`, `src/app/api/admin/codes/route.ts`
-
----
-
-## 8. Lead Generation Cards
-
-### 8.1 System Implementation
-- Lead generation card system
-- Admin partner creation
-- Partner portal with self-service dashboard
-
-**Files:** Various admin and partner files
+**Files:** `src/app/admin/codes/page.tsx`, `src/app/api/admin/codes/route.ts`, `src/app/api/admin/codes/assign/route.ts`
 
 ---
 
-## 9. Partner Suspension
+## 9. Lead Generation Referral System
 
-### 9.1 Suspension Flow
-- Store and show suspension reason
-- Require suspension reason when suspending
-- Email partner when suspended
+### 9.1 Referral Code Generator (`/admin/referrals`)
+- Generate referral codes (REF-XXXXX format)
+- Set discount %, commission %, free shipping, expiry
+- Partner gets commission when code is redeemed
 
-**Files:** `src/app/api/admin/partners/[id]/route.ts`
+### 9.2 Commission Tracking
+- Automatic commission record when referral code used
+- Partner dashboard shows earned commissions
 
----
+**Files:** `src/app/admin/referrals/page.tsx`, `src/app/api/admin/referrals/generate/route.ts`
 
-## 10. Admin Tools Page
-
-### 10.1 New Admin Tools Section (`/admin/tools`)
-- Added "Tools" link to all admin page navigation
-- Three tabs: Search Orders, Order Lookup, Resend Emails
-
-### 10.2 Search Orders by Customer
-- Search by customer name or email address
-- Returns matching orders with customer, status, and date
-- Quick "View Details" link to order lookup
-
-### 10.3 Order Lookup by Order Number
-- Enter order number (e.g. MQR-ABC123) to get full details
-- Displays order info, customer data, product type, status
-- Shows memorial URLs with copy buttons:
-  - QR Code / View URL
-  - Memorial View URL
-  - Edit Memorial URL
-- Quick link to resend emails
-
-### 10.4 Resend Customer Emails (Retail + Online)
-- **Retail activations:** search by business name, partner type, and/or customer email
-- Shows activation records with partner and memorial details
-- One-click resend of the memorial creation email (`memorial_created`)
-- **Online orders:** resend order confirmation or memorial email by order number
-- Uses Pipedream webhook for email delivery
-
-### 10.5 Memorial Management Tab
-- **Search memorials:** Search by slug, name, or email
-- **View details:** Modal showing full memorial info, URLs, and stats
-- **Toggle publish:** Publish/unpublish memorials instantly
-- **Extend hosting:** Add years to memorial hosting duration
-- **Reset views:** Reset view count for testing purposes
-
-### 10.6 Sortable Table Headers
-- Orders and Memorials tables have sortable column headers
-- Click column header to sort ascending/descending
-- Visual indicator shows current sort column and direction
-
-### 10.7 Navigation Improvements
-- "← Back to Dashboard" link on all admin pages (Tools, Partners, Orders, Memorials)
-- Consistent navigation across admin interface
-
-**Files:** `src/app/admin/tools/page.tsx`, `src/app/api/admin/tools/search/route.ts`, `src/app/api/admin/tools/order/route.ts`, `src/app/api/admin/tools/search-activations/route.ts`, `src/app/api/admin/tools/resend-email/route.ts`, `src/app/api/admin/tools/memorials/route.ts`
+**Migration:** `010_referral_system.sql`
 
 ---
 
-## 11. Partner Assignment for Activation Codes
+## 10. Admin Tools Page (`/admin/tools`)
 
-### 11.1 Assign at Generation Time
-- Partner dropdown in Generate Codes tab
-- Optional: generate codes pre-assigned to a specific partner
-- Codes display partner name in the table
+### 10.1 Search Orders
+- Search by customer name or email
+- Returns matching orders with quick "View Details" link
 
-### 11.2 Bulk Assign Existing Codes
-- Manage Codes tab shows "Assign to Partner" and "Unassign" buttons
-- Select one or more unassigned codes → assign to chosen partner
-- Select assigned codes → unassign to make available again
-- Skips codes that are already used or already assigned
+### 10.2 Order Lookup
+- Enter order number for full details
+- Shows memorial URLs with copy buttons
 
-### 11.3 Partner Name Column Fix
-- Fixed database schema issue: `partner_name` column used (not `business_name`)
-- Both assign and generate endpoints now correctly look up partner names
+### 10.3 Resend Emails
+- Retail activations: search by business name, partner type, email
+- Online orders: resend by order number
+- One-click resend of confirmation/memorial emails
 
-**Files:** `src/app/admin/codes/page.tsx`, `src/app/api/admin/codes/generate/route.ts`, `src/app/api/admin/codes/assign/route.ts` (new)
+### 10.4 Memorial Management
+- Search by slug, name, or email
+- View full memorial details in modal
+- Toggle publish/unpublish
+- Extend hosting duration
+- Reset view count
+
+**Files:** `src/app/admin/tools/page.tsx`, `src/app/api/admin/tools/*`
+
+---
+
+## 11. Pipedream Email Workflows
+
+### 11.1 Workflow Architecture
+Three separate Pipedream workflows:
+
+| Workflow | Env Var | Email Types |
+|----------|---------|-------------|
+| Main | `PIPEDREAM_WEBHOOK_URL` | contact_form, order_confirmation, memorial_created, partner_welcome, partner_approved, partner_suspended, partner_terms_updated, admin_new_order, admin_new_partner_application |
+| Referral Redeemed | `PIPEDREAM_REFERRAL_WEBHOOK_URL` | referral_redeemed |
+| Partner Codes | `PIPEDREAM_PARTNER_CODES_WEBHOOK_URL` | referral_codes_generated, partner_codes_generated |
+
+### 11.2 Handler Files
+- `pipedream/email-handler.js` - Main workflow (all email types)
+- `pipedream/referral-redeemed-handler.js` - Referral redemption emails
+- `pipedream/partner-codes-notification-handler.js` - Codes generated emails
+
+**Files:** `pipedream/*.js`, `pipedream/README.md`
 
 ---
 
 ## 12. Bug Fixes & Improvements
 
 ### 12.1 Partner Login
-- Fixed email lookup in verify
-- Fixed partner verify email lookup
-- Added debug logging for troubleshooting
-- Fixed missing webhook config surfacing
+- Fixed email lookup in verify (use most recent code)
+- Debug logging for troubleshooting
 
-### 12.2 UI/UX
-- Removed 'pre-made tags' from How It Works step 2
-- Added Partners link to main Header navigation
-- SimpleHeader on partners page (logo only)
-- Various button visibility improvements
+### 12.2 Database Column Fixes
+- Fixed `partner_name` vs `business_name` confusion
+- All queries now use correct column names
 
-### 12.3 Database
-- Fixed partner apply to use correct DB column names
-- Map DB columns correctly in admin
+### 12.3 UI/UX
+- Removed 'pre-made tags' from How It Works
+- Partners link in Header navigation
+- SimpleHeader on partners page
 
 ---
 
 ## Database Migrations Required
 
-The following migrations must be run in Supabase before deploying:
+Run these in Supabase SQL Editor before deploying to production:
 
-1. **015_partner_trusted_device.sql** (if not already run)
-   ```sql
-   ALTER TABLE public.partner_sessions 
-   ADD COLUMN IF NOT EXISTS is_trusted_device boolean DEFAULT false;
-   ```
-
-2. **014_add_rejection_reason.sql** (if not already run)
-   ```sql
-   ALTER TABLE public.partners 
-   ADD COLUMN IF NOT EXISTS rejection_reason text;
-   ```
+```sql
+-- Run migrations 014-020 in order
+-- Check supabase/migrations/ folder for each file
+```
 
 ---
 
@@ -301,33 +256,18 @@ Before merging to `main`, verify:
 
 - [ ] Partner login with standard session (1 hour)
 - [ ] Partner login with "Stay signed in longer" (24 hours)
-- [ ] Trust device warning modal appears first time
-- [ ] "Don't show again" works correctly
-- [ ] Activity-based session extension (after 30 min of activity)
-- [ ] Partner FAQ displays correctly
-- [ ] Partner dashboard shows discount/commission/shipping
-- [ ] Partner terms update email sends correctly
-- [ ] New partner application → duplicate detection works
-- [ ] Partner rejection with reason
-- [ ] Rejected partner edit → auto-approval
-- [ ] Admin commission payout workflow
-- [ ] Admin code generator
-- [ ] Partner suspension with reason and email
-- [ ] Admin tools: activation search by business/type/email
-- [ ] Admin tools: resend memorial creation email from activation results
-- [ ] Admin tools: Memorial search, view, toggle publish, extend hosting
-- [ ] Admin tools: Sortable table columns
-- [ ] Activation codes: Assign codes to partner at generation
-- [ ] Activation codes: Bulk assign/unassign existing codes
+- [ ] Partner notification toggle works
+- [ ] Referral code redemption sends email to partner
+- [ ] Codes generated sends email to partner
+- [ ] Admin tools: search, lookup, resend emails
+- [ ] Admin tools: memorial management
+- [ ] Activation codes: generate, assign, unassign
+- [ ] Referral codes: generate, track redemption
+- [ ] Commission payout workflow
 
 ---
 
-## Commit Count by Area
-
-| Area | Commits |
-|------|---------|
-| Session/Security | 3 |
-| Partner FAQ | 1 |
+*Last updated: February 1, 2026*
 | Dashboard Enhancements | 2 |
 | Application/Approval | 8 |
 | Admin Dashboard | 4 |

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { PartnerHeader } from '@/components/layout/PartnerHeader'
 import { formatDateOnly, formatTimeWithZone } from '@/lib/utils'
+import { useSessionExtension } from '@/lib/useSessionExtension'
 import { 
   ArrowLeft, 
   Tag, 
@@ -76,6 +77,9 @@ export default function PartnerReferralsPage() {
   const [transferNotes, setTransferNotes] = useState('')
   const [isTransferring, setIsTransferring] = useState(false)
   const [transferResult, setTransferResult] = useState<{ success: boolean; message: string } | null>(null)
+
+  // Extend session while user is active
+  useSessionExtension()
 
   useEffect(() => {
     fetchReferrals()
