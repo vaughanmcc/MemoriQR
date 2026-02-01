@@ -21,21 +21,31 @@ interface ReferralCode {
   free_shipping: boolean
 }
 
-// Check partner authentication
+// Check partner authentication - using partner_session cookie
 async function getPartnerSession(): Promise<Partner | null> {
   const cookieStore = await cookies()
-  const partnerId = cookieStore.get('partner-id')?.value
-  const partnerToken = cookieStore.get('partner-token')?.value
-  
-  if (!partnerId || !partnerToken) {
+  const sessionToken = cookieStore.get('partner_session')?.value
+
+  if (!sessionToken) {
     return null
   }
-  
+
   const supabase = createAdminClient()
+
+  const { data: session } = await supabase
+    .from('partner_sessions')
+    .select('partner_id, expires_at')
+    .eq('session_token', sessionToken)
+    .single()
+
+  if (!session || new Date(session.expires_at) < new Date()) {
+    return null
+  }
+
   const { data: partner } = await supabase
     .from('partners')
     .select('id, partner_name, contact_email, status, default_discount_percent')
-    .eq('id', partnerId)
+    .eq('id', session.partner_id)
     .eq('status', 'active')
     .single()
   
