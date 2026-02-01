@@ -1122,7 +1122,7 @@ export default function AdminToolsPage() {
                         <div>
                           <span className="text-amber-700 block text-xs">Media Uploaded</span>
                           <span className="font-medium text-amber-900">
-                            {(orderDetails.memorial.photos?.length || 0)} photos, {(orderDetails.memorial.videos?.length || 0)} videos
+                            {(orderDetails.memorial.photos_json?.length || 0)} photos, {(orderDetails.memorial.videos_json?.length || 0)} videos
                           </span>
                         </div>
                       </div>

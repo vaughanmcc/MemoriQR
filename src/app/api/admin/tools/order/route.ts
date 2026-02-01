@@ -50,7 +50,7 @@ export async function GET(request: NextRequest) {
         shipped_at,
         completed_at,
         customer:customers(id, full_name, email, phone, shipping_address),
-        memorial:memorial_records(id, memorial_slug, deceased_name, deceased_type, is_published, hosting_expires_at, photos, videos)
+        memorial:memorial_records(id, memorial_slug, deceased_name, deceased_type, is_published, hosting_expires_at, photos_json, videos_json)
       `)
       .eq('order_number', orderNumber)
       .single()
