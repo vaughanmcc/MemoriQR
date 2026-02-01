@@ -108,11 +108,11 @@ export default function AdminDashboardPage() {
           </Link>
 
           {/* Active Partners */}
-          <div className="bg-white rounded-xl shadow p-6">
+          <Link href="/admin/partners?status=active" className="bg-white rounded-xl shadow p-6 hover:shadow-lg transition-shadow">
             <span className="text-stone-500 text-sm">Active Partners</span>
             <p className="text-3xl font-bold text-stone-800">{stats?.activePartners ?? 0}</p>
             <p className="text-sm text-stone-400 mt-1">of {stats?.totalPartners ?? 0} total</p>
-          </div>
+          </Link>
 
           {/* Pending Fulfillment */}
           <Link href="/admin/orders?status=needs_fulfillment" className="bg-white rounded-xl shadow p-6 block hover:shadow-lg transition-shadow cursor-pointer">
