@@ -6,10 +6,10 @@ export function UseCasesSection() {
       <div className="container-wide">
         {/* Section header */}
         <div className="text-center mb-10">
-          <p className="text-primary-600 font-medium text-sm uppercase tracking-wider mb-2">
+          <p className="text-primary-600 font-semibold text-base uppercase tracking-wider mb-3">
             For People & Pets
           </p>
-          <h2 className="text-2xl md:text-3xl font-serif text-gray-900">
+          <h2 className="text-3xl md:text-4xl font-serif text-gray-900">
             Honour Every Life, Every Memory
           </h2>
         </div>
