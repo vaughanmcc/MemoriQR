@@ -115,7 +115,7 @@ ${surfacePrepSection}
 <a href="${activation_url}" style="display: inline-block; background: linear-gradient(135deg, #8B7355 0%, #A08060 100%); color: #fff; text-decoration: none; padding: 15px 40px; border-radius: 8px; font-size: 16px;">Activate Your Memorial</a>
 </div>
 
-<p style="color: #777; font-size: 16px;">Once your physical product arrives, you can use the activation code printed on it, or click the button above to set up your memorial page now.</p>
+<p style="color: #777; font-size: 16px;">Click the button above to set up your memorial page. Your physical product will arrive with a QR code or NFC tag that links directly to this memorial.</p>
 </div>
 <div style="background: #f5f5f0; padding: 20px; text-align: center;">
 <p style="color: #888; font-size: 14px; margin: 0;">© 2026 MemoriQR - Preserving Memories Forever</p>
