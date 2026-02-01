@@ -32,24 +32,23 @@ export default defineComponent({
     
     // Handle referral codes generated (Lead Generation Cards)
     if (body.type === 'referral_codes_generated') {
-      const { 
-        to, 
-        businessName, 
-        quantity, 
-        codes, 
-        totalCodes,
-        discountPercent, 
-        commissionPercent, 
-        freeShipping, 
-        expiresAt,
-        dashboardUrl 
-      } = body;
+      // Support both old field names (partner_email, partner_name, codes_list) and new ones (to, businessName, codes)
+      const to = body.to || body.partner_email;
+      const businessName = body.businessName || body.partner_name;
+      const codes = body.codes || body.codes_list || [];
+      const quantity = body.quantity || codes.length;
+      const totalCodes = body.totalCodes || quantity;
+      const discountPercent = body.discountPercent ?? 10;
+      const commissionPercent = body.commissionPercent ?? 15;
+      const freeShipping = body.freeShipping ?? false;
+      const expiresAt = body.expiresAt;
+      const dashboardUrl = body.dashboardUrl || 'https://memoriqr.co.nz/partner/referrals';
 
       const expiryText = expiresAt 
         ? `Valid until ${new Date(expiresAt).toLocaleDateString('en-NZ', { day: 'numeric', month: 'long', year: 'numeric' })}`
         : 'No expiry date';
       
-      const codesList = codes.join('\n');
+      const codesList = Array.isArray(codes) ? codes.join('\n') : '';
       const moreCodesNote = totalCodes > 10 ? `\n... and ${totalCodes - 10} more codes` : '';
 
       return {
