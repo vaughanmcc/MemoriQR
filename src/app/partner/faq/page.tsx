@@ -227,9 +227,9 @@ export default function PartnerFAQPage() {
         <div className="bg-white rounded-xl shadow-sm p-6 mb-8">
           <div className="flex items-center gap-3 mb-2">
             <HelpCircle className="h-8 w-8 text-emerald-600" />
-            <h1 className="text-2xl font-bold text-gray-900">Partner FAQ</h1>
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Partner FAQ</h1>
           </div>
-          <p className="text-gray-600">
+          <p className="text-gray-600 text-lg">
             Find answers to common questions about the MemoriQR Partner Program
           </p>
         </div>
@@ -239,7 +239,7 @@ export default function PartnerFAQPage() {
           {faqCategories.map((category) => (
             <div key={category.title} className="bg-white rounded-xl shadow-sm overflow-hidden">
               <div className="bg-emerald-50 px-6 py-4 border-b border-emerald-100">
-                <h2 className="text-lg font-semibold text-emerald-800">{category.title}</h2>
+                <h2 className="text-xl font-semibold text-emerald-800">{category.title}</h2>
               </div>
               <div className="divide-y divide-gray-100">
                 {category.items.map((item, index) => {
@@ -252,7 +252,7 @@ export default function PartnerFAQPage() {
                         onClick={() => toggleItem(itemKey)}
                         className="w-full px-6 py-4 flex items-center justify-between text-left hover:bg-gray-50 transition-colors"
                       >
-                        <span className="font-medium text-gray-900 pr-4">{item.question}</span>
+                        <span className="font-medium text-gray-900 text-lg pr-4">{item.question}</span>
                         {isOpen ? (
                           <ChevronUp className="h-5 w-5 text-gray-400 flex-shrink-0" />
                         ) : (
@@ -261,7 +261,7 @@ export default function PartnerFAQPage() {
                       </button>
                       {isOpen && (
                         <div className="px-6 pb-4">
-                          <p className="text-gray-600 leading-relaxed">{item.answer}</p>
+                          <p className="text-gray-600 text-lg leading-relaxed">{item.answer}</p>
                         </div>
                       )}
                     </div>
@@ -274,8 +274,8 @@ export default function PartnerFAQPage() {
 
         {/* Contact Section */}
         <div className="mt-8 bg-emerald-50 rounded-xl p-6 text-center">
-          <h3 className="font-semibold text-emerald-800 mb-2">Still have questions?</h3>
-          <p className="text-emerald-700 mb-4">
+          <h3 className="font-semibold text-emerald-800 text-xl mb-2">Still have questions?</h3>
+          <p className="text-emerald-700 text-lg mb-4">
             Our partner support team is here to help
           </p>
           <a

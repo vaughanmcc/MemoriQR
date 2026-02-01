@@ -206,8 +206,8 @@ export default function PartnerSettingsPage() {
 
         <div className="bg-white rounded-xl shadow-sm">
           <div className="p-6 border-b border-gray-200">
-            <h1 className="text-2xl font-bold text-gray-900">Account Settings</h1>
-            <p className="text-gray-600 mt-1">Manage your payout preferences and banking details</p>
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Account Settings</h1>
+            <p className="text-gray-600 text-lg mt-1">Manage your payout preferences and banking details</p>
           </div>
 
           {/* Bank Details Status Banner */}
@@ -215,8 +215,8 @@ export default function PartnerSettingsPage() {
             <div className="mx-6 mt-6 p-4 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-3">
               <AlertCircle className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
               <div>
-                <p className="font-medium text-amber-800">Banking details required</p>
-                <p className="text-sm text-amber-700 mt-1">
+                <p className="font-medium text-amber-800 text-lg">Banking details required</p>
+                <p className="text-base text-amber-700 mt-1">
                   Please add your banking details to receive commission payouts. Without this information, we cannot process your payments.
                 </p>
               </div>
@@ -228,13 +228,13 @@ export default function PartnerSettingsPage() {
             <div>
               <div className="flex items-center gap-2 mb-4">
                 <User className="h-5 w-5 text-gray-600" />
-                <h2 className="text-lg font-medium text-gray-900">Business Information</h2>
+                <h2 className="text-xl font-medium text-gray-900">Business Information</h2>
               </div>
               
               <div className="grid gap-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-base font-medium text-gray-700 mb-2">
                       Business Name *
                     </label>
                     <input
@@ -246,7 +246,7 @@ export default function PartnerSettingsPage() {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-base font-medium text-gray-700 mb-2">
                       Contact Name *
                     </label>
                     <input
@@ -261,7 +261,7 @@ export default function PartnerSettingsPage() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-base font-medium text-gray-700 mb-2">
                       Phone Number
                     </label>
                     <input
@@ -273,7 +273,7 @@ export default function PartnerSettingsPage() {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-base font-medium text-gray-700 mb-2">
                       Website
                     </label>
                     <input
@@ -292,12 +292,12 @@ export default function PartnerSettingsPage() {
             <div className="border-t border-gray-200 pt-6">
               <div className="flex items-center gap-2 mb-4">
                 <MapPin className="h-5 w-5 text-gray-600" />
-                <h2 className="text-lg font-medium text-gray-900">Business Address</h2>
+                <h2 className="text-xl font-medium text-gray-900">Business Address</h2>
               </div>
               
               <div className="grid gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-base font-medium text-gray-700 mb-2">
                     Street Address
                   </label>
                   <AddressAutocomplete
@@ -324,7 +324,7 @@ export default function PartnerSettingsPage() {
                 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">City</label>
+                    <label className="block text-base font-medium text-gray-700 mb-2">City</label>
                     <input
                       type="text"
                       value={formData.address.city}
@@ -333,7 +333,7 @@ export default function PartnerSettingsPage() {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Region</label>
+                    <label className="block text-base font-medium text-gray-700 mb-2">Region</label>
                     <input
                       type="text"
                       value={formData.address.region}
@@ -346,7 +346,7 @@ export default function PartnerSettingsPage() {
                 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Postcode</label>
+                    <label className="block text-base font-medium text-gray-700 mb-2">Postcode</label>
                     <input
                       type="text"
                       value={formData.address.postcode}
@@ -355,7 +355,7 @@ export default function PartnerSettingsPage() {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Country</label>
+                    <label className="block text-base font-medium text-gray-700 mb-2">Country</label>
                     <input
                       type="text"
                       value={formData.address.country}
@@ -369,7 +369,7 @@ export default function PartnerSettingsPage() {
 
             {/* Payout Email */}
             <div className="border-t border-gray-200 pt-6">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-base font-medium text-gray-700 mb-2">
                 Payout Notification Email
               </label>
               <input
@@ -379,7 +379,7 @@ export default function PartnerSettingsPage() {
                 placeholder={settings?.contact_email || 'your@email.com'}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
               />
-              <p className="mt-1 text-sm text-gray-500">
+              <p className="mt-1 text-base text-gray-500">
                 Leave blank to use your primary email ({settings?.contact_email})
               </p>
             </div>
@@ -388,15 +388,15 @@ export default function PartnerSettingsPage() {
             <div className="border-t border-gray-200 pt-6">
               <div className="flex items-center gap-2 mb-4">
                 <Building className="h-5 w-5 text-gray-600" />
-                <h2 className="text-lg font-medium text-gray-900">Banking Details</h2>
+                <h2 className="text-xl font-medium text-gray-900">Banking Details</h2>
               </div>
-              <p className="text-sm text-gray-500 mb-4">
+              <p className="text-base text-gray-500 mb-4">
                 Your banking details are stored securely and used only for commission payouts.
               </p>
 
               <div className="grid gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-base font-medium text-gray-700 mb-2">
                     Bank Name
                   </label>
                   <select
@@ -419,7 +419,7 @@ export default function PartnerSettingsPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-base font-medium text-gray-700 mb-2">
                     Account Name
                   </label>
                   <input
@@ -432,7 +432,7 @@ export default function PartnerSettingsPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-base font-medium text-gray-700 mb-2">
                     <span className="flex items-center gap-2">
                       <CreditCard className="h-4 w-4" />
                       Account Number
@@ -518,7 +518,7 @@ export default function PartnerSettingsPage() {
                     </div>
                   )}
                   
-                  <p className="mt-1 text-sm text-gray-500">
+                  <p className="mt-1 text-base text-gray-500">
                     New Zealand bank account format: Bank-Branch-Account-Suffix
                   </p>
                   {settings?.bank_account_number && !isEditingBankAccount && (
@@ -565,9 +565,9 @@ export default function PartnerSettingsPage() {
           <div className="p-6 border-b border-gray-200">
             <div className="flex items-center gap-2">
               <Shield className="h-5 w-5 text-gray-600" />
-              <h2 className="text-lg font-medium text-gray-900">Security</h2>
+              <h2 className="text-xl font-medium text-gray-900">Security</h2>
             </div>
-            <p className="text-gray-600 mt-1 text-sm">Manage your login sessions and security settings</p>
+            <p className="text-gray-600 mt-1 text-base">Manage your login sessions and security settings</p>
           </div>
 
           <div className="p-6 space-y-4">
@@ -575,8 +575,8 @@ export default function PartnerSettingsPage() {
               <div className="flex items-start gap-3">
                 <Smartphone className="h-5 w-5 text-gray-500 mt-0.5" />
                 <div>
-                  <h3 className="font-medium text-gray-900">Trusted Devices</h3>
-                  <p className="text-sm text-gray-600 mt-1">
+                  <h3 className="font-medium text-gray-900 text-lg">Trusted Devices</h3>
+                  <p className="text-base text-gray-600 mt-1">
                     {hasTrustedSessions 
                       ? 'You have active sessions on trusted devices (24-hour login). Revoking will log you out of those devices.'
                       : 'No trusted device sessions are currently active.'}
@@ -605,16 +605,16 @@ export default function PartnerSettingsPage() {
           <div className="p-6 border-b border-gray-200">
             <div className="flex items-center gap-2">
               <Bell className="h-5 w-5 text-gray-600" />
-              <h2 className="text-lg font-medium text-gray-900">Email Notifications</h2>
+              <h2 className="text-xl font-medium text-gray-900">Email Notifications</h2>
             </div>
-            <p className="text-gray-600 mt-1 text-sm">Manage which emails you receive</p>
+            <p className="text-gray-600 mt-1 text-base">Manage which emails you receive</p>
           </div>
 
           <div className="p-6 space-y-4">
             <div className="flex items-center justify-between gap-4 p-4 bg-gray-50 rounded-lg">
               <div>
-                <h3 className="font-medium text-gray-900">Referral Code Redemptions</h3>
-                <p className="text-sm text-gray-600 mt-1">
+                <h3 className="font-medium text-gray-900 text-lg">Referral Code Redemptions</h3>
+                <p className="text-base text-gray-600 mt-1">
                   Receive an email when a customer uses one of your referral codes to place an order.
                 </p>
               </div>
@@ -633,7 +633,7 @@ export default function PartnerSettingsPage() {
 
         {/* Security Note */}
         <div className="mt-6 p-4 bg-gray-100 rounded-lg">
-          <p className="text-sm text-gray-600">
+          <p className="text-base text-gray-600">
             <strong>🔒 Security:</strong> Your banking information is encrypted and stored securely. 
             We only use these details to process your commission payouts. 
             For your protection, account numbers are partially masked in emails and statements.

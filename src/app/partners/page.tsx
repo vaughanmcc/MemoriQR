@@ -140,7 +140,7 @@ export default function PartnersPage() {
             <h1 className="text-4xl md:text-5xl font-serif font-bold mb-6">
               Become a MemoriQR Partner
             </h1>
-            <p className="text-xl text-primary-100 mb-8">
+            <p className="text-xl md:text-2xl text-primary-100 mb-8">
               Join our network of veterinary clinics, crematoriums, and pet businesses 
               offering meaningful memorial products to grieving families.
             </p>
@@ -169,7 +169,7 @@ export default function PartnersPage() {
           <h2 className="text-3xl md:text-4xl font-serif font-bold text-center mb-4">
             Partner Benefits
           </h2>
-          <p className="text-gray-600 text-center mb-12 max-w-2xl mx-auto">
+          <p className="text-gray-600 text-lg md:text-xl text-center mb-12 max-w-2xl mx-auto">
             Everything you need to offer memorial products with zero hassle
           </p>
           
@@ -182,8 +182,8 @@ export default function PartnersPage() {
                 <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-primary-100 text-primary-600 mb-4">
                   <benefit.icon className="h-7 w-7" />
                 </div>
-                <h3 className="text-lg font-semibold mb-2">{benefit.title}</h3>
-                <p className="text-gray-600 text-sm">{benefit.description}</p>
+                <h3 className="text-xl font-semibold mb-2">{benefit.title}</h3>
+                <p className="text-gray-600 text-base md:text-lg">{benefit.description}</p>
               </div>
             ))}
           </div>
@@ -196,7 +196,7 @@ export default function PartnersPage() {
           <h2 className="text-3xl md:text-4xl font-serif font-bold text-center mb-4">
             Who Can Partner With Us?
           </h2>
-          <p className="text-gray-600 text-center mb-12 max-w-2xl mx-auto">
+          <p className="text-gray-600 text-lg md:text-xl text-center mb-12 max-w-2xl mx-auto">
             We work with businesses that serve pet owners and families during times of loss
           </p>
           
@@ -207,8 +207,8 @@ export default function PartnersPage() {
                 className="bg-white p-6 rounded-xl shadow-sm hover:shadow-md transition-shadow"
               >
                 <type.icon className="h-10 w-10 text-primary-600 mb-4" />
-                <h3 className="text-lg font-semibold mb-2">{type.title}</h3>
-                <p className="text-gray-600 text-sm">{type.description}</p>
+                <h3 className="text-xl font-semibold mb-2">{type.title}</h3>
+                <p className="text-gray-600 text-base md:text-lg">{type.description}</p>
               </div>
             ))}
           </div>
@@ -228,8 +228,8 @@ export default function PartnersPage() {
                 <div className="w-12 h-12 rounded-full bg-primary-600 text-white font-bold text-xl flex items-center justify-center mx-auto mb-4">
                   1
                 </div>
-                <h3 className="font-semibold mb-2">Apply & Get Approved</h3>
-                <p className="text-gray-600 text-sm">
+                <h3 className="text-lg font-semibold mb-2">Apply & Get Approved</h3>
+                <p className="text-gray-600 text-base md:text-lg">
                   Fill out the form below. We&apos;ll review your application and contact you within 48 hours.
                 </p>
               </div>
@@ -238,8 +238,8 @@ export default function PartnersPage() {
                 <div className="w-12 h-12 rounded-full bg-primary-600 text-white font-bold text-xl flex items-center justify-center mx-auto mb-4">
                   2
                 </div>
-                <h3 className="font-semibold mb-2">Receive Your Starter Kit</h3>
-                <p className="text-gray-600 text-sm">
+                <h3 className="text-lg font-semibold mb-2">Receive Your Starter Kit</h3>
+                <p className="text-gray-600 text-base md:text-lg">
                   Get referral cards and marketing materials shipped to your location.
                 </p>
               </div>
@@ -248,8 +248,8 @@ export default function PartnersPage() {
                 <div className="w-12 h-12 rounded-full bg-primary-600 text-white font-bold text-xl flex items-center justify-center mx-auto mb-4">
                   3
                 </div>
-                <h3 className="font-semibold mb-2">Start Earning</h3>
-                <p className="text-gray-600 text-sm">
+                <h3 className="text-lg font-semibold mb-2">Start Earning</h3>
+                <p className="text-gray-600 text-base md:text-lg">
                   Customers activate tags themselves. You earn commission on every sale, paid monthly.
                 </p>
               </div>
@@ -265,7 +265,7 @@ export default function PartnersPage() {
             <h2 className="text-3xl md:text-4xl font-serif font-bold text-center mb-4">
               Apply to Become a Partner
             </h2>
-            <p className="text-gray-600 text-center mb-8">
+            <p className="text-gray-600 text-lg md:text-xl text-center mb-8">
               Fill out the form below and we&apos;ll be in touch within 48 hours
             </p>
 
@@ -284,7 +284,7 @@ export default function PartnersPage() {
               <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-sm p-8 space-y-6">
                 <div className="grid md:grid-cols-2 gap-6">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-base font-medium text-gray-700 mb-2">
                       Business Name *
                     </label>
                     <input
@@ -298,7 +298,7 @@ export default function PartnersPage() {
                   </div>
                   
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-base font-medium text-gray-700 mb-2">
                       Contact Name *
                     </label>
                     <input
@@ -314,7 +314,7 @@ export default function PartnersPage() {
 
                 <div className="grid md:grid-cols-2 gap-6">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-base font-medium text-gray-700 mb-2">
                       Email Address *
                     </label>
                     <input
@@ -328,7 +328,7 @@ export default function PartnersPage() {
                   </div>
                   
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-base font-medium text-gray-700 mb-2">
                       Phone Number
                     </label>
                     <input
@@ -342,7 +342,7 @@ export default function PartnersPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-base font-medium text-gray-700 mb-2">
                     Business Type *
                   </label>
                   <select
@@ -366,7 +366,7 @@ export default function PartnersPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-base font-medium text-gray-700 mb-2">
                     Tell us about your business
                   </label>
                   <textarea
@@ -380,7 +380,7 @@ export default function PartnersPage() {
 
                 <div className="grid md:grid-cols-2 gap-6">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-base font-medium text-gray-700 mb-2">
                       Expected QR Plates / month
                       <span className="text-gray-400 font-normal ml-1">(optional)</span>
                     </label>
@@ -398,7 +398,7 @@ export default function PartnersPage() {
                   </div>
                   
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-base font-medium text-gray-700 mb-2">
                       Expected NFC Tags / month
                       <span className="text-gray-400 font-normal ml-1">(optional)</span>
                     </label>
@@ -417,7 +417,7 @@ export default function PartnersPage() {
                 </div>
 
                 {submitStatus === 'error' && (
-                  <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700 text-sm">
+                  <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700 text-base">
                     {errorMessage || 'Something went wrong.'} Please try again or email us at{' '}
                     <a href="mailto:partners@memoriqr.co.nz" className="underline">
                       partners@memoriqr.co.nz
@@ -452,7 +452,7 @@ export default function PartnersPage() {
       <section className="py-12 bg-primary-900 text-white">
         <div className="container-wide text-center">
           <h3 className="text-xl font-semibold mb-4">Already a Partner?</h3>
-          <p className="text-primary-200 mb-6">
+          <p className="text-primary-200 text-lg mb-6">
             Access your dashboard to view activations, download referral cards, and track commissions.
           </p>
           <Link 

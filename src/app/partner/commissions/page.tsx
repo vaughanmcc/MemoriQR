@@ -170,7 +170,7 @@ export default function PartnerCommissionsPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Page Header */}
           <div className="mb-8">
-            <nav className="text-sm mb-4">
+            <nav className="text-base mb-4">
               <Link href="/partner/dashboard" className="text-emerald-600 hover:text-emerald-700">
                 ← Back to Dashboard
               </Link>
@@ -178,7 +178,7 @@ export default function PartnerCommissionsPage() {
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div>
                 <h1 className="text-3xl font-bold text-gray-900">Commission Tracking</h1>
-                <p className="text-gray-600">Your commission rate: {commissionRate}%</p>
+                <p className="text-gray-600 text-lg">Your commission rate: {commissionRate}%</p>
               </div>
               <button
                 onClick={exportCSV}
@@ -195,25 +195,25 @@ export default function PartnerCommissionsPage() {
           {/* Summary Cards */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
             <div className="bg-white rounded-lg shadow p-6">
-              <p className="text-sm text-gray-500">Total Earned</p>
+              <p className="text-base text-gray-500">Total Earned</p>
               <p className="text-2xl font-bold text-gray-900">
                 {formatCurrency(summary?.totalEarned || 0)}
               </p>
             </div>
             <div className="bg-white rounded-lg shadow p-6">
-              <p className="text-sm text-gray-500">Pending</p>
+              <p className="text-base text-gray-500">Pending</p>
               <p className="text-2xl font-bold text-yellow-600">
                 {formatCurrency(summary?.pending || 0)}
               </p>
             </div>
             <div className="bg-white rounded-lg shadow p-6">
-              <p className="text-sm text-gray-500">Approved</p>
+              <p className="text-base text-gray-500">Approved</p>
               <p className="text-2xl font-bold text-blue-600">
                 {formatCurrency(summary?.approved || 0)}
               </p>
             </div>
             <div className="bg-white rounded-lg shadow p-6">
-              <p className="text-sm text-gray-500">Paid</p>
+              <p className="text-base text-gray-500">Paid</p>
               <p className="text-2xl font-bold text-green-600">
                 {formatCurrency(summary?.paid || 0)}
               </p>
@@ -232,7 +232,7 @@ export default function PartnerCommissionsPage() {
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id as typeof activeTab)}
-                    className={`px-6 py-4 text-sm font-medium border-b-2 ${
+                    className={`px-6 py-4 text-base font-medium border-b-2 ${
                       activeTab === tab.id
                         ? 'border-emerald-500 text-emerald-600'
                         : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
@@ -255,7 +255,7 @@ export default function PartnerCommissionsPage() {
                         <button
                           key={status}
                           onClick={() => setStatusFilter(status)}
-                          className={`px-3 py-1 text-sm rounded-full ${
+                          className={`px-3 py-1 text-base rounded-full ${
                             statusFilter === status
                               ? 'bg-emerald-100 text-emerald-700'
                               : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
@@ -270,7 +270,7 @@ export default function PartnerCommissionsPage() {
                         <button
                           key={period}
                           onClick={() => setPeriodFilter(period)}
-                          className={`px-3 py-1 text-sm rounded-full ${
+                          className={`px-3 py-1 text-base rounded-full ${
                             periodFilter === period
                               ? 'bg-emerald-100 text-emerald-700'
                               : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
@@ -288,8 +288,8 @@ export default function PartnerCommissionsPage() {
                       <svg className="w-12 h-12 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
-                      <p>No commissions found</p>
-                      <p className="text-sm">Commissions are earned when customers activate memorials using your codes</p>
+                      <p className="text-lg">No commissions found</p>
+                      <p className="text-base">Commissions are earned when customers activate memorials using your codes</p>
                     </div>
                   ) : (
                     <div className="overflow-x-auto">
@@ -307,21 +307,21 @@ export default function PartnerCommissionsPage() {
                         <tbody className="divide-y divide-gray-200">
                           {commissions.map((commission) => (
                             <tr key={commission.id} className="hover:bg-gray-50">
-                              <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                              <td className="px-4 py-4 whitespace-nowrap text-base text-gray-900">
                                 {formatDate(commission.earned_at)}
                               </td>
-                              <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                              <td className="px-4 py-4 whitespace-nowrap text-base text-gray-900">
                                 {commission.memorial?.deceased_name || 'Unknown'}
                               </td>
-                              <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
+                              <td className="px-4 py-4 whitespace-nowrap text-base text-gray-500">
                                 {commission.memorial?.deceased_type === 'pet' 
                                   ? `Pet (${commission.memorial.species || 'Unknown'})`
                                   : 'Human'}
                               </td>
-                              <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
+                              <td className="px-4 py-4 whitespace-nowrap text-base text-gray-900 text-right">
                                 {formatCurrency(commission.order_value)}
                               </td>
-                              <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-emerald-600 text-right">
+                              <td className="px-4 py-4 whitespace-nowrap text-base font-medium text-emerald-600 text-right">
                                 {formatCurrency(commission.commission_amount)}
                               </td>
                               <td className="px-4 py-4 whitespace-nowrap text-center">
@@ -346,8 +346,8 @@ export default function PartnerCommissionsPage() {
                       <svg className="w-12 h-12 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
                       </svg>
-                      <p>No payouts yet</p>
-                      <p className="text-sm">Payouts are processed monthly for approved commissions</p>
+                      <p className="text-lg">No payouts yet</p>
+                      <p className="text-base">Payouts are processed monthly for approved commissions</p>
                     </div>
                   ) : (
                     <div className="overflow-x-auto">
@@ -365,16 +365,16 @@ export default function PartnerCommissionsPage() {
                         <tbody className="divide-y divide-gray-200">
                           {payouts.map((payout) => (
                             <tr key={payout.id} className="hover:bg-gray-50">
-                              <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                              <td className="px-4 py-4 whitespace-nowrap text-base text-gray-900">
                                 {formatDate(payout.created_at)}
                               </td>
-                              <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
+                              <td className="px-4 py-4 whitespace-nowrap text-base text-gray-500">
                                 {formatDate(payout.period_start)} - {formatDate(payout.period_end)}
                               </td>
-                              <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
+                              <td className="px-4 py-4 whitespace-nowrap text-base text-gray-900 text-right">
                                 {payout.commission_count}
                               </td>
-                              <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-emerald-600 text-right">
+                              <td className="px-4 py-4 whitespace-nowrap text-base font-medium text-emerald-600 text-right">
                                 {formatCurrency(payout.amount)}
                               </td>
                               <td className="px-4 py-4 whitespace-nowrap text-center">
@@ -382,7 +382,7 @@ export default function PartnerCommissionsPage() {
                                   {payout.status}
                                 </span>
                               </td>
-                              <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
+                              <td className="px-4 py-4 whitespace-nowrap text-base text-gray-500">
                                 {payout.payment_reference || '-'}
                               </td>
                             </tr>
@@ -393,8 +393,8 @@ export default function PartnerCommissionsPage() {
                   )}
 
                   <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-                    <h3 className="font-medium text-gray-900 mb-2">Payout Information</h3>
-                    <ul className="text-sm text-gray-600 space-y-1">
+                    <h3 className="font-medium text-gray-900 text-lg mb-2">Payout Information</h3>
+                    <ul className="text-base text-gray-600 space-y-1">
                       <li>• Commissions are approved at the end of each month</li>
                       <li>• Payouts are processed within the first week of the following month</li>
                       <li>• Minimum payout threshold: $50 NZD</li>
@@ -429,19 +429,19 @@ export default function PartnerCommissionsPage() {
                         <tbody className="divide-y divide-gray-200">
                           {monthlyBreakdown.map((month) => (
                             <tr key={month.month} className="hover:bg-gray-50">
-                              <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                              <td className="px-4 py-4 whitespace-nowrap text-base font-medium text-gray-900">
                                 {month.label}
                               </td>
-                              <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
+                              <td className="px-4 py-4 whitespace-nowrap text-base text-gray-900 text-right">
                                 {month.activations}
                               </td>
-                              <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
+                              <td className="px-4 py-4 whitespace-nowrap text-base text-gray-900 text-right">
                                 {formatCurrency(month.orderValue)}
                               </td>
-                              <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-emerald-600 text-right">
+                              <td className="px-4 py-4 whitespace-nowrap text-base font-medium text-emerald-600 text-right">
                                 {formatCurrency(month.commission)}
                               </td>
-                              <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500 text-right">
+                              <td className="px-4 py-4 whitespace-nowrap text-base text-gray-500 text-right">
                                 {formatCurrency(month.orderValue / month.activations)}
                               </td>
                             </tr>
@@ -449,19 +449,19 @@ export default function PartnerCommissionsPage() {
                         </tbody>
                         <tfoot className="bg-gray-50">
                           <tr>
-                            <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                            <td className="px-4 py-4 whitespace-nowrap text-base font-medium text-gray-900">
                               Total
                             </td>
-                            <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900 text-right">
+                            <td className="px-4 py-4 whitespace-nowrap text-base font-medium text-gray-900 text-right">
                               {monthlyBreakdown.reduce((sum, m) => sum + m.activations, 0)}
                             </td>
-                            <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900 text-right">
+                            <td className="px-4 py-4 whitespace-nowrap text-base font-medium text-gray-900 text-right">
                               {formatCurrency(monthlyBreakdown.reduce((sum, m) => sum + m.orderValue, 0))}
                             </td>
-                            <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-emerald-600 text-right">
+                            <td className="px-4 py-4 whitespace-nowrap text-base font-medium text-emerald-600 text-right">
                               {formatCurrency(monthlyBreakdown.reduce((sum, m) => sum + m.commission, 0))}
                             </td>
-                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500 text-right">
+                            <td className="px-4 py-4 whitespace-nowrap text-base text-gray-500 text-right">
                               -
                             </td>
                           </tr>

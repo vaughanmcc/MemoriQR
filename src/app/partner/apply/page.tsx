@@ -101,8 +101,8 @@ export default function PartnerApplyPage() {
 
           {/* Benefits */}
           <div className="bg-gradient-to-br from-primary/5 to-primary/10 rounded-2xl p-6 mb-8">
-            <h2 className="font-semibold text-stone-800 mb-4">Partner Benefits</h2>
-            <ul className="space-y-2 text-stone-600">
+            <h2 className="font-semibold text-stone-800 text-xl mb-4">Partner Benefits</h2>
+            <ul className="space-y-2 text-stone-600 text-lg">
               <li className="flex items-start gap-2">
                 <svg className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
@@ -136,14 +136,14 @@ export default function PartnerApplyPage() {
 
             {error && (
               <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-                <p className="text-red-600 text-sm">{error}</p>
+                <p className="text-red-600 text-base">{error}</p>
               </div>
             )}
 
             <div className="space-y-6">
               {/* Business Name */}
               <div>
-                <label className="block text-sm font-medium text-stone-700 mb-2">
+                <label className="block text-base font-medium text-stone-700 mb-2">
                   Business Name <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -158,7 +158,7 @@ export default function PartnerApplyPage() {
 
               {/* Partner Type */}
               <div>
-                <label className="block text-sm font-medium text-stone-700 mb-2">
+                <label className="block text-base font-medium text-stone-700 mb-2">
                   Business Type <span className="text-red-500">*</span>
                 </label>
                 <select
@@ -178,7 +178,7 @@ export default function PartnerApplyPage() {
 
               {/* Contact Name */}
               <div>
-                <label className="block text-sm font-medium text-stone-700 mb-2">
+                <label className="block text-base font-medium text-stone-700 mb-2">
                   Contact Name <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -193,7 +193,7 @@ export default function PartnerApplyPage() {
 
               {/* Email */}
               <div>
-                <label className="block text-sm font-medium text-stone-700 mb-2">
+                <label className="block text-base font-medium text-stone-700 mb-2">
                   Email Address <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -208,7 +208,7 @@ export default function PartnerApplyPage() {
 
               {/* Phone */}
               <div>
-                <label className="block text-sm font-medium text-stone-700 mb-2">
+                <label className="block text-base font-medium text-stone-700 mb-2">
                   Phone Number <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -223,7 +223,7 @@ export default function PartnerApplyPage() {
 
               {/* Website */}
               <div>
-                <label className="block text-sm font-medium text-stone-700 mb-2">
+                <label className="block text-base font-medium text-stone-700 mb-2">
                   Website (optional)
                 </label>
                 <input
@@ -237,7 +237,7 @@ export default function PartnerApplyPage() {
 
               {/* Message */}
               <div>
-                <label className="block text-sm font-medium text-stone-700 mb-2">
+                <label className="block text-base font-medium text-stone-700 mb-2">
                   Tell us about your business (optional)
                 </label>
                 <textarea
@@ -260,7 +260,7 @@ export default function PartnerApplyPage() {
             </div>
           </form>
 
-          <p className="text-center text-stone-500 text-sm mt-6">
+          <p className="text-center text-stone-500 text-base mt-6">
             Already a partner?{' '}
             <Link href="/partner" className="text-primary hover:underline">
               Log in here

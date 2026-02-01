@@ -158,7 +158,7 @@ export default function PartnerLoginPage() {
           <Link href="/" className="inline-block">
             <h1 className="text-3xl font-serif text-primary-700">MemoriQR</h1>
           </Link>
-          <p className="text-gray-600 mt-2">Partner Portal</p>
+          <p className="text-gray-600 text-lg mt-2">Partner Portal</p>
         </div>
 
         {/* Login Card */}
@@ -168,13 +168,13 @@ export default function PartnerLoginPage() {
           </h2>
 
           {error && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-base">
               {error}
             </div>
           )}
 
           {message && (step === 'code' || step === 'select-business') && (
-            <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg text-green-700 text-sm">
+            <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg text-green-700 text-base">
               {message}
             </div>
           )}
@@ -182,7 +182,7 @@ export default function PartnerLoginPage() {
           {step === 'email' ? (
             <form onSubmit={handleRequestCode}>
               <div className="mb-4">
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="email" className="block text-base font-medium text-gray-700 mb-1">
                   Partner Email Address
                 </label>
                 <input
@@ -206,7 +206,7 @@ export default function PartnerLoginPage() {
             </form>
           ) : step === 'select-business' ? (
             <div>
-              <p className="text-gray-600 text-sm mb-4">
+              <p className="text-gray-600 text-base mb-4">
                 Your email is linked to multiple businesses. Select which one to log into:
               </p>
 
@@ -236,13 +236,13 @@ export default function PartnerLoginPage() {
             </div>
           ) : (
             <form onSubmit={(e) => handleVerifyCode(e)}>
-              <p className="text-gray-600 text-sm mb-4">
+              <p className="text-gray-600 text-base mb-4">
                 We sent a 6-digit code to <strong>{email}</strong>. 
                 Enter it below to continue.
               </p>
 
               <div className="mb-4">
-                <label htmlFor="code" className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="code" className="block text-base font-medium text-gray-700 mb-1">
                   Verification Code
                 </label>
                 <input
@@ -265,10 +265,10 @@ export default function PartnerLoginPage() {
                     onChange={(e) => handleTrustDeviceChange(e.target.checked)}
                     className="mt-0.5 h-4 w-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
                   />
-                  <span className="text-sm text-gray-600">
+                  <span className="text-base text-gray-600">
                     <strong>Stay signed in longer</strong>
                     <br />
-                    <span className="text-xs text-gray-500">Keep me logged in for 24 hours on this device</span>
+                    <span className="text-sm text-gray-500">Keep me logged in for 24 hours on this device</span>
                   </span>
                 </label>
               </div>
@@ -328,7 +328,7 @@ export default function PartnerLoginPage() {
         </div>
 
         {/* Footer */}
-        <p className="text-center text-gray-500 text-sm mt-6">
+        <p className="text-center text-gray-500 text-base mt-6">
           Not a partner yet?{' '}
           <Link href="/contact" className="text-primary-600 hover:underline">
             Contact us
@@ -351,20 +351,20 @@ export default function PartnerLoginPage() {
             </div>
             
             <div className="p-6 space-y-4">
-              <p className="text-gray-600 text-sm">
+              <p className="text-gray-600 text-base">
                 Selecting <strong>&quot;Stay signed in longer&quot;</strong> will keep you logged in for <strong>24 hours</strong> instead of the standard 1 hour.
               </p>
               
               <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
-                <p className="text-amber-800 text-sm font-medium mb-2">Security Considerations:</p>
-                <ul className="text-amber-700 text-sm space-y-1 list-disc list-inside">
+                <p className="text-amber-800 text-base font-medium mb-2">Security Considerations:</p>
+                <ul className="text-amber-700 text-base space-y-1 list-disc list-inside">
                   <li>Anyone with access to this device can access your partner account</li>
                   <li>Your commission data and business information will be accessible</li>
                   <li>Only use on personal, secure devices you control</li>
                 </ul>
               </div>
 
-              <p className="text-gray-500 text-xs">
+              <p className="text-gray-500 text-sm">
                 You can always log out manually at any time from the Partner Portal.
               </p>
 
@@ -375,7 +375,7 @@ export default function PartnerLoginPage() {
                   onChange={(e) => setDontShowAgain(e.target.checked)}
                   className="h-4 w-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
                 />
-                <span className="text-sm text-gray-600">Don&apos;t show this warning again</span>
+                <span className="text-base text-gray-600">Don&apos;t show this warning again</span>
               </label>
             </div>
 

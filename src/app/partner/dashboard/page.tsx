@@ -118,10 +118,10 @@ export default function PartnerDashboardPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Welcome */}
         <div className="mb-8">
-          <h1 className="text-2xl font-bold text-gray-900">
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
             Welcome back, {partner.name}
           </h1>
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-gray-600">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-gray-600 text-lg">
             <span>
               Commission: <strong>{partner.commissionRate}%</strong>
             </span>
@@ -147,14 +147,14 @@ export default function PartnerDashboardPage() {
                 <AlertTriangle className="h-6 w-6 text-amber-600" />
               </div>
               <div className="flex-1">
-                <h3 className="font-medium text-amber-800">Banking Details Required</h3>
-                <p className="text-sm text-amber-700 mt-1">
+                <h3 className="font-medium text-amber-800 text-lg">Banking Details Required</h3>
+                <p className="text-base text-amber-700 mt-1">
                   To receive commission payouts, please add your banking details in Settings. 
                   We need your bank name, account name, and account number.
                 </p>
                 <Link
                   href="/partner/settings"
-                  className="inline-flex items-center gap-1 mt-3 text-sm font-medium text-amber-800 hover:text-amber-900"
+                  className="inline-flex items-center gap-1 mt-3 text-base font-medium text-amber-800 hover:text-amber-900"
                 >
                   <Settings className="h-4 w-4" />
                   Go to Settings
@@ -210,8 +210,8 @@ export default function PartnerDashboardPage() {
                 <QrCode className="h-6 w-6 text-primary-600" />
               </div>
               <div>
-                <h3 className="font-medium text-gray-900">Activation Codes</h3>
-                <p className="text-sm text-gray-500">Pre-paid codes</p>
+                <h3 className="font-medium text-gray-900 text-lg">Activation Codes</h3>
+                <p className="text-base text-gray-500">Pre-paid codes</p>
               </div>
             </div>
             <ChevronRight className="h-5 w-5 text-gray-400" />
@@ -226,8 +226,8 @@ export default function PartnerDashboardPage() {
                 <Tag className="h-6 w-6 text-purple-600" />
               </div>
               <div>
-                <h3 className="font-medium text-gray-900">Referral Codes</h3>
-                <p className="text-sm text-gray-500">Referral codes</p>
+                <h3 className="font-medium text-gray-900 text-lg">Referral Codes</h3>
+                <p className="text-base text-gray-500">Referral codes</p>
               </div>
             </div>
             <ChevronRight className="h-5 w-5 text-gray-400" />
@@ -242,8 +242,8 @@ export default function PartnerDashboardPage() {
                 <DollarSign className="h-6 w-6 text-green-600" />
               </div>
               <div>
-                <h3 className="font-medium text-gray-900">Commissions</h3>
-                <p className="text-sm text-gray-500">Earnings & payouts</p>
+                <h3 className="font-medium text-gray-900 text-lg">Commissions</h3>
+                <p className="text-base text-gray-500">Earnings & payouts</p>
               </div>
             </div>
             <ChevronRight className="h-5 w-5 text-gray-400" />
@@ -258,8 +258,8 @@ export default function PartnerDashboardPage() {
                 <Download className="h-6 w-6 text-blue-600" />
               </div>
               <div>
-                <h3 className="font-medium text-gray-900">Materials</h3>
-                <p className="text-sm text-gray-500">Download assets</p>
+                <h3 className="font-medium text-gray-900 text-lg">Materials</h3>
+                <p className="text-base text-gray-500">Download assets</p>
               </div>
             </div>
             <ChevronRight className="h-5 w-5 text-gray-400" />
@@ -274,8 +274,8 @@ export default function PartnerDashboardPage() {
                 <Settings className="h-6 w-6 text-gray-600" />
               </div>
               <div>
-                <h3 className="font-medium text-gray-900">Settings</h3>
-                <p className="text-sm text-gray-500">Banking & payouts</p>
+                <h3 className="font-medium text-gray-900 text-lg">Settings</h3>
+                <p className="text-base text-gray-500">Banking & payouts</p>
               </div>
             </div>
             <ChevronRight className="h-5 w-5 text-gray-400" />
@@ -290,8 +290,8 @@ export default function PartnerDashboardPage() {
                 <HelpCircle className="h-6 w-6 text-amber-600" />
               </div>
               <div>
-                <h3 className="font-medium text-gray-900">FAQ</h3>
-                <p className="text-sm text-gray-500">Common questions</p>
+                <h3 className="font-medium text-gray-900 text-lg">FAQ</h3>
+                <p className="text-base text-gray-500">Common questions</p>
               </div>
             </div>
             <ChevronRight className="h-5 w-5 text-gray-400" />
@@ -300,7 +300,7 @@ export default function PartnerDashboardPage() {
 
         {/* Monthly Chart */}
         <div className="bg-white rounded-xl shadow-sm p-6 mb-8">
-          <h2 className="text-lg font-medium text-gray-900 mb-4">Activations & Earnings</h2>
+          <h2 className="text-xl font-medium text-gray-900 mb-4">Activations & Earnings</h2>
           <div className="h-64 flex items-end justify-between gap-2">
             {monthlyStats.map((month) => (
               <div key={month.month} className="flex-1 flex flex-col items-center">
@@ -326,20 +326,20 @@ export default function PartnerDashboardPage() {
           <div className="flex justify-center gap-6 mt-4">
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 bg-primary-200 rounded" />
-              <span className="text-sm text-gray-600">Commission ($)</span>
+              <span className="text-base text-gray-600">Commission ($)</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 bg-green-400 rounded" />
-              <span className="text-sm text-gray-600">Activations</span>
+              <span className="text-base text-gray-600">Activations</span>
             </div>
           </div>
         </div>
 
         {/* Recent Activity */}
         <div className="bg-white rounded-xl shadow-sm p-6">
-          <h2 className="text-lg font-medium text-gray-900 mb-4">Recent Activations</h2>
+          <h2 className="text-xl font-medium text-gray-900 mb-4">Recent Activations</h2>
           {recentCommissions.length === 0 ? (
-            <p className="text-gray-500 text-center py-8">No activations yet</p>
+            <p className="text-gray-500 text-center py-8 text-lg">No activations yet</p>
           ) : (
             <div className="divide-y">
               {recentCommissions.map((commission: any) => (
@@ -349,10 +349,10 @@ export default function PartnerDashboardPage() {
                       <CheckCircle className="h-4 w-4 text-green-600" />
                     </div>
                     <div>
-                      <p className="font-medium text-gray-900">
+                      <p className="font-medium text-gray-900 text-lg">
                         {commission.memorial?.deceased_name || 'Memorial'}
                       </p>
-                      <p className="text-sm text-gray-500">
+                      <p className="text-base text-gray-500">
                         Code: {commission.activation_code}
                       </p>
                     </div>
@@ -401,13 +401,13 @@ function StatCard({
   const content = (
     <>
       <div className="flex items-center justify-between mb-4">
-        <span className="text-sm font-medium text-gray-500">{title}</span>
+        <span className="text-base font-medium text-gray-500">{title}</span>
         <div className={`${bgColors[color]} rounded-lg p-2`}>
           {icon}
         </div>
       </div>
       <p className="text-3xl font-bold text-gray-900">{value}</p>
-      <p className="text-sm text-gray-500 mt-1">{subtitle}</p>
+      <p className="text-base text-gray-500 mt-1">{subtitle}</p>
     </>
   )
 
