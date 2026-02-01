@@ -21,7 +21,8 @@ import {
   Plus,
   ArrowUpDown,
   ArrowUp,
-  ArrowDown
+  ArrowDown,
+  Mail
 } from 'lucide-react'
 
 interface ReferralCode {
@@ -121,6 +122,7 @@ export default function PartnerReferralsPage() {
   const [isSendingShare, setIsSendingShare] = useState(false)
   const [shareResult, setShareResult] = useState<{ success: boolean; message: string } | null>(null)
   const [loadingShares, setLoadingShares] = useState(false)
+  const [showShareModal, setShowShareModal] = useState(false)
 
   // Extend session while user is active
   useSessionExtension()
@@ -575,13 +577,28 @@ export default function PartnerReferralsPage() {
                     )}
                   </div>
                   {selectedCodes.size > 0 && (
-                    <button
-                      onClick={() => setShowTransferModal(true)}
-                      className="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 text-sm font-medium"
-                    >
-                      <Send className="h-4 w-4" />
-                      Transfer {selectedCodes.size} Code{selectedCodes.size > 1 ? 's' : ''}
-                    </button>
+                    <div className="flex items-center gap-2">
+                      {selectedCodes.size === 1 && (
+                        <button
+                          onClick={() => {
+                            const codeId = Array.from(selectedCodes)[0]
+                            setSelectedShareCodeId(codeId)
+                            setShowShareModal(true)
+                          }}
+                          className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-medium"
+                        >
+                          <Mail className="h-4 w-4" />
+                          Share Code
+                        </button>
+                      )}
+                      <button
+                        onClick={() => setShowTransferModal(true)}
+                        className="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 text-sm font-medium"
+                      >
+                        <Send className="h-4 w-4" />
+                        Transfer {selectedCodes.size} Code{selectedCodes.size > 1 ? 's' : ''}
+                      </button>
+                    </div>
                   )}
                 </div>
               )}
@@ -1031,6 +1048,165 @@ export default function PartnerReferralsPage() {
                           <>
                             <Send className="h-4 w-4" />
                             Transfer Codes
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Share Modal (from Individual Codes selection) */}
+        {showShareModal && selectedShareCodeId && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
+              <div className="flex items-center justify-between p-4 border-b">
+                <h3 className="text-lg font-semibold">Share Referral Code</h3>
+                <button
+                  onClick={() => {
+                    setShowShareModal(false)
+                    setSelectedShareCodeId('')
+                    setShareEmail('')
+                    setShareName('')
+                    setShareMessage('')
+                    setShareResult(null)
+                  }}
+                  className="p-1 hover:bg-gray-100 rounded"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+              
+              <div className="p-4">
+                {shareResult ? (
+                  <div className={`p-4 rounded-lg ${
+                    shareResult.success ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'
+                  }`}>
+                    <p className="font-medium">
+                      {shareResult.success ? 'Code Shared!' : 'Failed to Share'}
+                    </p>
+                    <p className="text-sm mt-1">{shareResult.message}</p>
+                    {shareResult.success && (
+                      <button
+                        onClick={() => {
+                          setShowShareModal(false)
+                          setSelectedShareCodeId('')
+                          setShareEmail('')
+                          setShareName('')
+                          setShareMessage('')
+                          setShareResult(null)
+                          setSelectedCodes(new Set())
+                        }}
+                        className="mt-3 px-4 py-2 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700"
+                      >
+                        Done
+                      </button>
+                    )}
+                  </div>
+                ) : (
+                  <>
+                    <p className="text-gray-600 mb-4">
+                      Share code <span className="font-mono font-semibold">{codes.find(c => c.id === selectedShareCodeId)?.code}</span> via email.
+                    </p>
+                    
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Recipient Email <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          type="email"
+                          value={shareEmail}
+                          onChange={(e) => setShareEmail(e.target.value)}
+                          placeholder="customer@example.com"
+                          className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-primary-500 focus:border-primary-500"
+                          required
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Recipient Name (optional)
+                        </label>
+                        <input
+                          type="text"
+                          value={shareName}
+                          onChange={(e) => setShareName(e.target.value)}
+                          placeholder="John Doe"
+                          className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-primary-500 focus:border-primary-500"
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Personal Message (optional)
+                        </label>
+                        <textarea
+                          value={shareMessage}
+                          onChange={(e) => setShareMessage(e.target.value)}
+                          placeholder="Add a personal note..."
+                          className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-primary-500 focus:border-primary-500"
+                          rows={3}
+                        />
+                      </div>
+                    </div>
+                    
+                    <div className="flex justify-end gap-3 mt-6">
+                      <button
+                        onClick={() => {
+                          setShowShareModal(false)
+                          setSelectedShareCodeId('')
+                          setShareEmail('')
+                          setShareName('')
+                          setShareMessage('')
+                        }}
+                        className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={async () => {
+                          if (!shareEmail) return
+                          setIsSendingShare(true)
+                          try {
+                            const res = await fetch('/api/partner/referrals/share', {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({
+                                referral_code_id: selectedShareCodeId,
+                                recipient_email: shareEmail,
+                                recipient_name: shareName || undefined,
+                                message: shareMessage || undefined
+                              })
+                            })
+                            const data = await res.json()
+                            if (res.ok) {
+                              setShareResult({ success: true, message: `Code shared with ${shareEmail}!` })
+                              fetchShares()
+                            } else {
+                              setShareResult({ success: false, message: data.error || 'Failed to share code' })
+                            }
+                          } catch {
+                            setShareResult({ success: false, message: 'Failed to share code' })
+                          } finally {
+                            setIsSendingShare(false)
+                          }
+                        }}
+                        disabled={!shareEmail || isSendingShare}
+                        className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                      >
+                        {isSendingShare ? (
+                          <>
+                            <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                            Sending...
+                          </>
+                        ) : (
+                          <>
+                            <Mail className="h-4 w-4" />
+                            Share Code
                           </>
                         )}
                       </button>
