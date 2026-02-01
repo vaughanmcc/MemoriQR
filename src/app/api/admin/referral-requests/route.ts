@@ -123,7 +123,8 @@ export async function POST(request: Request) {
             partner_email: codeRequest.partner.contact_email,
             partner_name: codeRequest.partner.partner_name,
             quantity: codeRequest.quantity,
-            admin_notes: adminNotes || 'Your request was not approved at this time.'
+            admin_notes: adminNotes || 'Your request was not approved at this time.',
+            baseUrl: process.env.NEXT_PUBLIC_BASE_URL || 'https://memoriqr.co.nz'
           })
         })
       }

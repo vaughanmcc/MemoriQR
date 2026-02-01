@@ -399,8 +399,8 @@ ${bankingReminderHtml}
 
     // Referral code request - admin notification (partner requests > 10 codes)
     if (body.type === 'referral_code_request') {
-      const { partner_name, partner_email, quantity, reason } = body;
-      const adminUrl = 'https://memoriqr.co.nz/admin/referrals';
+      const { partner_name, partner_email, quantity, reason, baseUrl } = body;
+      const adminUrl = `${baseUrl || 'https://memoriqr.co.nz'}/admin/referrals`;
       
       return {
         to: 'memoriqr.global@gmail.com',
@@ -447,8 +447,8 @@ ${bankingReminderHtml}
 
     // Referral request submitted - partner confirmation
     if (body.type === 'referral_request_submitted') {
-      const { partner_email, partner_name, quantity, reason } = body;
-      const dashboardUrl = 'https://memoriqr.co.nz/partner/referrals';
+      const { partner_email, partner_name, quantity, reason, baseUrl } = body;
+      const dashboardUrl = `${baseUrl || 'https://memoriqr.co.nz'}/partner/referrals`;
       
       return {
         to: partner_email,
@@ -493,8 +493,8 @@ ${reason ? `<div style="background: #f9fafb; padding: 15px; border-radius: 8px; 
 
     // Referral request approved - partner notification
     if (body.type === 'referral_request_approved') {
-      const { partner_email, partner_name, quantity, codes, admin_notes } = body;
-      const dashboardUrl = 'https://memoriqr.co.nz/partner/referrals';
+      const { partner_email, partner_name, quantity, codes, admin_notes, baseUrl } = body;
+      const dashboardUrl = `${baseUrl || 'https://memoriqr.co.nz'}/partner/referrals`;
       const codesList = Array.isArray(codes) ? codes.slice(0, 10).join('\n') : '';
       const moreCodesNote = codes && codes.length > 10 ? `\n... and ${codes.length - 10} more codes` : '';
       
@@ -538,8 +538,8 @@ ${admin_notes ? `<div style="background: #f0fdf4; padding: 15px; border-radius: 
 
     // Referral request rejected - partner notification
     if (body.type === 'referral_request_rejected') {
-      const { partner_email, partner_name, quantity, admin_notes } = body;
-      const dashboardUrl = 'https://memoriqr.co.nz/partner/referrals';
+      const { partner_email, partner_name, quantity, admin_notes, baseUrl } = body;
+      const dashboardUrl = `${baseUrl || 'https://memoriqr.co.nz'}/partner/referrals`;
       
       return {
         to: partner_email,

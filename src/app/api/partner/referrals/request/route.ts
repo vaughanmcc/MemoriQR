@@ -196,7 +196,8 @@ export async function POST(request: Request) {
             partner_name: partner.partner_name,
             partner_email: partner.contact_email,
             quantity,
-            reason: reason.trim()
+            reason: reason.trim(),
+            baseUrl: process.env.NEXT_PUBLIC_BASE_URL || 'https://memoriqr.co.nz'
           })
         })
       }
@@ -216,7 +217,8 @@ export async function POST(request: Request) {
             partner_email: partner.contact_email,
             partner_name: partner.partner_name,
             quantity,
-            reason: reason.trim()
+            reason: reason.trim(),
+            baseUrl: process.env.NEXT_PUBLIC_BASE_URL || 'https://memoriqr.co.nz'
           })
         })
       }
