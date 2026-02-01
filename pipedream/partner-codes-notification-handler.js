@@ -7,11 +7,15 @@
  * - partner_codes_generated: Wholesale activation codes ready
  * - partner_codes_unassigned: Codes removed from partner
  * - activation_code_used: Customer used an activation code
+ * - referral_code_request: Partner requests codes (admin notification)
+ * - referral_request_submitted: Request confirmation (partner notification)
+ * - referral_request_approved: Request approved (partner notification)
+ * - referral_request_rejected: Request rejected (partner notification)
  * 
  * Use this in a SEPARATE Pipedream workflow with its own webhook URL.
  * Env var: PIPEDREAM_PARTNER_CODES_WEBHOOK_URL
  * 
- * Last updated: January 30, 2026
+ * Last updated: February 1, 2026
  */
 
 export default defineComponent({
@@ -24,7 +28,18 @@ export default defineComponent({
     console.log('Body object:', JSON.stringify(body, null, 2));
     console.log('Type:', body?.type);
     
-    const validTypes = ['referral_codes_generated', 'referral_codes_transferred', 'partner_codes_generated', 'partner_codes_unassigned', 'activation_codes_transferred', 'activation_code_used'];
+    const validTypes = [
+      'referral_codes_generated', 
+      'referral_codes_transferred', 
+      'partner_codes_generated', 
+      'partner_codes_unassigned', 
+      'activation_codes_transferred', 
+      'activation_code_used',
+      'referral_code_request',
+      'referral_request_submitted',
+      'referral_request_approved',
+      'referral_request_rejected'
+    ];
     
     if (!body || !validTypes.includes(body.type)) {
       $.flow.exit(`Not a partner codes notification event: ${body?.type}`);
@@ -379,6 +394,185 @@ ${bankingReminderHtml}
 </div>
 </div>`,
         text: `Hi ${businessName},\n\nGreat news! One of your activation codes has been used to create a memorial.\n\nDETAILS:\n- Activation Code: ${activationCode}\n- Memorial For: ${deceasedName}\n- Product: ${productLabel}\n- Hosting: ${hostingDuration} years${bankingReminderText}\n\nView your codes in the Partner Portal: ${dashboardUrl}`
+      };
+    }
+
+    // Referral code request - admin notification (partner requests > 10 codes)
+    if (body.type === 'referral_code_request') {
+      const { partner_name, partner_email, quantity, reason } = body;
+      const adminUrl = 'https://memoriqr.co.nz/admin/referrals';
+      
+      return {
+        to: 'memoriqr.global@gmail.com',
+        replyTo: partner_email,
+        from_name: 'MemoriQR Partner Portal',
+        subject: `🏷️ Referral Code Request: ${quantity} codes from ${partner_name}`,
+        html: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; font-size: 18px; line-height: 1.6; color: #333;">
+<div style="background: linear-gradient(135deg, #059669 0%, #047857 100%); padding: 20px; text-align: center; border-radius: 8px 8px 0 0;">
+<h1 style="color: #fff; margin: 0;">🏷️ Referral Code Request</h1>
+</div>
+
+<div style="padding: 25px; background: #fff; border: 1px solid #ddd; border-top: none;">
+
+<table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+<tr style="background: #f0fdf4;"><td colspan="2" style="padding: 12px; font-weight: bold; border: 1px solid #ddd;">Request Details</td></tr>
+<tr><td style="padding: 10px; border: 1px solid #eee; width: 40%;">Partner</td><td style="padding: 10px; border: 1px solid #eee;">${partner_name}<br><a href="mailto:${partner_email}" style="color: #059669;">${partner_email}</a></td></tr>
+<tr><td style="padding: 10px; border: 1px solid #eee;">Quantity Requested</td><td style="padding: 10px; border: 1px solid #eee; font-weight: 500; font-size: 20px;">${quantity} codes</td></tr>
+</table>
+
+<div style="background: #f0fdf4; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+<strong>📝 Partner's Reason:</strong>
+<p style="margin: 10px 0 0; color: #555;">${reason}</p>
+</div>
+
+<div style="background: #fef3c7; border: 1px solid #f59e0b; padding: 15px; border-radius: 8px;">
+<strong>⚡ Action Required:</strong>
+<p style="margin: 10px 0 5px;">Review this request in the Admin Portal:</p>
+<p style="margin: 5px 0;">• Approve to generate codes automatically</p>
+<p style="margin: 5px 0 0;">• Or reject with a reason</p>
+</div>
+
+<div style="text-align: center; margin: 25px 0 10px;">
+<a href="${adminUrl}" style="display: inline-block; background: linear-gradient(135deg, #059669 0%, #047857 100%); color: #fff; text-decoration: none; padding: 15px 40px; border-radius: 8px; font-size: 16px;">Review Request</a>
+</div>
+
+</div>
+<div style="background: #f0fdf4; padding: 15px; text-align: center; border: 1px solid #ddd; border-top: none; border-radius: 0 0 8px 8px;">
+<p style="color: #888; font-size: 14px; margin: 0;">Partner Portal Admin Notification</p>
+</div>
+</div>`,
+        text: `REFERRAL CODE REQUEST\n\nPartner: ${partner_name} (${partner_email})\nQuantity: ${quantity} codes\n\nReason: ${reason}\n\nReview this request: ${adminUrl}`
+      };
+    }
+
+    // Referral request submitted - partner confirmation
+    if (body.type === 'referral_request_submitted') {
+      const { partner_email, partner_name, quantity, reason } = body;
+      const dashboardUrl = 'https://memoriqr.co.nz/partner/referrals';
+      
+      return {
+        to: partner_email,
+        replyTo: 'partners@memoriqr.co.nz',
+        from_name: 'MemoriQR Partner Portal',
+        subject: `✓ Your request for ${quantity} referral codes has been submitted`,
+        html: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; font-size: 18px; line-height: 1.6; color: #333;">
+<div style="background: linear-gradient(135deg, #059669 0%, #047857 100%); padding: 30px; text-align: center; border-radius: 8px 8px 0 0;">
+<h1 style="color: #fff; margin: 0; font-size: 24px;">Request Submitted</h1>
+</div>
+
+<div style="padding: 30px; background: #fff; border: 1px solid #ddd; border-top: none;">
+<p style="color: #333; font-size: 16px;">Hi ${partner_name},</p>
+
+<p style="color: #555; line-height: 1.6;">Your request for <strong>${quantity} referral codes</strong> has been submitted and is awaiting approval.</p>
+
+<div style="background: #f0fdf4; border: 1px solid #10b981; padding: 20px; border-radius: 8px; margin: 20px 0;">
+<p style="margin: 0; color: #065f46;"><strong>📋 Request Details:</strong></p>
+<p style="margin: 10px 0 0; color: #047857;">Quantity: ${quantity} codes</p>
+<p style="margin: 5px 0 0; color: #047857;">Status: Pending approval</p>
+</div>
+
+${reason ? `<div style="background: #f9fafb; padding: 15px; border-radius: 8px; margin: 20px 0;">
+<p style="margin: 0; color: #6b7280; font-size: 14px;"><strong>Your reason:</strong></p>
+<p style="margin: 5px 0 0; color: #374151;">${reason}</p>
+</div>` : ''}
+
+<p style="color: #555; line-height: 1.6;">We'll review your request and notify you once it's been processed. This typically takes 1-2 business days.</p>
+
+<div style="text-align: center; margin: 30px 0;">
+<a href="${dashboardUrl}" style="display: inline-block; background: linear-gradient(135deg, #059669 0%, #047857 100%); color: #fff; text-decoration: none; padding: 15px 40px; border-radius: 8px; font-size: 16px;">View Your Referrals</a>
+</div>
+
+</div>
+<div style="background: #f5f5f0; padding: 20px; text-align: center; border-radius: 0 0 8px 8px;">
+<p style="color: #888; font-size: 14px; margin: 0;">MemoriQR Partner Portal</p>
+</div>
+</div>`,
+        text: `Hi ${partner_name},\n\nYour request for ${quantity} referral codes has been submitted and is awaiting approval.\n\nQuantity: ${quantity} codes\nStatus: Pending approval\n${reason ? `\nYour reason: ${reason}` : ''}\n\nWe'll review your request and notify you once it's been processed.\n\nView your referrals: ${dashboardUrl}`
+      };
+    }
+
+    // Referral request approved - partner notification
+    if (body.type === 'referral_request_approved') {
+      const { partner_email, partner_name, quantity, codes, admin_notes } = body;
+      const dashboardUrl = 'https://memoriqr.co.nz/partner/referrals';
+      const codesList = Array.isArray(codes) ? codes.slice(0, 10).join('\n') : '';
+      const moreCodesNote = codes && codes.length > 10 ? `\n... and ${codes.length - 10} more codes` : '';
+      
+      return {
+        to: partner_email,
+        replyTo: 'partners@memoriqr.co.nz',
+        from_name: 'MemoriQR Partner Portal',
+        subject: `✅ Your request for ${quantity} referral codes has been approved!`,
+        html: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; font-size: 18px; line-height: 1.6; color: #333;">
+<div style="background: linear-gradient(135deg, #059669 0%, #10b981 100%); padding: 30px; text-align: center; border-radius: 8px 8px 0 0;">
+<h1 style="color: #fff; margin: 0; font-size: 24px;">✅ Request Approved!</h1>
+</div>
+
+<div style="padding: 30px; background: #fff; border: 1px solid #ddd; border-top: none;">
+<p style="color: #333; font-size: 16px;">Hi ${partner_name},</p>
+
+<p style="color: #555; line-height: 1.6;">Great news! Your request for <strong>${quantity} referral codes</strong> has been approved and the codes are now available in your account.</p>
+
+${admin_notes ? `<div style="background: #f0fdf4; padding: 15px; border-radius: 8px; margin: 20px 0;">
+<p style="margin: 0; color: #065f46;"><strong>Admin note:</strong></p>
+<p style="margin: 5px 0 0; color: #047857;">${admin_notes}</p>
+</div>` : ''}
+
+<div style="background: #f9f7f4; padding: 20px; border-radius: 8px; margin: 20px 0;">
+<p style="font-weight: bold; margin: 0 0 10px; color: #333;">Your New Referral Codes:</p>
+<pre style="background: #fff; border: 1px solid #ddd; padding: 15px; border-radius: 4px; font-family: monospace; font-size: 14px; white-space: pre-wrap; word-break: break-all; margin: 0;">${codesList}${moreCodesNote}</pre>
+</div>
+
+<div style="text-align: center; margin: 30px 0;">
+<a href="${dashboardUrl}" style="display: inline-block; background: linear-gradient(135deg, #059669 0%, #10b981 100%); color: #fff; text-decoration: none; padding: 15px 40px; border-radius: 8px; font-size: 16px;">View All Your Codes</a>
+</div>
+
+</div>
+<div style="background: #f5f5f0; padding: 20px; text-align: center; border-radius: 0 0 8px 8px;">
+<p style="color: #888; font-size: 14px; margin: 0;">MemoriQR Partner Portal</p>
+</div>
+</div>`,
+        text: `Hi ${partner_name},\n\nGreat news! Your request for ${quantity} referral codes has been approved!\n\n${admin_notes ? `Admin note: ${admin_notes}\n\n` : ''}YOUR CODES:\n${codesList}${moreCodesNote}\n\nView all your codes: ${dashboardUrl}`
+      };
+    }
+
+    // Referral request rejected - partner notification
+    if (body.type === 'referral_request_rejected') {
+      const { partner_email, partner_name, quantity, admin_notes } = body;
+      const dashboardUrl = 'https://memoriqr.co.nz/partner/referrals';
+      
+      return {
+        to: partner_email,
+        replyTo: 'partners@memoriqr.co.nz',
+        from_name: 'MemoriQR Partner Portal',
+        subject: `Your referral code request update`,
+        html: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; font-size: 18px; line-height: 1.6; color: #333;">
+<div style="background: linear-gradient(135deg, #8B7355 0%, #A08060 100%); padding: 30px; text-align: center; border-radius: 8px 8px 0 0;">
+<h1 style="color: #fff; margin: 0; font-size: 24px;">Referral Code Request Update</h1>
+</div>
+
+<div style="padding: 30px; background: #fff; border: 1px solid #ddd; border-top: none;">
+<p style="color: #333; font-size: 16px;">Hi ${partner_name},</p>
+
+<p style="color: #555; line-height: 1.6;">Thank you for your request for ${quantity} referral codes.</p>
+
+<div style="background: #fef3c7; border: 1px solid #f59e0b; padding: 20px; border-radius: 8px; margin: 20px 0;">
+<p style="margin: 0; color: #92400e;"><strong>Status:</strong> Not approved at this time</p>
+${admin_notes ? `<p style="margin: 10px 0 0; color: #78350f;">${admin_notes}</p>` : ''}
+</div>
+
+<p style="color: #555; line-height: 1.6;">If you have any questions or would like to discuss this further, please reply to this email or contact us at partners@memoriqr.co.nz.</p>
+
+<div style="text-align: center; margin: 30px 0;">
+<a href="${dashboardUrl}" style="display: inline-block; background: linear-gradient(135deg, #8B7355 0%, #A08060 100%); color: #fff; text-decoration: none; padding: 15px 40px; border-radius: 8px; font-size: 16px;">View Your Referrals</a>
+</div>
+
+</div>
+<div style="background: #f5f5f0; padding: 20px; text-align: center; border-radius: 0 0 8px 8px;">
+<p style="color: #888; font-size: 14px; margin: 0;">MemoriQR Partner Portal</p>
+</div>
+</div>`,
+        text: `Hi ${partner_name},\n\nThank you for your request for ${quantity} referral codes.\n\nStatus: Not approved at this time\n${admin_notes ? `\n${admin_notes}\n` : ''}\nIf you have any questions, please contact us at partners@memoriqr.co.nz.\n\nView your referrals: ${dashboardUrl}`
       };
     }
   }

@@ -186,7 +186,7 @@ export async function POST(request: Request) {
 
     // Send notification email to admin
     try {
-      const webhookUrl = process.env.PIPEDREAM_WEBHOOK_URL
+      const webhookUrl = process.env.PIPEDREAM_PARTNER_CODES_WEBHOOK_URL || process.env.PIPEDREAM_WEBHOOK_URL
       if (webhookUrl) {
         await fetch(webhookUrl, {
           method: 'POST',
@@ -206,7 +206,7 @@ export async function POST(request: Request) {
 
     // Send confirmation email to partner
     try {
-      const webhookUrl = process.env.PIPEDREAM_WEBHOOK_URL
+      const webhookUrl = process.env.PIPEDREAM_PARTNER_CODES_WEBHOOK_URL || process.env.PIPEDREAM_WEBHOOK_URL
       if (webhookUrl) {
         await fetch(webhookUrl, {
           method: 'POST',

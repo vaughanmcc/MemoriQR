@@ -113,7 +113,7 @@ export async function POST(request: Request) {
 
     // Send rejection email to partner
     try {
-      const webhookUrl = process.env.PIPEDREAM_WEBHOOK_URL
+      const webhookUrl = process.env.PIPEDREAM_PARTNER_CODES_WEBHOOK_URL || process.env.PIPEDREAM_WEBHOOK_URL
       if (webhookUrl) {
         await fetch(webhookUrl, {
           method: 'POST',
@@ -123,7 +123,7 @@ export async function POST(request: Request) {
             partner_email: codeRequest.partner.contact_email,
             partner_name: codeRequest.partner.partner_name,
             quantity: codeRequest.quantity,
-            reason: adminNotes || 'Your request was not approved at this time.'
+            admin_notes: adminNotes || 'Your request was not approved at this time.'
           })
         })
       }
