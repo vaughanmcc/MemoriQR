@@ -40,7 +40,7 @@ function waitForPlacesLibrary(): Promise<void> {
     const checkPlaces = () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const google = (window as any).google
-      if (google?.maps?.places?.AutocompleteService) {
+      if (google?.maps?.places?.AutocompleteService || google?.maps?.places?.AutocompleteSuggestion) {
         console.log('AddressAutocomplete: Places library ready')
         resolve()
       } else {
@@ -55,7 +55,7 @@ function loadGooglePlacesScript(apiKey: string): Promise<void> {
   return new Promise((resolve) => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const google = (window as any).google
-    if (google?.maps?.places?.AutocompleteService) {
+    if (google?.maps?.places?.AutocompleteService || google?.maps?.places?.AutocompleteSuggestion) {
       // Already loaded and ready
       resolve()
       return
@@ -115,6 +115,9 @@ export function AddressAutocomplete({
   const [highlightedIndex, setHighlightedIndex] = useState(-1)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const autocompleteServiceRef = useRef<any>(null)
+  const useNewAutocompleteRef = useRef(false)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const sessionTokenRef = useRef<any>(null)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const placesServiceRef = useRef<any>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
@@ -141,7 +144,16 @@ export function AddressAutocomplete({
       const google = (window as any).google
       console.log('AddressAutocomplete: google.maps.places available:', !!google?.maps?.places)
       if (google?.maps?.places) {
-        autocompleteServiceRef.current = new google.maps.places.AutocompleteService()
+        if (google?.maps?.places?.AutocompleteService) {
+          autocompleteServiceRef.current = new google.maps.places.AutocompleteService()
+          useNewAutocompleteRef.current = false
+        } else if (google?.maps?.places?.AutocompleteSuggestion) {
+          autocompleteServiceRef.current = null
+          useNewAutocompleteRef.current = true
+          if (google?.maps?.places?.AutocompleteSessionToken) {
+            sessionTokenRef.current = new google.maps.places.AutocompleteSessionToken()
+          }
+        }
         // Create a dummy div for PlacesService
         const dummyDiv = document.createElement('div')
         placesServiceRef.current = new google.maps.places.PlacesService(dummyDiv)
@@ -155,7 +167,51 @@ export function AddressAutocomplete({
     console.log('AddressAutocomplete: fetchPredictions called with:', input)
     console.log('AddressAutocomplete: autocompleteService available:', !!autocompleteServiceRef.current)
     
-    if (!autocompleteServiceRef.current || input.length < 2) {
+    if (input.length < 2) {
+      setPredictions([])
+      return
+    }
+
+    if (useNewAutocompleteRef.current) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const google = (window as any).google
+      const fetchFn = google?.maps?.places?.AutocompleteSuggestion?.fetchAutocompleteSuggestions
+      if (!fetchFn) {
+        console.warn('AddressAutocomplete: AutocompleteSuggestion not available')
+        setPredictions([])
+        return
+      }
+
+      if (!sessionTokenRef.current && google?.maps?.places?.AutocompleteSessionToken) {
+        sessionTokenRef.current = new google.maps.places.AutocompleteSessionToken()
+      }
+
+      fetchFn({
+        input,
+        sessionToken: sessionTokenRef.current || undefined,
+        includedRegionCodes: countries.map((country) => country.toUpperCase()),
+        types: ['address'],
+      }).then((response: any) => {
+        const suggestions = response?.suggestions || []
+        setPredictions(
+          suggestions.map((s: any) => ({
+            placeId: s?.placeId || s?.place?.id || s?.place?.placeId,
+            description: s?.text?.text || s?.placePrediction?.text?.text || s?.place?.formattedAddress || '',
+            mainText: s?.text?.primaryText || s?.placePrediction?.text?.primaryText || s?.text?.text || '',
+            secondaryText: s?.text?.secondaryText || s?.placePrediction?.text?.secondaryText || '',
+          })).filter((s: Prediction) => s.placeId)
+        )
+        setShowDropdown(true)
+        console.log('AddressAutocomplete: Showing dropdown with', suggestions.length, 'predictions')
+      }).catch((error: unknown) => {
+        console.error('AddressAutocomplete: AutocompleteSuggestion failed', error)
+        setPredictions([])
+      })
+
+      return
+    }
+
+    if (!autocompleteServiceRef.current) {
       setPredictions([])
       return
     }
@@ -260,6 +316,15 @@ export function AddressAutocomplete({
           
           // Notify parent of all components
           onAddressSelect(components)
+        }
+
+        if (useNewAutocompleteRef.current) {
+          // Reset session token after a selection
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const google = (window as any).google
+          if (google?.maps?.places?.AutocompleteSessionToken) {
+            sessionTokenRef.current = new google.maps.places.AutocompleteSessionToken()
+          }
         }
 
         setShowDropdown(false)

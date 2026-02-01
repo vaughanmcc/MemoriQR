@@ -57,7 +57,7 @@ export default defineComponent({
         replyTo: 'partners@memoriqr.co.nz',
         from_name: 'MemoriQR Partner Program',
         subject: `🎴 ${quantity} Referral Codes Generated for ${businessName}`,
-        html: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        html: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; font-size: 18px; line-height: 1.6; color: #333;">
 <div style="background: linear-gradient(135deg, #8B7355 0%, #A08060 100%); padding: 30px; text-align: center; border-radius: 8px 8px 0 0;">
 <h1 style="color: #fff; margin: 0; font-size: 24px;">🎴 Referral Codes Ready!</h1>
 <p style="color: rgba(255,255,255,0.9); margin: 10px 0 0; font-size: 14px;">Lead Generation Cards</p>
@@ -93,7 +93,7 @@ ${freeShipping ? '<li>They get <strong>free shipping</strong></li>' : ''}
 </div>
 
 <div style="background: #f5f5f0; padding: 20px; text-align: center; border-radius: 0 0 8px 8px;">
-<p style="color: #888; font-size: 12px; margin: 0;">MemoriQR Partner Program</p>
+<p style="color: #888; font-size: 14px; margin: 0;">MemoriQR Partner Program</p>
 </div>
 </div>`,
         text: `Hi ${businessName},\n\n${quantity} referral codes have been generated for your lead generation cards.\n\nDETAILS:\n- Customer Discount: ${discountPercent}%\n- Your Commission: ${commissionPercent}%\n- Free Shipping: ${freeShipping ? 'Yes' : 'No'}\n- Validity: ${expiryText}\n\nYOUR CODES:\n${codesList}${moreCodesNote}\n\nView your Partner Dashboard: ${dashboardUrl}`
@@ -126,7 +126,7 @@ ${freeShipping ? '<li>They get <strong>free shipping</strong></li>' : ''}
         replyTo: 'partners@memoriqr.co.nz',
         from_name: 'MemoriQR Partner Program',
         subject: `📥 ${quantity} Referral Code${quantity > 1 ? 's' : ''} Transferred to Your Account`,
-        html: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        html: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; font-size: 18px; line-height: 1.6; color: #333;">
 <div style="background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); padding: 30px; text-align: center; border-radius: 8px 8px 0 0;">
 <h1 style="color: #fff; margin: 0; font-size: 24px;">📥 Codes Transferred!</h1>
 <p style="color: rgba(255,255,255,0.9); margin: 10px 0 0; font-size: 14px;">From ${fromBusinessName}</p>
@@ -151,7 +151,7 @@ ${notesHtml}
 </div>
 
 <div style="background: #f5f5f0; padding: 20px; text-align: center; border-radius: 0 0 8px 8px;">
-<p style="color: #888; font-size: 12px; margin: 0;">MemoriQR Partner Program</p>
+<p style="color: #888; font-size: 14px; margin: 0;">MemoriQR Partner Program</p>
 </div>
 </div>`,
         text: `Hi ${toBusinessName},\n\n${fromBusinessName} has transferred ${quantity} referral code${quantity > 1 ? 's' : ''} to your account.${notesText}\n\nYOUR NEW CODES:\n${codesList}\n\nThese codes are now yours to use. When a customer uses one of these codes, you'll earn the commission!\n\nView your referral codes: ${dashboardUrl}`
@@ -174,7 +174,7 @@ ${notesHtml}
         replyTo: 'partners@memoriqr.co.nz',
         from_name: 'MemoriQR Partner Portal',
         subject: `✅ Your ${quantity} activation codes are ready! (${batch_number})`,
-        html: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        html: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; font-size: 18px; line-height: 1.6; color: #333;">
 <div style="background: linear-gradient(135deg, #2d5a27 0%, #3d7a35 100%); padding: 30px; text-align: center; border-radius: 8px 8px 0 0;">
 <h1 style="color: #fff; margin: 0; font-size: 24px;">✅ Your Codes Are Ready!</h1>
 </div>
@@ -204,7 +204,7 @@ ${notesHtml}
 </div>
 
 <div style="background: #f5f5f0; padding: 20px; text-align: center; border-radius: 0 0 8px 8px;">
-<p style="color: #888; font-size: 12px; margin: 0;">MemoriQR Partner Portal</p>
+<p style="color: #888; font-size: 14px; margin: 0;">MemoriQR Partner Portal</p>
 </div>
 </div>`,
         text: `Hi ${partner_name},\n\nYour batch of activation codes is ready!\n\nBatch: ${batch_number}\nCodes Generated: ${quantity}\nProduct: ${productDisplay}\nHosting: ${hosting_duration} years\n\nYOUR CODES:\n${codes_list}\n\nView all codes in the Partner Portal: ${portal_url}`
@@ -220,7 +220,7 @@ ${notesHtml}
         replyTo: 'partners@memoriqr.co.nz',
         from_name: 'MemoriQR Partner Portal',
         subject: `⚠️ ${quantity} Activation Code${quantity > 1 ? 's' : ''} Removed from Your Account`,
-        html: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        html: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; font-size: 18px; line-height: 1.6; color: #333;">
 <div style="background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%); padding: 30px; text-align: center; border-radius: 8px 8px 0 0;">
 <h1 style="color: #fff; margin: 0; font-size: 24px;">⚠️ Codes Removed</h1>
 </div>
@@ -242,7 +242,7 @@ ${notesHtml}
 </div>
 
 <div style="background: #f5f5f0; padding: 20px; text-align: center; border-radius: 0 0 8px 8px;">
-<p style="color: #888; font-size: 12px; margin: 0;">MemoriQR Partner Portal</p>
+<p style="color: #888; font-size: 14px; margin: 0;">MemoriQR Partner Portal</p>
 </div>
 </div>`,
         text: `Hi ${partner_name},\n\nThis is to inform you that ${quantity} activation code${quantity > 1 ? 's have' : ' has'} been removed from your partner account.\n\nREMOVED CODES:\n${codes_list}\n\nIf you believe this is an error, please contact our partner support team.\n\nView Partner Portal: ${portal_url}`
@@ -275,7 +275,7 @@ ${notesHtml}
         replyTo: 'partners@memoriqr.co.nz',
         from_name: 'MemoriQR Partner Portal',
         subject: `📥 ${quantity} Activation Code${quantity > 1 ? 's' : ''} Transferred to Your Account`,
-        html: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        html: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; font-size: 18px; line-height: 1.6; color: #333;">
 <div style="background: linear-gradient(135deg, #2d5a27 0%, #3d7a35 100%); padding: 30px; text-align: center; border-radius: 8px 8px 0 0;">
 <h1 style="color: #fff; margin: 0; font-size: 24px;">📥 Codes Transferred!</h1>
 <p style="color: rgba(255,255,255,0.9); margin: 10px 0 0; font-size: 14px;">From ${fromBusinessName}</p>
@@ -300,7 +300,7 @@ ${notesHtml}
 </div>
 
 <div style="background: #f5f5f0; padding: 20px; text-align: center; border-radius: 0 0 8px 8px;">
-<p style="color: #888; font-size: 12px; margin: 0;">MemoriQR Partner Portal</p>
+<p style="color: #888; font-size: 14px; margin: 0;">MemoriQR Partner Portal</p>
 </div>
 </div>`,
         text: `Hi ${toBusinessName},\n\n${fromBusinessName} has transferred ${quantity} activation code${quantity > 1 ? 's' : ''} to your account.${notesText}\n\nYOUR TRANSFERRED CODES:\n${codesList}\n\nThese codes are now available in your account. Customers can use them to activate their MemoriQR products.\n\nView your activation codes: ${dashboardUrl}`
@@ -349,7 +349,7 @@ ${notesHtml}
         replyTo: 'partners@memoriqr.co.nz',
         from_name: 'MemoriQR Partner Program',
         subject: `✅ Activation Code ${activationCode} Used - Memorial Created!`,
-        html: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        html: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; font-size: 18px; line-height: 1.6; color: #333;">
 <div style="background: linear-gradient(135deg, #059669 0%, #10b981 100%); padding: 30px; text-align: center; border-radius: 8px 8px 0 0;">
 <h1 style="color: #fff; margin: 0; font-size: 24px;">✅ Code Activated!</h1>
 <p style="color: rgba(255,255,255,0.9); margin: 10px 0 0; font-size: 14px;">A customer has created their memorial</p>
@@ -376,7 +376,7 @@ ${bankingReminderHtml}
 </div>
 
 <div style="background: #f5f5f0; padding: 20px; text-align: center; border-radius: 0 0 8px 8px;">
-<p style="color: #888; font-size: 12px; margin: 0;">MemoriQR Partner Program</p>
+<p style="color: #888; font-size: 14px; margin: 0;">MemoriQR Partner Program</p>
 </div>
 </div>`,
         text: `Hi ${businessName},\n\nGreat news! One of your activation codes has been used to create a memorial.\n\nDETAILS:\n- Activation Code: ${activationCode}\n- Memorial For: ${deceasedName}\n- Product: ${productLabel}\n- Hosting: ${hostingDuration} years${bankingReminderText}\n\nView your codes in the Partner Portal: ${dashboardUrl}`

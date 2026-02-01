@@ -66,7 +66,7 @@ export default defineComponent({
       replyTo: 'partners@memoriqr.co.nz',
       from_name: 'MemoriQR Partner Program',
       subject: `🎉 Referral Code ${referralCode} Redeemed - $${commissionAmount} Commission Earned!`,
-      html: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      html: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; font-size: 18px; line-height: 1.6; color: #333;">
 <div style="background: linear-gradient(135deg, #059669 0%, #10b981 100%); padding: 30px; text-align: center; border-radius: 8px 8px 0 0;">
 <h1 style="color: #fff; margin: 0; font-size: 28px; font-weight: 300;">MemoriQR</h1>
 <p style="color: rgba(255,255,255,0.9); margin: 10px 0 0; font-size: 14px;">Partner Program</p>
@@ -89,7 +89,7 @@ ${discountRowHtml}
 <div style="margin: 0 0 25px; background-color: #ecfdf5; border: 2px solid #10b981; border-radius: 8px; padding: 25px; text-align: center;">
 <p style="color: #059669; margin: 0 0 5px; font-size: 14px; text-transform: uppercase; letter-spacing: 1px;">Your Commission</p>
 <p style="color: #047857; font-size: 36px; font-weight: bold; margin: 0;">$${commissionAmount}</p>
-<p style="color: #6b7280; margin: 10px 0 0; font-size: 12px;">Status: Pending</p>
+<p style="color: #6b7280; margin: 10px 0 0; font-size: 14px;">Status: Pending</p>
 </div>
 
 ${bankingReminderHtml}
@@ -102,9 +102,9 @@ ${bankingReminderHtml}
 </div>
 
 <div style="background: #f5f5f0; padding: 25px 30px; text-align: center; border-radius: 0 0 8px 8px;">
-<p style="color: #888; font-size: 12px; margin: 0 0 10px;">You're receiving this because you're a MemoriQR Partner.</p>
-<p style="color: #888; font-size: 12px; margin: 0 0 10px;"><a href="${optOutUrl}" style="color: #059669; text-decoration: underline;">Unsubscribe from redemption notifications</a></p>
-<p style="color: #888; font-size: 12px; margin: 0;">© 2026 MemoriQR. All rights reserved.</p>
+<p style="color: #888; font-size: 14px; margin: 0 0 10px;">You're receiving this because you're a MemoriQR Partner.</p>
+<p style="color: #888; font-size: 14px; margin: 0 0 10px;"><a href="${optOutUrl}" style="color: #059669; text-decoration: underline;">Unsubscribe from redemption notifications</a></p>
+<p style="color: #888; font-size: 14px; margin: 0;">© 2026 MemoriQR. All rights reserved.</p>
 </div>
 </div>`,
       text: `Hi ${businessName},\n\nGreat news! One of your referral codes has just been used.\n\nDETAILS:\n- Referral Code: ${referralCode}\n- Order Number: ${orderNumber}\n- Order Total: $${orderTotal} NZD\n${discountRowText}${bankingReminderText}\nYOUR COMMISSION: $${commissionAmount}\nStatus: Pending\n\nYour commission will be added to your next payout.\n\nView your Partner Dashboard: ${dashboardUrl}\n\n---\nTo stop receiving these notifications: ${optOutUrl}\n\n© 2026 MemoriQR. All rights reserved.`

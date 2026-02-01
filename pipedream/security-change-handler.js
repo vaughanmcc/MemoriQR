@@ -52,7 +52,7 @@ export default defineComponent({
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Security Alert - Account Change</title>
 </head>
-<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f4f4f5;">
+<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f4f4f5; font-size: 18px; line-height: 1.6; color: #333;">
   <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: #f4f4f5;">
     <tr>
       <td align="center" style="padding: 40px 20px;">
@@ -70,11 +70,11 @@ export default defineComponent({
           <!-- Body -->
           <tr>
             <td style="padding: 40px 30px;">
-              <p style="color: #374151; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
+              <p style="color: #374151; font-size: 18px; line-height: 1.6; margin: 0 0 20px 0;">
                 Hi ${partner_name},
               </p>
               
-              <p style="color: #374151; font-size: 16px; line-height: 1.6; margin: 0 0 30px 0;">
+              <p style="color: #374151; font-size: 18px; line-height: 1.6; margin: 0 0 30px 0;">
                 We're writing to let you know that your <strong>${changeLabel}</strong> was recently changed on your MemoriQR Partner account.
               </p>
               
@@ -82,22 +82,22 @@ export default defineComponent({
               <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin: 0 0 30px 0;">
                 <tr>
                   <td style="background-color: #fef2f2; border: 2px solid #fecaca; border-radius: 12px; padding: 25px;">
-                    <div style="color: #991b1b; font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 15px;">
+                    <div style="color: #991b1b; font-size: 16px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 15px;">
                       Change Details
                     </div>
                     <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
                       <tr>
-                        <td style="color: #6b7280; font-size: 14px; padding: 5px 0;">What changed:</td>
-                        <td style="color: #111827; font-size: 14px; font-weight: 600; padding: 5px 0;">${change_description}</td>
+                        <td style="color: #6b7280; font-size: 16px; padding: 5px 0;">What changed:</td>
+                        <td style="color: #111827; font-size: 16px; font-weight: 600; padding: 5px 0;">${change_description}</td>
                       </tr>
                       <tr>
-                        <td style="color: #6b7280; font-size: 14px; padding: 5px 0;">When:</td>
-                        <td style="color: #111827; font-size: 14px; font-weight: 600; padding: 5px 0;">${formattedDate}</td>
+                        <td style="color: #6b7280; font-size: 16px; padding: 5px 0;">When:</td>
+                        <td style="color: #111827; font-size: 16px; font-weight: 600; padding: 5px 0;">${formattedDate}</td>
                       </tr>
                       ${ip_address ? `
                       <tr>
-                        <td style="color: #6b7280; font-size: 14px; padding: 5px 0;">IP Address:</td>
-                        <td style="color: #111827; font-size: 14px; font-weight: 600; padding: 5px 0;">${ip_address}</td>
+                        <td style="color: #6b7280; font-size: 16px; padding: 5px 0;">IP Address:</td>
+                        <td style="color: #111827; font-size: 16px; font-weight: 600; padding: 5px 0;">${ip_address}</td>
                       </tr>
                       ` : ''}
                     </table>
@@ -105,11 +105,11 @@ export default defineComponent({
                 </tr>
               </table>
               
-              <p style="color: #374151; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
+              <p style="color: #374151; font-size: 18px; line-height: 1.6; margin: 0 0 20px 0;">
                 <strong>If you made this change:</strong> No action is needed. You can safely ignore this email.
               </p>
               
-              <p style="color: #374151; font-size: 16px; line-height: 1.6; margin: 0 0 30px 0;">
+              <p style="color: #374151; font-size: 18px; line-height: 1.6; margin: 0 0 30px 0;">
                 <strong>If you didn't make this change:</strong> Please contact us immediately at <a href="mailto:support@memoriqr.co.nz" style="color: #dc2626; font-weight: 600;">support@memoriqr.co.nz</a> to secure your account.
               </p>
               
@@ -117,7 +117,7 @@ export default defineComponent({
               <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin: 0 0 30px 0;">
                 <tr>
                   <td style="background-color: #fffbeb; border-left: 4px solid #f59e0b; padding: 15px 20px;">
-                    <p style="color: #92400e; font-size: 14px; line-height: 1.5; margin: 0;">
+                    <p style="color: #92400e; font-size: 16px; line-height: 1.5; margin: 0;">
                       <strong>⚠️ Important:</strong> MemoriQR will never ask for your password or full bank account details via email. If you receive a suspicious request, please report it to us.
                     </p>
                   </td>
@@ -129,7 +129,7 @@ export default defineComponent({
           <!-- Footer -->
           <tr>
             <td style="background-color: #f9fafb; padding: 25px 30px; border-top: 1px solid #e5e7eb;">
-              <p style="color: #6b7280; font-size: 13px; line-height: 1.5; margin: 0; text-align: center;">
+              <p style="color: #6b7280; font-size: 15px; line-height: 1.5; margin: 0; text-align: center;">
                 This is an automated security notification.<br>
                 Contact us at <a href="mailto:support@memoriqr.co.nz" style="color: #059669;">support@memoriqr.co.nz</a> if you have any concerns.
               </p>
@@ -142,7 +142,7 @@ export default defineComponent({
         <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width: 600px;">
           <tr>
             <td style="padding: 20px; text-align: center;">
-              <p style="color: #9ca3af; font-size: 12px; margin: 0;">
+              <p style="color: #9ca3af; font-size: 14px; margin: 0;">
                 © ${new Date().getFullYear()} MemoriQR. All rights reserved.
               </p>
             </td>

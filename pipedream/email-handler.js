@@ -85,7 +85,7 @@ export default defineComponent({
       const surfacePrepSection = surface_preparation_note ? `
 <div style="background: #fff3cd; border-left: 4px solid #f0ad4e; padding: 20px; margin: 25px 0; border-radius: 4px;">
 <h3 style="color: #856404; margin: 0 0 10px; font-size: 16px;">📋 Important: Surface Preparation</h3>
-<p style="color: #856404; margin: 0; line-height: 1.6; font-size: 14px;">${surface_preparation_note}</p>
+<p style="color: #856404; margin: 0; line-height: 1.6; font-size: 16px;">${surface_preparation_note}</p>
 </div>` : '';
 
       const surfacePrepText = surface_preparation_note ? `\n\nIMPORTANT: SURFACE PREPARATION\n${surface_preparation_note}\n` : '';
@@ -95,7 +95,7 @@ export default defineComponent({
         replyTo: reply_to || 'memoriqr.global@gmail.com',
         from_name: sender_name || 'MemoriQR',
         subject: `Your MemoriQR order ${order_number} is confirmed`,
-        html: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        html: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; font-size: 18px; line-height: 1.6; color: #333;">
 <div style="background: linear-gradient(135deg, #8B7355 0%, #A08060 100%); padding: 30px; text-align: center;">
 <h1 style="color: #fff; margin: 0; font-size: 28px; font-weight: 300;">MemoriQR</h1>
 </div>
@@ -115,10 +115,10 @@ ${surfacePrepSection}
 <a href="${activation_url}" style="display: inline-block; background: linear-gradient(135deg, #8B7355 0%, #A08060 100%); color: #fff; text-decoration: none; padding: 15px 40px; border-radius: 8px; font-size: 16px;">Activate Your Memorial</a>
 </div>
 
-<p style="color: #777; font-size: 14px;">Once your physical product arrives, you can use the activation code printed on it, or click the button above to set up your memorial page now.</p>
+<p style="color: #777; font-size: 16px;">Once your physical product arrives, you can use the activation code printed on it, or click the button above to set up your memorial page now.</p>
 </div>
 <div style="background: #f5f5f0; padding: 20px; text-align: center;">
-<p style="color: #888; font-size: 12px; margin: 0;">© 2026 MemoriQR - Preserving Memories Forever</p>
+<p style="color: #888; font-size: 14px; margin: 0;">© 2026 MemoriQR - Preserving Memories Forever</p>
 </div>
 </div>`,
         text: `Thank you for your order, ${customer_name}!\n\nOrder: ${order_number}\nMemorial for: ${deceased_name}\nProduct: ${productDisplay}\nHosting: ${hosting_duration} years${surfacePrepText}\n\nActivate your memorial: ${activation_url}`
@@ -177,7 +177,7 @@ ${surfacePrepSection}
         replyTo: customer_email,
         from_name: 'MemoriQR Orders',
         subject: `📦 New Order ${order_number} - ${productDisplay} for ${deceased_name}`,
-        html: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        html: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; font-size: 18px; line-height: 1.6; color: #333;">
 <div style="background: linear-gradient(135deg, #2d5a27 0%, #3d7a35 100%); padding: 20px; text-align: center; border-radius: 8px 8px 0 0;">
 <h1 style="color: #fff; margin: 0;">📦 New Order Received</h1>
 <p style="color: rgba(255,255,255,0.9); margin: 10px 0 0; font-size: 18px; font-weight: bold;">${order_number}</p>
@@ -204,7 +204,7 @@ ${surfacePrepSection}
 ${qr_code_url ? `<div style="border: 1px solid #ddd; border-radius: 8px; padding: 15px; text-align: center; margin-bottom: 20px;">
 <p style="margin: 0 0 10px; font-weight: bold;">QR Code for Plate</p>
 <img src="${qr_code_url}" alt="QR Code" style="width: 150px; height: 150px;">
-<p style="margin: 10px 0 0;"><a href="${qr_code_url}" style="color: #8B7355; font-size: 13px;">Download QR Code</a></p>
+<p style="margin: 10px 0 0;"><a href="${qr_code_url}" style="color: #8B7355; font-size: 15px;">Download QR Code</a></p>
 </div>` : ''}
 
 <table style="width: 100%; margin-bottom: 20px;">
@@ -234,7 +234,7 @@ ${qr_code_url ? `<div style="border: 1px solid #ddd; border-radius: 8px; padding
 
 </div>
 <div style="background: #f9f7f4; padding: 15px; text-align: center; border: 1px solid #ddd; border-top: none; border-radius: 0 0 8px 8px;">
-<p style="color: #888; font-size: 12px; margin: 0;">Internal order notification</p>
+<p style="color: #888; font-size: 14px; margin: 0;">Internal order notification</p>
 </div>
 </div>`,
         text: `NEW ORDER: ${order_number}\n\nPRODUCT: ${productDisplay}\nHOSTING: ${hosting_duration} years\nAMOUNT: $${amount_paid} ${currency}\nMEMORIAL FOR: ${deceased_name}\n\nFULFILLMENT DETAILS:\nNFC URL: ${nfc_url}\nMemorial Page: ${memorial_url}\nQR Code: ${qr_code_url || 'N/A'}\n\nCUSTOMER:\n${customer_name}\n${customer_email}\n\nSHIP TO:\n${shippingText}\n\nACTION CHECKLIST:\n- Program NFC tag with URL: ${nfc_url}\n- Print QR code for plate (if applicable)\n- Pack and ship`
@@ -294,7 +294,7 @@ ${qr_code_url ? `<div style="border: 1px solid #ddd; border-radius: 8px; padding
         replyTo: customer_email,
         from_name: 'MemoriQR Retail',
         subject: `🎫 Retail Activation: ${productDisplay} for ${deceased_name}`,
-        html: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        html: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; font-size: 18px; line-height: 1.6; color: #333;">
 <div style="background: linear-gradient(135deg, #6B46C1 0%, #805AD5 100%); padding: 20px; text-align: center; border-radius: 8px 8px 0 0;">
 <h1 style="color: #fff; margin: 0;">🎫 Retail Scratch Card Activated</h1>
 <p style="color: rgba(255,255,255,0.9); margin: 10px 0 0; font-size: 14px;">Customer activated their memorial - product ready to ship!</p>
@@ -313,7 +313,7 @@ ${qr_code_url ? `<div style="border: 1px solid #ddd; border-radius: 8px; padding
 <tr><td style="padding: 10px; border: 1px solid #eee;">Product</td><td style="padding: 10px; border: 1px solid #eee; font-weight: 500;">${productDisplay}</td></tr>
 <tr><td style="padding: 10px; border: 1px solid #eee;">Hosting</td><td style="padding: 10px; border: 1px solid #eee;">${hosting_duration} years</td></tr>
 <tr><td style="padding: 10px; border: 1px solid #eee;">Memorial For</td><td style="padding: 10px; border: 1px solid #eee; font-weight: 500;">${deceased_name}</td></tr>
-${partner_id ? `<tr><td style="padding: 10px; border: 1px solid #eee;">Partner ID</td><td style="padding: 10px; border: 1px solid #eee; font-family: monospace; font-size: 12px;">${partner_id}</td></tr>` : ''}
+${partner_id ? `<tr><td style="padding: 10px; border: 1px solid #eee;">Partner ID</td><td style="padding: 10px; border: 1px solid #eee; font-family: monospace; font-size: 14px;">${partner_id}</td></tr>` : ''}
 </table>
 
 <div style="background: #6B46C1; color: #fff; padding: 12px; font-weight: bold; border-radius: 8px 8px 0 0;">⚙️ Fulfillment Details</div>
@@ -327,7 +327,7 @@ ${partner_id ? `<tr><td style="padding: 10px; border: 1px solid #eee;">Partner I
 ${qr_code_url ? `<div style="border: 1px solid #ddd; border-radius: 8px; padding: 15px; text-align: center; margin-bottom: 20px;">
 <p style="margin: 0 0 10px; font-weight: bold;">QR Code for Plate</p>
 <img src="${qr_code_url}" alt="QR Code" style="width: 150px; height: 150px;">
-<p style="margin: 10px 0 0;"><a href="${qr_code_url}" style="color: #6B46C1; font-size: 13px;">Download QR Code</a></p>
+<p style="margin: 10px 0 0;"><a href="${qr_code_url}" style="color: #6B46C1; font-size: 15px;">Download QR Code</a></p>
 </div>` : ''}
 
 <table style="width: 100%; margin-bottom: 20px;">
@@ -357,7 +357,7 @@ ${qr_code_url ? `<div style="border: 1px solid #ddd; border-radius: 8px; padding
 
 </div>
 <div style="background: #f9f7f4; padding: 15px; text-align: center; border: 1px solid #ddd; border-top: none; border-radius: 0 0 8px 8px;">
-<p style="color: #888; font-size: 12px; margin: 0;">Retail activation fulfillment notification</p>
+<p style="color: #888; font-size: 14px; margin: 0;">Retail activation fulfillment notification</p>
 </div>
 </div>`,
         text: `RETAIL SCRATCH CARD ACTIVATED\n\nACTIVATION CODE: ${activation_code}\nPRODUCT: ${productDisplay}\nHOSTING: ${hosting_duration} years\nMEMORIAL FOR: ${deceased_name}\n${partner_id ? `PARTNER ID: ${partner_id}\n` : ''}\nMEMORIAL IS LIVE:\n${memorial_url}\n\nFULFILLMENT DETAILS:\nNFC URL: ${nfc_url}\nQR Code: ${qr_code_url || 'N/A'}\n\nCUSTOMER:\n${customer_name || shipping_name}\n${customer_email}\n\nSHIP TO:\n${shippingText}\n\nACTION CHECKLIST:\n- Program NFC tag with URL: ${nfc_url}\n- Print QR code for plate (if applicable)\n- Pack and ship`
@@ -380,10 +380,10 @@ ${qr_code_url ? `<div style="border: 1px solid #ddd; border-radius: 8px; padding
         replyTo: reply_to || 'memoriqr.global@gmail.com',
         from_name: sender_name || 'MemoriQR',
         subject: `Your memorial for ${memorialName} is now live 🕊️`,
-        html: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        html: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; font-size: 18px; line-height: 1.6; color: #333;">
 <div style="background: linear-gradient(135deg, #8B7355 0%, #A08060 100%); padding: 30px; text-align: center;">
 <h1 style="color: #fff; margin: 0; font-size: 28px; font-weight: 300;">MemoriQR</h1>
-<p style="color: rgba(255,255,255,0.9); margin: 10px 0 0; font-size: 14px;">Preserving Memories Forever</p>
+<p style="color: rgba(255,255,255,0.9); margin: 10px 0 0; font-size: 16px;">Preserving Memories Forever</p>
 </div>
 
 <div style="padding: 30px; background: #fff;">
@@ -392,18 +392,18 @@ ${qr_code_url ? `<div style="border: 1px solid #ddd; border-radius: 8px; padding
 <p style="color: #555; line-height: 1.6;">We're honoured to let you know that the memorial page for <strong>${memorialName}</strong> has been successfully created and is now live.</p>
 
 <div style="background: #f9f7f4; border-left: 4px solid #8B7355; padding: 20px; margin: 20px 0;">
-<p style="color: #666; margin: 0 0 10px; font-size: 13px; text-transform: uppercase; letter-spacing: 1px;">Memorial Page</p>
+<p style="color: #666; margin: 0 0 10px; font-size: 15px; text-transform: uppercase; letter-spacing: 1px;">Memorial Page</p>
 <table style="width: 100%; border-collapse: collapse;">
 <tr>
 <td style="padding: 0;">
 <a href="${memorialUrl}" style="color: #8B7355; font-size: 16px; text-decoration: none; word-break: break-all;">${memorialUrl}</a>
 </td>
 <td style="width: 80px; text-align: right; vertical-align: middle;">
-<a href="${memorialUrl}" onclick="navigator.clipboard.writeText('${memorialUrl}'); return false;" style="display: inline-block; background: #8B7355; color: #fff; text-decoration: none; padding: 8px 12px; border-radius: 4px; font-size: 12px; font-weight: bold;">📋 Copy</a>
+<a href="${memorialUrl}" onclick="navigator.clipboard.writeText('${memorialUrl}'); return false;" style="display: inline-block; background: #8B7355; color: #fff; text-decoration: none; padding: 8px 12px; border-radius: 4px; font-size: 14px; font-weight: bold;">📋 Copy</a>
 </td>
 </tr>
 </table>
-<p style="color: #888; font-size: 13px; margin: 12px 0 0; font-style: italic;">💝 Share this link with family and friends so they can visit the digital memorial.</p>
+<p style="color: #888; font-size: 15px; margin: 12px 0 0; font-style: italic;">💝 Share this link with family and friends so they can visit the digital memorial.</p>
 </div>
 
 <div style="text-align: center; margin: 25px 0;">
@@ -414,12 +414,12 @@ ${qr_code_url ? `<div style="border: 1px solid #ddd; border-radius: 8px; padding
 <h3 style="color: #333; margin: 0 0 15px; font-size: 18px;">📦 Your ${years}-Year Package Includes</h3>
 <table style="width: 100%;">
 <tr>
-<td style="padding: 8px 0; color: #555; font-size: 14px;"><span style="color: #5A7F5A;">✓</span> ${photos} curated photos</td>
-<td style="padding: 8px 0; color: #555; font-size: 14px;"><span style="color: #5A7F5A;">✓</span> ${videos} videos</td>
+<td style="padding: 8px 0; color: #555; font-size: 16px;"><span style="color: #5A7F5A;">✓</span> ${photos} curated photos</td>
+<td style="padding: 8px 0; color: #555; font-size: 16px;"><span style="color: #5A7F5A;">✓</span> ${videos} videos</td>
 </tr>
 <tr>
-<td style="padding: 8px 0; color: #555; font-size: 14px;"><span style="color: #5A7F5A;">✓</span> ${themes} memorial themes</td>
-<td style="padding: 8px 0; color: #555; font-size: 14px;"><span style="color: #5A7F5A;">✓</span> ${frames} photo frames</td>
+<td style="padding: 8px 0; color: #555; font-size: 16px;"><span style="color: #5A7F5A;">✓</span> ${themes} memorial themes</td>
+<td style="padding: 8px 0; color: #555; font-size: 16px;"><span style="color: #5A7F5A;">✓</span> ${frames} photo frames</td>
 </tr>
 </table>
 </div>
@@ -427,23 +427,23 @@ ${qr_code_url ? `<div style="border: 1px solid #ddd; border-radius: 8px; padding
 <div style="border: 1px solid #e5e5e5; border-radius: 8px; padding: 25px; text-align: center; margin: 25px 0;">
 <h3 style="color: #333; margin: 0 0 15px;">Your QR Code</h3>
 <img src="${qrCodeUrl}" alt="QR Code for ${memorialName}" style="width: 180px; height: 180px; margin: 0 auto 15px; display: block;">
-<p style="color: #777; font-size: 13px; margin: 0 0 15px;">Scan this QR code with any smartphone camera<br>to visit the memorial page instantly.</p>
-<a href="${qrCodeUrl}" style="color: #8B7355; font-size: 14px;">Download QR Code</a>
+<p style="color: #777; font-size: 15px; margin: 0 0 15px;">Scan this QR code with any smartphone camera<br>to visit the memorial page instantly.</p>
+<a href="${qrCodeUrl}" style="color: #8B7355; font-size: 16px;">Download QR Code</a>
 </div>
 
 <div style="background: #fefcf9; padding: 25px; border-radius: 8px; margin: 25px 0;">
 <h3 style="color: #333; margin: 0 0 12px;">✏️ Need to Make Changes?</h3>
-<p style="color: #555; line-height: 1.6; margin: 0 0 15px; font-size: 14px;">You can update photos, change the theme, add videos, or edit text at any time using your private edit link:</p>
-<a href="${editUrl}" style="display: inline-block; background-color: #fff; border: 2px solid #8B7355; color: #8B7355; text-decoration: none; padding: 12px 30px; border-radius: 6px; font-size: 14px;">Edit Memorial</a>
-<p style="color: #999; font-size: 12px; margin: 15px 0 0;">⚠️ Keep this link private - anyone with it can edit the memorial.</p>
+<p style="color: #555; line-height: 1.6; margin: 0 0 15px; font-size: 16px;">You can update photos, change the theme, add videos, or edit text at any time using your private edit link:</p>
+<a href="${editUrl}" style="display: inline-block; background-color: #fff; border: 2px solid #8B7355; color: #8B7355; text-decoration: none; padding: 12px 30px; border-radius: 6px; font-size: 16px;">Edit Memorial</a>
+<p style="color: #999; font-size: 14px; margin: 15px 0 0;">⚠️ Keep this link private - anyone with it can edit the memorial.</p>
 </div>
 
 <p style="color: #555; line-height: 1.6;">If you have any questions, just reply to this email and we'll be happy to help.</p>
 </div>
 
 <div style="background: #f5f5f0; padding: 25px; text-align: center;">
-<p style="color: #888; font-size: 13px; margin: 0 0 10px;">With deepest sympathy,<br><strong style="color: #8B7355;">The MemoriQR Team</strong></p>
-<p style="color: #aaa; font-size: 12px; margin: 0;"><a href="https://memoriqr.co.nz" style="color: #8B7355; text-decoration: none;">memoriqr.co.nz</a></p>
+<p style="color: #888; font-size: 15px; margin: 0 0 10px;">With deepest sympathy,<br><strong style="color: #8B7355;">The MemoriQR Team</strong></p>
+<p style="color: #aaa; font-size: 14px; margin: 0;"><a href="https://memoriqr.co.nz" style="color: #8B7355; text-decoration: none;">memoriqr.co.nz</a></p>
 </div>
 </div>`,
         text: `Your Memorial for ${memorialName} is Now Live!
@@ -491,7 +491,7 @@ memoriqr.co.nz`
         replyTo: reply_to || 'memoriqr.global@gmail.com',
         from_name: sender_name || 'MemoriQR',
         subject: `Your MemoriQR Verification Code: ${verification_code}`,
-        html: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        html: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; font-size: 18px; line-height: 1.6; color: #333;">
 <h2 style="color: #8B7355;">Your Verification Code 🔐</h2>
 <p>Hi ${customer_name},</p>
 <p>You requested to edit the memorial for <strong>${deceased_name}</strong>.</p>
@@ -502,7 +502,7 @@ memoriqr.co.nz`
 <p style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px;">
 ⏰ This code expires in <strong>${expires_in}</strong> (at ${expires_at})
 </p>
-<p style="color: #777; font-size: 14px;">If you didn't request this code, please ignore this email.</p>
+<p style="color: #777; font-size: 16px;">If you didn't request this code, please ignore this email.</p>
 </div>`,
         text: `Hi ${customer_name},\n\nYour verification code to edit the memorial for ${deceased_name} is:\n\n    ${verification_code}\n\nThis code expires in ${expires_in} (at ${expires_at}).\n\nIf you didn't request this code, please ignore this email.`
       };
@@ -522,7 +522,7 @@ memoriqr.co.nz`
         replyTo: 'partners@memoriqr.co.nz',
         from_name: 'MemoriQR Partner Portal',
         subject: `Your Partner Login Code: ${login_code}`,
-        html: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        html: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; font-size: 18px; line-height: 1.6; color: #333;">
 <div style="background: linear-gradient(135deg, #2d5a27 0%, #3d7a35 100%); padding: 30px; text-align: center; border-radius: 8px 8px 0 0;">
 <h1 style="color: #fff; margin: 0; font-size: 24px;">🔐 Partner Portal Login</h1>
 </div>
@@ -531,7 +531,7 @@ memoriqr.co.nz`
 <p style="color: #555; line-height: 1.6;">Use this code to log in to your MemoriQR Partner Portal:</p>
 
 <div style="background: #f5f5f0; border: 2px dashed #2d5a27; padding: 30px; text-align: center; margin: 25px 0; border-radius: 8px;">
-<p style="margin: 0 0 10px; color: #666; font-size: 14px;">Your Login Code</p>
+<p style="margin: 0 0 10px; color: #666; font-size: 16px;">Your Login Code</p>
 <p style="font-size: 42px; font-weight: bold; letter-spacing: 10px; margin: 0; font-family: monospace; color: #2d5a27;">${login_code}</p>
 </div>
 
@@ -539,10 +539,10 @@ memoriqr.co.nz`
 ⏰ This code expires in <strong>${expires_in}</strong>
 </p>
 
-<p style="color: #777; font-size: 14px; margin-top: 20px;">If you didn't request this code, please ignore this email or contact us if you have concerns.</p>
+<p style="color: #777; font-size: 16px; margin-top: 20px;">If you didn't request this code, please ignore this email or contact us if you have concerns.</p>
 </div>
 <div style="background: #f5f5f0; padding: 20px; text-align: center; border-radius: 0 0 8px 8px;">
-<p style="color: #888; font-size: 12px; margin: 0;">MemoriQR Partner Portal</p>
+<p style="color: #888; font-size: 14px; margin: 0;">MemoriQR Partner Portal</p>
 </div>
 </div>`,
         text: `Hi ${greeting},\n\nYour MemoriQR Partner Portal login code is:\n\n    ${login_code}\n\nThis code expires in ${expires_in}.\n\nIf you didn't request this code, please ignore this email.`
@@ -560,7 +560,7 @@ memoriqr.co.nz`
         replyTo: partner_email,
         from_name: 'MemoriQR Partner Portal',
         subject: `📦 New Code Request: ${quantity}x ${productDisplay} from ${partner_name}`,
-        html: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        html: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; font-size: 18px; line-height: 1.6; color: #333;">
 <div style="background: linear-gradient(135deg, #8B7355 0%, #A08060 100%); padding: 20px; text-align: center; border-radius: 8px 8px 0 0;">
 <h1 style="color: #fff; margin: 0;">📦 New Partner Code Request</h1>
 </div>
@@ -592,7 +592,7 @@ ${notes ? `<div style="background: #f9f7f4; padding: 15px; border-radius: 8px; m
 
 </div>
 <div style="background: #f9f7f4; padding: 15px; text-align: center; border: 1px solid #ddd; border-top: none; border-radius: 0 0 8px 8px;">
-<p style="color: #888; font-size: 12px; margin: 0;">Partner Portal Admin Notification</p>
+<p style="color: #888; font-size: 14px; margin: 0;">Partner Portal Admin Notification</p>
 </div>
 </div>`,
         text: `NEW PARTNER CODE REQUEST\n\nBatch: ${batch_number}\nPartner: ${partner_name} (${partner_email})\nQuantity: ${quantity} codes\nProduct: ${productDisplay}\nHosting: ${hosting_duration} years\nUnit Cost: $${unit_cost.toFixed(2)} NZD\nTotal: $${total_cost.toFixed(2)} NZD\n${notes ? `\nNotes: ${notes}` : ''}\n\nACTIONS:\n1. Approve batch request\n2. Generate codes via admin API\n3. Partner will be notified`
@@ -610,7 +610,7 @@ ${notes ? `<div style="background: #f9f7f4; padding: 15px; border-radius: 8px; m
         replyTo: 'partners@memoriqr.co.nz',
         from_name: 'MemoriQR Partner Portal',
         subject: `✅ Your ${quantity} activation codes are ready! (${batch_number})`,
-        html: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        html: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; font-size: 18px; line-height: 1.6; color: #333;">
 <div style="background: linear-gradient(135deg, #2d5a27 0%, #3d7a35 100%); padding: 30px; text-align: center; border-radius: 8px 8px 0 0;">
 <h1 style="color: #fff; margin: 0; font-size: 24px;">✅ Your Codes Are Ready!</h1>
 </div>
@@ -633,14 +633,14 @@ ${notes ? `<div style="background: #f9f7f4; padding: 15px; border-radius: 8px; m
 
 <div style="background: #f9f7f4; padding: 20px; border-radius: 8px; margin: 20px 0;">
 <p style="font-weight: bold; margin: 0 0 10px;">Your Activation Codes:</p>
-<pre style="background: #fff; border: 1px solid #ddd; padding: 15px; border-radius: 4px; font-family: monospace; font-size: 14px; white-space: pre-wrap; word-break: break-all; margin: 0;">${codes_list}</pre>
+<pre style="background: #fff; border: 1px solid #ddd; padding: 15px; border-radius: 4px; font-family: monospace; font-size: 16px; white-space: pre-wrap; word-break: break-all; margin: 0;">${codes_list}</pre>
 </div>
 
-<p style="color: #777; font-size: 14px;">You can also download all codes as a CSV from the Partner Portal. Each code can be used by one customer to activate their memorial.</p>
+<p style="color: #777; font-size: 16px;">You can also download all codes as a CSV from the Partner Portal. Each code can be used by one customer to activate their memorial.</p>
 </div>
 
 <div style="background: #f5f5f0; padding: 20px; text-align: center; border-radius: 0 0 8px 8px;">
-<p style="color: #888; font-size: 12px; margin: 0;">MemoriQR Partner Portal</p>
+<p style="color: #888; font-size: 14px; margin: 0;">MemoriQR Partner Portal</p>
 </div>
 </div>`,
         text: `Hi ${partner_name},\n\nYour batch of activation codes is ready!\n\nBatch: ${batch_number}\nCodes Generated: ${quantity}\nProduct: ${productDisplay}\nHosting: ${hosting_duration} years\n\nYOUR CODES:\n${codes_list}\n\nView all codes in the Partner Portal: ${portal_url}`
@@ -672,7 +672,7 @@ ${notes ? `<div style="background: #f9f7f4; padding: 15px; border-radius: 8px; m
         replyTo: email,
         from_name: 'MemoriQR Partner Portal',
         subject: `🆕 New Partner Application: ${businessName}`,
-        html: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        html: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; font-size: 18px; line-height: 1.6; color: #333;">
 <div style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); padding: 30px; text-align: center; border-radius: 8px 8px 0 0;">
 <h1 style="color: #fff; margin: 0; font-size: 24px;">🆕 New Partner Application</h1>
 </div>
@@ -714,7 +714,7 @@ ${message ? `<div style="background: #f9f7f4; padding: 15px; border-radius: 8px;
 </div>
 
 <div style="background: #f5f5f0; padding: 20px; text-align: center; border-radius: 0 0 8px 8px;">
-<p style="color: #888; font-size: 12px; margin: 0;">MemoriQR Admin Notification</p>
+<p style="color: #888; font-size: 14px; margin: 0;">MemoriQR Admin Notification</p>
 </div>
 </div>`,
         text: `New Partner Application\n\nBusiness: ${businessName}\nType: ${businessTypeLabels[businessType] || businessType}\nContact: ${contactName}\nEmail: ${email}\nPhone: ${phone || 'Not provided'}\n\nExpected Monthly Sales:\n- QR Plates: ${expectedQrSales || 'Not specified'}\n- NFC Tags: ${expectedNfcSales || 'Not specified'}\n${message ? `\nMessage: ${message}\n` : ''}\n\nReview pending applications: ${baseUrl}/admin/partners?status=pending`
@@ -753,7 +753,7 @@ ${message ? `<div style="background: #f9f7f4; padding: 15px; border-radius: 8px;
 </div>
 
 <div style="background: #f5f5f0; padding: 20px; text-align: center; border-radius: 0 0 8px 8px;">
-<p style="color: #888; font-size: 12px; margin: 0;">MemoriQR Partner Program</p>
+<p style="color: #888; font-size: 14px; margin: 0;">MemoriQR Partner Program</p>
 </div>
 </div>`,
         text: `Hi ${contactName},\n\nThank you for your interest in becoming a MemoriQR partner! We've received your application for ${businessName}.\n\nWhat happens next?\nOur team will review your application within 1-2 business days. You'll receive an email once a decision has been made.\n\nIn the meantime, if you have any questions about our partner program, feel free to reply to this email.\n\nWe look forward to potentially working with you!\n\nWarm regards,\nThe MemoriQR Team`
@@ -805,7 +805,7 @@ ${message ? `<div style="background: #f9f7f4; padding: 15px; border-radius: 8px;
 </div>
 
 <div style="background: #f5f5f0; padding: 20px; text-align: center; border-radius: 0 0 8px 8px;">
-<p style="color: #888; font-size: 12px; margin: 0;">MemoriQR Partner Program</p>
+<p style="color: #888; font-size: 14px; margin: 0;">MemoriQR Partner Program</p>
 </div>
 </div>`,
         text: `Hi ${contactName},\n\nGreat news! Your partner application for ${businessName} has been approved. Welcome to the MemoriQR partner family!\n\nYour Partner Portal is Ready:\n${loginUrl}\n\n⚡ IMPORTANT: Complete Your Profile\nBefore you can receive commission payouts, please log in and add your business address and banking details in your Account Settings.\n\nWhat you can do:\n- View your dashboard with activation statistics\n- Request batches of activation codes at wholesale prices\n- Track commissions on customer activations\n- Download marketing materials for your business\n- Add your business address and bank details in Settings\n\nIf you have any questions about getting started, just reply to this email and we'll be happy to help.\n\nWelcome aboard!\nThe MemoriQR Team`
@@ -841,7 +841,7 @@ ${message ? `<div style="background: #f9f7f4; padding: 15px; border-radius: 8px;
 </div>
 
 <div style="background: #f5f5f0; padding: 20px; text-align: center; border-radius: 0 0 8px 8px;">
-<p style="color: #888; font-size: 12px; margin: 0;">MemoriQR Partner Program</p>
+<p style="color: #888; font-size: 14px; margin: 0;">MemoriQR Partner Program</p>
 </div>
 </div>`,
         text: `Hi ${contactName},\n\nThank you for your interest in becoming a MemoriQR partner. After reviewing your application for ${businessName}, we've decided not to proceed at this time.\n\nThis decision may be based on factors such as market coverage, business alignment, or current partner capacity in your area.\n\nWe appreciate you taking the time to apply, and we encourage you to reapply in the future if your circumstances change.\n\nIf you have any questions, please don't hesitate to reach out.\n\nBest regards,\nThe MemoriQR Team`
@@ -887,7 +887,7 @@ ${message ? `<div style="background: #f9f7f4; padding: 15px; border-radius: 8px;
 </div>
 
 <div style="background: #f5f5f0; padding: 20px; text-align: center; border-radius: 0 0 8px 8px;">
-<p style="color: #888; font-size: 12px; margin: 0;">MemoriQR Partner Program</p>
+<p style="color: #888; font-size: 14px; margin: 0;">MemoriQR Partner Program</p>
 </div>
 </div>`,
         text: `Hi ${contactName},\n\nGreat news! Your partner account for ${businessName} has been reactivated. We're glad to have you back in the MemoriQR partner family!\n\nYour Partner Portal is Ready:\n${loginUrl}\n\nWhat you can do:\n- View your dashboard with activation statistics\n- Request batches of activation codes at wholesale prices\n- Track commissions on customer activations\n- Download marketing materials for your business\n\nIf you have any questions, just reply to this email and we'll be happy to help.\n\nWelcome back!\nThe MemoriQR Team`
@@ -953,7 +953,7 @@ ${changesList}
 </div>
 
 <div style="background: #f5f5f0; padding: 20px; text-align: center; border-radius: 0 0 8px 8px;">
-<p style="color: #888; font-size: 12px; margin: 0;">MemoriQR Partner Program</p>
+<p style="color: #888; font-size: 14px; margin: 0;">MemoriQR Partner Program</p>
 </div>
 </div>`,
         text: `Hi ${contactName},\n\nWe're writing to let you know that your partner terms for ${businessName} have been updated.\n\nCHANGES:\n${changesText}\nThese changes are effective immediately and will apply to all future orders and commissions.\n\nView your Partner Portal: ${portalUrl}\n\nIf you have any questions about these changes, please reply to this email and we'll be happy to discuss.\n\nBest regards,\nThe MemoriQR Team`
@@ -991,7 +991,7 @@ ${changesList}
 <p style="color: #555; line-height: 1.6;">Great news! Your commission payout has been processed and the funds are on their way to you.</p>
 
 <div style="background: #ecfdf5; border: 2px solid #10b981; padding: 20px; border-radius: 8px; margin: 20px 0; text-align: center;">
-<p style="color: #059669; font-size: 14px; margin: 0 0 5px 0;">PAYOUT AMOUNT</p>
+<p style="color: #059669; font-size: 16px; margin: 0 0 5px 0;">PAYOUT AMOUNT</p>
 <p style="color: #047857; font-size: 32px; font-weight: bold; margin: 0;">$${total_amount} NZD</p>
 </div>
 
@@ -1026,7 +1026,7 @@ ${changesList}
 </div>
 
 <div style="background: #f5f5f0; padding: 20px; text-align: center; border-radius: 0 0 8px 8px;">
-<p style="color: #888; font-size: 12px; margin: 0;">MemoriQR Partner Program | Questions? Reply to this email</p>
+<p style="color: #888; font-size: 14px; margin: 0;">MemoriQR Partner Program | Questions? Reply to this email</p>
 </div>
 </div>`,
         text: `Hi ${partner_name},\n\nGreat news! Your commission payout has been processed.\n\nPAYOUT DETAILS:\n- Payout Reference: ${payout_number}\n- Amount: $${total_amount} NZD\n- Period: ${period_start} to ${period_end}\n- Commissions: ${total_commissions}\n- Bank Transfer Ref: ${payment_reference}\n- Paid To: ${bank_name} ****${bank_account_last4}\n\nFunds typically arrive within 1-2 business days.\n\nView your commission history: https://memoriqr.co.nz/partner/commissions\n\nThank you for being a valued MemoriQR partner!\n\nRegards,\nThe MemoriQR Team`
@@ -1062,7 +1062,7 @@ ${changesList}
 </div>
 
 <div style="background: #f5f5f0; padding: 20px; text-align: center; border-radius: 0 0 8px 8px;">
-<p style="color: #888; font-size: 12px; margin: 0;">MemoriQR Partner Program</p>
+<p style="color: #888; font-size: 14px; margin: 0;">MemoriQR Partner Program</p>
 </div>
 </div>`,
         text: `Hi ${contactName},\n\nYour MemoriQR partner account for ${businessName} has been suspended.\n\nReason: ${reason}\n\nIf you believe this is a mistake or would like to discuss this suspension, please reply to this email.\n\nRegards,\nThe MemoriQR Team`

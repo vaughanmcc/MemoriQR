@@ -15,37 +15,37 @@ export default function OrderSuccessPage() {
       <Header />
       <main className="min-h-screen bg-memorial-cream">
         <div className="container-narrow py-16 md:py-24">
-          <div className="bg-white rounded-2xl shadow-sm p-8 md:p-12 text-center">
+          <div className="bg-white rounded-2xl shadow-md p-10 md:p-14 text-center border border-gray-100">
             {/* Success icon */}
-            <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-green-100 mb-6">
-              <CheckCircle className="h-10 w-10 text-green-600" />
+            <div className="inline-flex items-center justify-center w-24 h-24 rounded-full bg-green-100 mb-8">
+              <CheckCircle className="h-12 w-12 text-green-700" />
             </div>
 
-            <h1 className="text-3xl md:text-4xl font-serif text-gray-900 mb-4">
+            <h1 className="text-4xl md:text-5xl font-serif text-gray-900 mb-5">
               Thank You for Your Order!
             </h1>
 
-            <p className="text-lg text-gray-600 mb-8 max-w-lg mx-auto">
+            <p className="text-xl md:text-2xl text-gray-700 mb-10 max-w-2xl mx-auto leading-relaxed">
               Your memorial has been created. We'll send you an email with 
               instructions to upload photos and customize your memorial page.
             </p>
 
             {/* Next steps */}
-            <div className="bg-memorial-cream rounded-xl p-6 md:p-8 mb-8 text-left">
-              <h2 className="text-xl font-serif text-gray-900 mb-6 text-center">
+            <div className="bg-memorial-cream rounded-xl p-8 md:p-10 mb-10 text-left border border-amber-100">
+              <h2 className="text-2xl md:text-3xl font-serif text-gray-900 mb-8 text-center">
                 What Happens Next?
               </h2>
               
-              <div className="space-y-6">
+              <div className="space-y-8">
                 <div className="flex gap-4">
                   <div className="flex-shrink-0">
-                    <div className="w-10 h-10 rounded-full bg-primary-100 flex items-center justify-center">
-                      <Mail className="h-5 w-5 text-primary-600" />
+                    <div className="w-12 h-12 rounded-full bg-primary-100 flex items-center justify-center">
+                      <Mail className="h-6 w-6 text-primary-700" />
                     </div>
                   </div>
                   <div>
-                    <h3 className="font-semibold text-gray-900">Check your email</h3>
-                    <p className="text-gray-600">
+                    <h3 className="text-lg md:text-xl font-semibold text-gray-900">Check your email</h3>
+                    <p className="text-lg text-gray-700 leading-relaxed">
                       We've sent your order confirmation and activation link. 
                       Check your inbox (and spam folder) for an email from MemoriQR.
                     </p>
@@ -54,13 +54,13 @@ export default function OrderSuccessPage() {
 
                 <div className="flex gap-4">
                   <div className="flex-shrink-0">
-                    <div className="w-10 h-10 rounded-full bg-primary-100 flex items-center justify-center">
-                      <ArrowRight className="h-5 w-5 text-primary-600" />
+                    <div className="w-12 h-12 rounded-full bg-primary-100 flex items-center justify-center">
+                      <ArrowRight className="h-6 w-6 text-primary-700" />
                     </div>
                   </div>
                   <div>
-                    <h3 className="font-semibold text-gray-900">Upload your memories</h3>
-                    <p className="text-gray-600">
+                    <h3 className="text-lg md:text-xl font-semibold text-gray-900">Upload your memories</h3>
+                    <p className="text-lg text-gray-700 leading-relaxed">
                       Click the activation link in your email to add photos, 
                       videos, and a heartfelt message to your memorial page.
                     </p>
@@ -69,13 +69,13 @@ export default function OrderSuccessPage() {
 
                 <div className="flex gap-4">
                   <div className="flex-shrink-0">
-                    <div className="w-10 h-10 rounded-full bg-primary-100 flex items-center justify-center">
-                      <Package className="h-5 w-5 text-primary-600" />
+                    <div className="w-12 h-12 rounded-full bg-primary-100 flex items-center justify-center">
+                      <Package className="h-6 w-6 text-primary-700" />
                     </div>
                   </div>
                   <div>
-                    <h3 className="font-semibold text-gray-900">Receive your tag</h3>
-                    <p className="text-gray-600">
+                    <h3 className="text-lg md:text-xl font-semibold text-gray-900">Receive your tag</h3>
+                    <p className="text-lg text-gray-700 leading-relaxed">
                       Your memorial tag will be shipped to you shortly. 
                       NFC tags ship in 2-3 days, QR plates in 7-10 days.
                     </p>
@@ -86,24 +86,24 @@ export default function OrderSuccessPage() {
 
             {/* Actions */}
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link href="/" className="btn-primary">
+              <Link href="/" className="btn-primary text-lg px-6 py-3">
                 Return Home
               </Link>
-              <Link href="/contact" className="btn-outline">
+              <Link href="/contact" className="btn-outline text-lg px-6 py-3">
                 Contact Support
               </Link>
             </div>
           </div>
 
           {/* Order another memorial */}
-          <div className="mt-8 bg-white rounded-2xl shadow-sm p-8 text-center">
-            <h2 className="text-xl font-serif text-gray-900 mb-3">
+          <div className="mt-8 bg-white rounded-2xl shadow-md p-10 text-center border border-gray-100">
+            <h2 className="text-2xl md:text-3xl font-serif text-gray-900 mb-4">
               Need Another Memorial?
             </h2>
-            <p className="text-gray-600 mb-6">
+            <p className="text-lg text-gray-700 mb-8 leading-relaxed">
               Honour another loved one with their own dedicated memorial page.
             </p>
-            <Link href="/order" className="btn-primary">
+            <Link href="/order" className="btn-primary text-lg px-6 py-3">
               Order Another Memorial
             </Link>
           </div>
