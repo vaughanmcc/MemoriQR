@@ -37,6 +37,8 @@ export async function GET(request: Request) {
 
   const supabase = createAdminClient()
 
+  console.log('Fetching referral_code_requests with status:', status)
+
   const { data: requests, error } = await (supabase
     .from('referral_code_requests' as any)
     .select(`
@@ -46,9 +48,11 @@ export async function GET(request: Request) {
     .eq('status', status)
     .order('created_at', { ascending: false }) as any)
 
+  console.log('Query result:', { requests, error })
+
   if (error) {
     console.error('Failed to fetch requests:', error)
-    return NextResponse.json({ error: 'Failed to fetch requests' }, { status: 500 })
+    return NextResponse.json({ error: 'Failed to fetch requests', details: error }, { status: 500 })
   }
 
   return NextResponse.json({ requests: requests || [] })

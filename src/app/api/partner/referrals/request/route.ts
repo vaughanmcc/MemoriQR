@@ -199,6 +199,26 @@ export async function POST(request: Request) {
       console.error('Failed to send admin notification:', emailError)
     }
 
+    // Send confirmation email to partner
+    try {
+      const webhookUrl = process.env.PIPEDREAM_WEBHOOK_URL
+      if (webhookUrl) {
+        await fetch(webhookUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: 'referral_request_submitted',
+            partner_email: partner.contact_email,
+            partner_name: partner.partner_name,
+            quantity,
+            reason: reason.trim()
+          })
+        })
+      }
+    } catch (emailError) {
+      console.error('Failed to send partner confirmation:', emailError)
+    }
+
     return NextResponse.json({
       success: true,
       autoApproved: false,

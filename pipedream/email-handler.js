@@ -696,6 +696,47 @@ ${notes ? `<div style="background: #f9f7f4; padding: 15px; border-radius: 8px; m
       };
     }
 
+    // Referral code request submitted confirmation (to partner)
+    if (type === 'referral_request_submitted') {
+      const { partner_email, partner_name, quantity, reason } = body;
+      
+      return {
+        to: partner_email,
+        replyTo: 'partners@memoriqr.co.nz',
+        from_name: 'MemoriQR Partner Portal',
+        subject: `✓ Your request for ${quantity} referral codes has been submitted`,
+        html: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; font-size: 18px; line-height: 1.6; color: #333;">
+<div style="background: linear-gradient(135deg, #059669 0%, #047857 100%); padding: 30px; text-align: center; border-radius: 8px 8px 0 0;">
+<h1 style="color: #fff; margin: 0; font-size: 24px;">Request Submitted</h1>
+</div>
+
+<div style="padding: 30px; background: #fff; border: 1px solid #ddd; border-top: none;">
+<p style="color: #333; font-size: 16px;">Hi ${partner_name},</p>
+
+<p style="color: #555; line-height: 1.6;">Your request for <strong>${quantity} referral codes</strong> has been submitted and is awaiting approval.</p>
+
+<div style="background: #f0fdf4; border: 1px solid #10b981; padding: 20px; border-radius: 8px; margin: 20px 0;">
+<p style="margin: 0; color: #065f46;"><strong>📋 Request Details:</strong></p>
+<p style="margin: 10px 0 0; color: #047857;">Quantity: ${quantity} codes</p>
+<p style="margin: 5px 0 0; color: #047857;">Status: Pending approval</p>
+</div>
+
+${reason ? `<div style="background: #f9fafb; padding: 15px; border-radius: 8px; margin: 20px 0;">
+<p style="margin: 0; color: #6b7280; font-size: 14px;"><strong>Your reason:</strong></p>
+<p style="margin: 5px 0 0; color: #374151;">${reason}</p>
+</div>` : ''}
+
+<p style="color: #555; line-height: 1.6;">We'll review your request and notify you once it's been processed. This typically takes 1-2 business days.</p>
+
+</div>
+<div style="background: #f5f5f0; padding: 20px; text-align: center; border-radius: 0 0 8px 8px;">
+<p style="color: #888; font-size: 14px; margin: 0;">MemoriQR Partner Portal</p>
+</div>
+</div>`,
+        text: `Hi ${partner_name},\n\nYour request for ${quantity} referral codes has been submitted and is awaiting approval.\n\nQuantity: ${quantity} codes\nStatus: Pending approval\n${reason ? `\nYour reason: ${reason}` : ''}\n\nWe'll review your request and notify you once it's been processed.`
+      };
+    }
+
     // Referral code request rejected (notification to partner)
     if (type === 'referral_request_rejected') {
       const { partner_email, partner_name, quantity, reason } = body;
