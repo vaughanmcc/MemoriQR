@@ -8,7 +8,7 @@ type ReferralCode = Database['public']['Tables']['referral_codes']['Row']
 
 // Helper to get authenticated partner
 async function getAuthenticatedPartner(): Promise<Partner | null> {
-  const cookieStore = cookies()
+  const cookieStore = await cookies()
   const sessionToken = cookieStore.get('partner_session')?.value
 
   if (!sessionToken) {
