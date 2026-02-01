@@ -86,6 +86,12 @@ export async function GET() {
       .select('*', { count: 'exact', head: true })
       .in('fulfillment_status', ['pending', 'processing']);
 
+    // Get pending referral code requests
+    const { count: pendingReferralRequests } = await (supabase
+      .from('referral_code_requests' as any)
+      .select('*', { count: 'exact', head: true })
+      .eq('status', 'pending') as any);
+
     return NextResponse.json({
       totalPartners,
       activePartners,
@@ -93,6 +99,7 @@ export async function GET() {
       pendingBatchRequests: pendingBatchRequests ?? 0,
       pendingCommissions: pendingCommissions ?? 0,
       pendingFulfillment: pendingFulfillment ?? 0,
+      pendingReferralRequests: pendingReferralRequests ?? 0,
       totalMemorials: totalMemorials ?? 0,
       totalOrders,
       totalRevenue,

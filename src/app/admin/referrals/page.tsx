@@ -338,8 +338,13 @@ export default function AdminReferralsPage() {
               <Link href="/admin/codes" className="text-white/70 hover:text-white px-3 py-1 rounded hover:bg-white/10">
                 Activation Codes
               </Link>
-              <Link href="/admin/referrals" className="text-white/90 hover:text-white px-3 py-1 rounded bg-white/10">
+              <Link href="/admin/referrals" className="text-white/90 hover:text-white px-3 py-1 rounded bg-white/10 relative">
                 Referral Codes
+                {pendingCount > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-amber-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+                    {pendingCount}
+                  </span>
+                )}
               </Link>
               <Link href="/admin/partners" className="text-white/70 hover:text-white px-3 py-1 rounded hover:bg-white/10">
                 Partners
