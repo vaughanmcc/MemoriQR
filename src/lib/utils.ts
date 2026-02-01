@@ -50,22 +50,21 @@ export function formatDateTime(date: string | Date): string {
 /**
  * Format date only (no time) for admin/partner displays
  * Output: "27/01/2026"
- * Always displays in NZ timezone
+ * Displays in user's local browser timezone
  */
 export function formatDateOnly(date: string | Date): string {
   const d = typeof date === 'string' ? new Date(date) : date
   return d.toLocaleDateString('en-NZ', {
     day: '2-digit',
     month: '2-digit',
-    year: 'numeric',
-    timeZone: 'Pacific/Auckland'
+    year: 'numeric'
   })
 }
 
 /**
  * Format time with timezone for admin/partner displays
  * Output: "07:25 am NZDT"
- * Always displays in NZ timezone
+ * Displays in user's local browser timezone
  */
 export function formatTimeWithZone(date: string | Date): string {
   const d = typeof date === 'string' ? new Date(date) : date
@@ -73,15 +72,14 @@ export function formatTimeWithZone(date: string | Date): string {
     hour: '2-digit',
     minute: '2-digit',
     hour12: true,
-    timeZoneName: 'short',
-    timeZone: 'Pacific/Auckland'
+    timeZoneName: 'short'
   })
 }
 
 /**
  * Format date and time for multi-line display
  * Returns { date: "27/01/2026", time: "07:25 am NZDT" }
- * Always displays in NZ timezone
+ * Displays in user's local browser timezone
  */
 export function formatDateTimeParts(date: string | Date): { date: string; time: string } {
   const d = typeof date === 'string' ? new Date(date) : date
