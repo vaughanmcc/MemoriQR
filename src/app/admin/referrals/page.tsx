@@ -43,9 +43,27 @@ interface ReferralCode {
   batch_name: string | null;
 }
 
+interface CodeRequest {
+  id: string;
+  partner_id: string;
+  quantity: number;
+  reason: string | null;
+  status: 'pending' | 'approved' | 'rejected';
+  admin_notes: string | null;
+  processed_at: string | null;
+  batch_id: string | null;
+  created_at: string;
+  partner: {
+    id: string;
+    partner_name: string;
+    contact_email: string;
+    partner_type: string;
+  };
+}
+
 export default function AdminReferralsPage() {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<'generate' | 'batches'>('generate');
+  const [activeTab, setActiveTab] = useState<'generate' | 'batches' | 'requests'>('generate');
   
   // Generate tab state
   const [partners, setPartners] = useState<Partner[]>([]);
@@ -68,6 +86,13 @@ export default function AdminReferralsPage() {
   const [expandedBatchCodes, setExpandedBatchCodes] = useState<ReferralCode[]>([]);
   const [isLoadingBatchCodes, setIsLoadingBatchCodes] = useState(false);
 
+  // Requests tab state
+  const [requests, setRequests] = useState<CodeRequest[]>([]);
+  const [isLoadingRequests, setIsLoadingRequests] = useState(false);
+  const [pendingCount, setPendingCount] = useState(0);
+  const [processingRequestId, setProcessingRequestId] = useState<string | null>(null);
+  const [requestAdminNotes, setRequestAdminNotes] = useState<{ [key: string]: string }>({});
+
   useEffect(() => {
     checkAuth();
     fetchPartners();
@@ -77,7 +102,15 @@ export default function AdminReferralsPage() {
     if (activeTab === 'batches') {
       fetchBatches();
     }
+    if (activeTab === 'requests') {
+      fetchRequests();
+    }
   }, [activeTab]);
+
+  useEffect(() => {
+    // Fetch pending count on mount
+    fetchPendingCount();
+  }, []);
 
   const checkAuth = async () => {
     const res = await fetch('/api/admin/session');
@@ -124,6 +157,64 @@ export default function AdminReferralsPage() {
       console.error('Failed to fetch batches:', err);
     } finally {
       setIsLoadingBatches(false);
+    }
+  };
+
+  const fetchRequests = async () => {
+    setIsLoadingRequests(true);
+    try {
+      const res = await fetch('/api/admin/referral-requests?status=pending');
+      if (res.ok) {
+        const data = await res.json();
+        setRequests(data.requests || []);
+      }
+    } catch (err) {
+      console.error('Failed to fetch requests:', err);
+    } finally {
+      setIsLoadingRequests(false);
+    }
+  };
+
+  const fetchPendingCount = async () => {
+    try {
+      const res = await fetch('/api/admin/referral-requests?status=pending');
+      if (res.ok) {
+        const data = await res.json();
+        setPendingCount(data.requests?.length || 0);
+      }
+    } catch (err) {
+      console.error('Failed to fetch pending count:', err);
+    }
+  };
+
+  const handleRequestAction = async (requestId: string, action: 'approve' | 'reject') => {
+    setProcessingRequestId(requestId);
+    try {
+      const res = await fetch('/api/admin/referral-requests', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          requestId,
+          action,
+          adminNotes: requestAdminNotes[requestId] || ''
+        })
+      });
+
+      if (res.ok) {
+        // Refresh the requests list
+        fetchRequests();
+        fetchPendingCount();
+        // Clear admin notes
+        setRequestAdminNotes(prev => {
+          const updated = { ...prev };
+          delete updated[requestId];
+          return updated;
+        });
+      }
+    } catch (err) {
+      console.error('Failed to process request:', err);
+    } finally {
+      setProcessingRequestId(null);
     }
   };
 
@@ -287,6 +378,21 @@ export default function AdminReferralsPage() {
             }`}
           >
             Manage Batches
+          </button>
+          <button
+            onClick={() => setActiveTab('requests')}
+            className={`px-4 py-2 rounded-lg font-medium transition-colors relative ${
+              activeTab === 'requests'
+                ? 'bg-stone-800 text-white'
+                : 'bg-white text-stone-600 hover:bg-stone-50'
+            }`}
+          >
+            Requests
+            {pendingCount > 0 && (
+              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                {pendingCount}
+              </span>
+            )}
           </button>
         </div>
 
@@ -552,6 +658,91 @@ export default function AdminReferralsPage() {
                         )}
                       </div>
                     )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Requests Tab */}
+        {activeTab === 'requests' && (
+          <div className="bg-white rounded-xl shadow">
+            <div className="p-6 border-b">
+              <h3 className="text-lg font-semibold text-stone-800">Pending Referral Code Requests</h3>
+              <p className="text-stone-600 text-sm">Review and approve partner requests for additional referral codes</p>
+            </div>
+
+            {isLoadingRequests ? (
+              <div className="p-8 text-center text-stone-500">Loading requests...</div>
+            ) : requests.length === 0 ? (
+              <div className="p-12 text-center">
+                <div className="text-4xl mb-4">✓</div>
+                <p className="text-stone-600 font-medium">No pending requests</p>
+                <p className="text-stone-500 text-sm">All referral code requests have been processed</p>
+              </div>
+            ) : (
+              <div className="divide-y">
+                {requests.map((request) => (
+                  <div key={request.id} className="p-6">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-2">
+                          <span className="font-semibold text-stone-800">
+                            {request.partner?.partner_name || 'Unknown Partner'}
+                          </span>
+                          <span className="text-sm text-stone-500">
+                            {request.partner?.contact_email}
+                          </span>
+                          <span className="px-2 py-0.5 bg-stone-100 text-stone-600 text-xs rounded capitalize">
+                            {request.partner?.partner_type || 'partner'}
+                          </span>
+                        </div>
+                        
+                        <div className="flex items-center gap-4 mb-3">
+                          <span className="text-2xl font-bold text-primary-600">
+                            {request.quantity} codes
+                          </span>
+                          <span className="text-stone-500 text-sm">
+                            requested {formatDateOnly(request.created_at)} at {formatTimeWithZone(request.created_at)}
+                          </span>
+                        </div>
+
+                        {request.reason && (
+                          <div className="bg-stone-50 rounded-lg p-3 mb-4">
+                            <p className="text-sm font-medium text-stone-600 mb-1">Reason:</p>
+                            <p className="text-stone-700">{request.reason}</p>
+                          </div>
+                        )}
+
+                        <div className="flex items-center gap-3">
+                          <input
+                            type="text"
+                            value={requestAdminNotes[request.id] || ''}
+                            onChange={(e) => setRequestAdminNotes(prev => ({
+                              ...prev,
+                              [request.id]: e.target.value
+                            }))}
+                            placeholder="Admin notes (optional)..."
+                            className="flex-1 border border-stone-300 rounded-lg px-3 py-2 text-sm"
+                          />
+                          <button
+                            onClick={() => handleRequestAction(request.id, 'approve')}
+                            disabled={processingRequestId === request.id}
+                            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 font-medium text-sm"
+                          >
+                            {processingRequestId === request.id ? 'Processing...' : '✓ Approve'}
+                          </button>
+                          <button
+                            onClick={() => handleRequestAction(request.id, 'reject')}
+                            disabled={processingRequestId === request.id}
+                            className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 font-medium text-sm"
+                          >
+                            ✕ Reject
+                          </button>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 ))}
               </div>

@@ -17,7 +17,8 @@ import {
   XCircle,
   TrendingUp,
   Send,
-  X
+  X,
+  Plus
 } from 'lucide-react'
 
 interface ReferralCode {
@@ -77,6 +78,13 @@ export default function PartnerReferralsPage() {
   const [transferNotes, setTransferNotes] = useState('')
   const [isTransferring, setIsTransferring] = useState(false)
   const [transferResult, setTransferResult] = useState<{ success: boolean; message: string } | null>(null)
+
+  // Request modal state
+  const [showRequestModal, setShowRequestModal] = useState(false)
+  const [requestQuantity, setRequestQuantity] = useState(5)
+  const [requestReason, setRequestReason] = useState('')
+  const [isRequesting, setIsRequesting] = useState(false)
+  const [requestResult, setRequestResult] = useState<{ success: boolean; message: string } | null>(null)
 
   // Extend session while user is active
   useSessionExtension()
@@ -512,19 +520,47 @@ export default function PartnerReferralsPage() {
           </div>
         )}
 
-        {/* Contact CTA */}
+        {/* Request More Codes CTA */}
         <div className="mt-8 bg-white rounded-lg shadow p-6 text-center">
           <h3 className="font-semibold mb-2">Need more referral codes?</h3>
           <p className="text-gray-600 text-sm mb-4">
-            Contact us to request additional cards for your business.
+            Request additional codes for your business. Up to 10 codes are generated instantly!
           </p>
-          <Link
-            href="mailto:support@memoriqr.co.nz?subject=Request%20More%20Lead%20Generation%20Cards"
+          <button
+            onClick={() => setShowRequestModal(true)}
             className="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
           >
-            Request More Cards
-          </Link>
+            <Plus className="h-4 w-4" />
+            Request More Codes
+          </button>
         </div>
+
+        {/* Request Modal */}
+        {showRequestModal && (
+          <RequestCodesModal
+            onClose={() => {
+              setShowRequestModal(false)
+              setRequestResult(null)
+              setRequestQuantity(5)
+              setRequestReason('')
+            }}
+            onSuccess={() => {
+              setShowRequestModal(false)
+              setRequestResult(null)
+              setRequestQuantity(5)
+              setRequestReason('')
+              fetchReferrals()
+            }}
+            quantity={requestQuantity}
+            setQuantity={setRequestQuantity}
+            reason={requestReason}
+            setReason={setRequestReason}
+            isRequesting={isRequesting}
+            setIsRequesting={setIsRequesting}
+            result={requestResult}
+            setResult={setRequestResult}
+          />
+        )}
 
         {/* Transfer Modal */}
         {showTransferModal && (
@@ -641,6 +677,192 @@ export default function PartnerReferralsPage() {
           </div>
         )}
       </main>
+    </div>
+  )
+}
+
+// Request Codes Modal Component
+function RequestCodesModal({
+  onClose,
+  onSuccess,
+  quantity,
+  setQuantity,
+  reason,
+  setReason,
+  isRequesting,
+  setIsRequesting,
+  result,
+  setResult
+}: {
+  onClose: () => void
+  onSuccess: () => void
+  quantity: number
+  setQuantity: (q: number) => void
+  reason: string
+  setReason: (r: string) => void
+  isRequesting: boolean
+  setIsRequesting: (b: boolean) => void
+  result: { success: boolean; message: string } | null
+  setResult: (r: { success: boolean; message: string } | null) => void
+}) {
+  const [error, setError] = useState('')
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setError('')
+    
+    if (quantity < 1 || quantity > 100) {
+      setError('Quantity must be between 1 and 100')
+      return
+    }
+    
+    if (quantity > 10 && reason.trim().length < 10) {
+      setError('Please provide a reason when requesting more than 10 codes (minimum 10 characters)')
+      return
+    }
+
+    setIsRequesting(true)
+
+    try {
+      const response = await fetch('/api/partner/referrals/request', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ quantity, reason: reason.trim() || null })
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to submit request')
+      }
+
+      setResult({
+        success: true,
+        message: data.message
+      })
+
+      // Auto-close after success if auto-approved
+      if (data.autoApproved) {
+        setTimeout(() => {
+          onSuccess()
+        }, 2000)
+      }
+    } catch (err: any) {
+      setError(err.message)
+    } finally {
+      setIsRequesting(false)
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
+        <div className="flex items-center justify-between p-4 border-b">
+          <h3 className="text-lg font-semibold">Request Referral Codes</h3>
+          <button
+            onClick={onClose}
+            className="p-1 hover:bg-gray-100 rounded"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        <div className="p-4">
+          {result ? (
+            <div className={`p-4 rounded-lg ${
+              result.success ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'
+            }`}>
+              <p className="font-medium">
+                {result.success ? '✓ Request Submitted!' : 'Request Failed'}
+              </p>
+              <p className="text-sm mt-1">{result.message}</p>
+              <button
+                onClick={result.success ? onSuccess : onClose}
+                className="mt-3 px-4 py-2 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700"
+              >
+                {result.success ? 'Done' : 'Close'}
+              </button>
+            </div>
+          ) : (
+            <form onSubmit={handleSubmit}>
+              {error && (
+                <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+                  {error}
+                </div>
+              )}
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Number of Codes
+                  </label>
+                  <select
+                    value={quantity}
+                    onChange={(e) => setQuantity(parseInt(e.target.value))}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-primary-500 focus:border-primary-500"
+                  >
+                    <option value={5}>5 codes</option>
+                    <option value={10}>10 codes</option>
+                    <option value={20}>20 codes (requires approval)</option>
+                    <option value={50}>50 codes (requires approval)</option>
+                    <option value={100}>100 codes (requires approval)</option>
+                  </select>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {quantity <= 10 
+                      ? '✓ Up to 10 codes are generated instantly!' 
+                      : '⏳ Requests for more than 10 codes require admin approval'}
+                  </p>
+                </div>
+
+                {quantity > 10 && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Reason for Request <span className="text-red-500">*</span>
+                    </label>
+                    <textarea
+                      value={reason}
+                      onChange={(e) => setReason(e.target.value)}
+                      placeholder="e.g., We have a trade show coming up and need more cards to hand out..."
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-primary-500 focus:border-primary-500"
+                      rows={3}
+                      required
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Please explain why you need this many codes
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex justify-end gap-3 mt-6">
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isRequesting}
+                  className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                >
+                  {isRequesting ? (
+                    <>
+                      <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      Submitting...
+                    </>
+                  ) : (
+                    <>
+                      {quantity <= 10 ? 'Generate Codes' : 'Submit Request'}
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          )}
+        </div>
+      </div>
     </div>
   )
 }
