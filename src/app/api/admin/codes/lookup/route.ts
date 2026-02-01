@@ -178,6 +178,22 @@ export async function GET(request: NextRequest) {
 
       console.log(`[Code Lookup] Activity log for ${referralCode.id}: found=${activityLog?.length || 0} entries, error=${activityError?.message || 'none'}`)
 
+      // Fetch share history for this referral code
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: shareHistory, error: shareError } = await (supabase as any)
+        .from('referral_code_shares')
+        .select(`
+          id,
+          recipient_email,
+          recipient_name,
+          message,
+          sent_at
+        `)
+        .eq('referral_code_id', referralCode.id)
+        .order('sent_at', { ascending: false })
+
+      console.log(`[Code Lookup] Share history for ${referralCode.id}: found=${shareHistory?.length || 0} entries, error=${shareError?.message || 'none'}`)
+
       return NextResponse.json({
         found: true,
         type: 'referral',
@@ -218,6 +234,13 @@ export async function GET(request: NextRequest) {
             performedByAdmin: log.performed_by_admin,
             notes: log.notes,
             createdAt: log.created_at
+          })) || [],
+          shareHistory: shareHistory?.map((share: { id: string; recipient_email: string; recipient_name: string | null; message: string | null; sent_at: string }) => ({
+            id: share.id,
+            recipientEmail: share.recipient_email,
+            recipientName: share.recipient_name,
+            message: share.message,
+            sentAt: share.sent_at
           })) || []
         }
       })
