@@ -1084,6 +1084,50 @@ export default function AdminToolsPage() {
                       </div>
                     </div>
 
+                    {/* Plan & Expiry Info */}
+                    <div className="bg-amber-50 border border-amber-200 p-4 rounded-lg">
+                      <h5 className="font-medium text-amber-800 mb-3">Plan & Hosting</h5>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                        <div>
+                          <span className="text-amber-700 block text-xs">Plan</span>
+                          <span className="font-medium text-amber-900">{orderDetails.hosting_duration} Year{orderDetails.hosting_duration !== 1 ? 's' : ''}</span>
+                        </div>
+                        <div>
+                          <span className="text-amber-700 block text-xs">Expires</span>
+                          <span className="font-medium text-amber-900">
+                            {orderDetails.memorial.hosting_expires_at 
+                              ? new Date(orderDetails.memorial.hosting_expires_at).toLocaleDateString('en-NZ', { day: '2-digit', month: '2-digit', year: 'numeric' })
+                              : 'Not set'}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-amber-700 block text-xs">Years Remaining</span>
+                          <span className={`font-medium ${
+                            orderDetails.memorial.hosting_expires_at && new Date(orderDetails.memorial.hosting_expires_at) > new Date()
+                              ? Math.ceil((new Date(orderDetails.memorial.hosting_expires_at).getTime() - Date.now()) / (365.25 * 24 * 60 * 60 * 1000)) <= 1 
+                                ? 'text-red-600' 
+                                : 'text-amber-900'
+                              : 'text-red-600'
+                          }`}>
+                            {orderDetails.memorial.hosting_expires_at 
+                              ? (() => {
+                                  const yearsLeft = (new Date(orderDetails.memorial.hosting_expires_at).getTime() - Date.now()) / (365.25 * 24 * 60 * 60 * 1000);
+                                  if (yearsLeft <= 0) return 'Expired';
+                                  if (yearsLeft < 1) return `${Math.ceil(yearsLeft * 12)} months`;
+                                  return `${Math.ceil(yearsLeft)} year${Math.ceil(yearsLeft) !== 1 ? 's' : ''}`;
+                                })()
+                              : 'N/A'}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-amber-700 block text-xs">Media Uploaded</span>
+                          <span className="font-medium text-amber-900">
+                            {(orderDetails.memorial.photos?.length || 0)} photos, {(orderDetails.memorial.videos?.length || 0)} videos
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
                     <div className="bg-stone-50 p-4 rounded-lg space-y-3">
                       <div className="flex items-center justify-between">
                         <div>
