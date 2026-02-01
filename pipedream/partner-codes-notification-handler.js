@@ -11,6 +11,7 @@
  * - referral_request_submitted: Request confirmation (partner notification)
  * - referral_request_approved: Request approved (partner notification)
  * - referral_request_rejected: Request rejected (partner notification)
+ * - referral_code_share: Partner shares a referral code with customer via email
  * 
  * Use this in a SEPARATE Pipedream workflow with its own webhook URL.
  * Env var: PIPEDREAM_PARTNER_CODES_WEBHOOK_URL
@@ -38,7 +39,8 @@ export default defineComponent({
       'referral_code_request',
       'referral_request_submitted',
       'referral_request_approved',
-      'referral_request_rejected'
+      'referral_request_rejected',
+      'referral_code_share'
     ];
     
     if (!body || !validTypes.includes(body.type)) {
@@ -573,6 +575,74 @@ ${admin_notes ? `<p style="margin: 10px 0 0; color: #78350f;">${admin_notes}</p>
 </div>
 </div>`,
         text: `Hi ${partner_name},\n\nThank you for your request for ${quantity} referral codes.\n\nStatus: Not approved at this time\n${admin_notes ? `\n${admin_notes}\n` : ''}\nIf you have any questions, please contact us at partners@memoriqr.co.nz.\n\nView your referrals: ${dashboardUrl}`
+      };
+    }
+
+    // Referral code share email (sent by partner to potential customer)
+    if (body.type === 'referral_code_share') {
+      const { to, recipientName, partnerName, personalMessage, referralCode, discountPercent, freeShipping, orderUrl } = body;
+      
+      const greeting = recipientName ? `Hi ${recipientName}` : 'Hello';
+      
+      const discountText = discountPercent > 0 ? `${discountPercent}% discount` : '';
+      const freeShippingText = freeShipping ? 'free shipping' : '';
+      const benefits = [discountText, freeShippingText].filter(Boolean).join(' + ');
+      const benefitsDisplay = benefits ? ` with ${benefits}` : '';
+      
+      const personalMessageHtml = personalMessage 
+        ? `<div style="background: #f5f5f0; border-left: 4px solid #8B7355; padding: 20px; margin: 20px 0; border-radius: 4px; font-style: italic;">
+"${personalMessage}"
+<div style="margin-top: 10px; color: #666; font-size: 14px;">— ${partnerName}</div>
+</div>` 
+        : '';
+      
+      return {
+        to,
+        replyTo: 'info@memoriqr.co.nz',
+        from_name: 'MemoriQR',
+        subject: `${partnerName} has shared a MemoriQR referral code with you`,
+        html: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; font-size: 18px; line-height: 1.6; color: #333;">
+<div style="background: linear-gradient(135deg, #8B7355 0%, #A08060 100%); padding: 30px; text-align: center; border-radius: 8px 8px 0 0;">
+<h1 style="color: #fff; margin: 0; font-size: 24px;">You've Received a Referral Code! 💝</h1>
+</div>
+
+<div style="padding: 30px; background: #fff; border: 1px solid #ddd; border-top: none;">
+<p style="color: #333; font-size: 18px; margin-top: 0;">${greeting},</p>
+
+<p style="color: #555; line-height: 1.7;"><strong>${partnerName}</strong> thought you might be interested in MemoriQR and has shared their referral code with you${benefitsDisplay}!</p>
+
+${personalMessageHtml}
+
+<div style="background: #f9f7f4; border: 2px dashed #8B7355; border-radius: 8px; padding: 20px; text-align: center; margin: 25px 0;">
+<p style="color: #666; font-size: 14px; margin: 0 0 10px;">Your referral code:</p>
+<p style="font-family: monospace; font-size: 28px; font-weight: bold; color: #8B7355; margin: 0; letter-spacing: 2px;">${referralCode}</p>
+${benefits ? `<p style="color: #2d5a27; font-size: 14px; margin: 10px 0 0;">✓ ${benefits}</p>` : ''}
+</div>
+
+<p style="color: #555; line-height: 1.7;">MemoriQR creates premium NFC tags and QR code plates that link to beautiful online memorials, perfect for:</p>
+
+<ul style="color: #555; line-height: 2;">
+<li>🪦 Cemetery headstones and grave markers</li>
+<li>🐾 Pet memorial gardens and urns</li>
+<li>🏠 Home memorial displays</li>
+<li>🌳 Memorial trees and benches</li>
+</ul>
+
+<div style="text-align: center; margin: 30px 0;">
+<a href="${orderUrl}" style="display: inline-block; background: linear-gradient(135deg, #8B7355 0%, #A08060 100%); color: #fff; text-decoration: none; padding: 16px 32px; border-radius: 8px; font-weight: bold; font-size: 18px;">
+Use Code & View Options →
+</a>
+</div>
+
+<p style="color: #888; font-size: 14px; text-align: center;">Your code will be automatically applied when you click the link above</p>
+</div>
+
+<div style="background: #f5f5f0; padding: 20px; text-align: center; border-radius: 0 0 8px 8px;">
+<p style="color: #666; font-size: 14px; margin: 0 0 10px;">Honouring lives, preserving memories.</p>
+<p style="color: #888; font-size: 12px; margin: 0;">MemoriQR • memoriqr.co.nz</p>
+</div>
+</div>`,
+        text: `${greeting},\n\n${partnerName} thought you might be interested in MemoriQR and has shared their referral code with you${benefitsDisplay}!\n\n${personalMessage ? `"${personalMessage}"\n— ${partnerName}\n\n` : ''}Your referral code: ${referralCode}\n${benefits ? `Benefits: ${benefits}\n` : ''}\nMemoriQR creates premium NFC tags and QR code plates that link to beautiful online memorials.\n\nUse your code here: ${orderUrl}\n\n---\nMemoriQR • memoriqr.co.nz`
       };
     }
   }

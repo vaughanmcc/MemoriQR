@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { createAdminClient } from '@/lib/supabase/server'
 
-const PIPEDREAM_WEBHOOK_URL = process.env.PIPEDREAM_WEBHOOK_URL
+// Use the partner codes webhook for share emails
+const PIPEDREAM_PARTNER_CODES_WEBHOOK_URL = process.env.PIPEDREAM_PARTNER_CODES_WEBHOOK_URL
 
 interface Partner {
   id: string
@@ -163,13 +164,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to share code' }, { status: 500 })
     }
 
-    // Send email via Pipedream
-    if (PIPEDREAM_WEBHOOK_URL) {
+    // Send email via Pipedream (partner codes workflow)
+    if (PIPEDREAM_PARTNER_CODES_WEBHOOK_URL) {
       try {
         const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://memoriqr.com'
         const orderUrl = `${baseUrl}/order?ref=${encodeURIComponent(referralCode.code)}`
 
-        await fetch(PIPEDREAM_WEBHOOK_URL, {
+        await fetch(PIPEDREAM_PARTNER_CODES_WEBHOOK_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
