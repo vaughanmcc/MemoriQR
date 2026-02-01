@@ -18,7 +18,10 @@ import {
   TrendingUp,
   Send,
   X,
-  Plus
+  Plus,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown
 } from 'lucide-react'
 
 interface ReferralCode {
@@ -85,6 +88,10 @@ export default function PartnerReferralsPage() {
   const [requestReason, setRequestReason] = useState('')
   const [isRequesting, setIsRequesting] = useState(false)
   const [requestResult, setRequestResult] = useState<{ success: boolean; message: string } | null>(null)
+
+  // Sorting state for individual codes
+  const [sortField, setSortField] = useState<'created_at' | 'used_at' | 'code'>('created_at')
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc')
 
   // Extend session while user is active
   useSessionExtension()
@@ -156,6 +163,39 @@ export default function PartnerReferralsPage() {
 
   const clearSelection = () => {
     setSelectedCodes(new Set())
+  }
+
+  // Sort codes based on current sort settings
+  const sortedCodes = [...codes].sort((a, b) => {
+    let comparison = 0
+    if (sortField === 'code') {
+      comparison = a.code.localeCompare(b.code)
+    } else if (sortField === 'created_at') {
+      comparison = new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+    } else if (sortField === 'used_at') {
+      // Put unused codes at the end when sorting by used_at
+      if (!a.used_at && !b.used_at) comparison = 0
+      else if (!a.used_at) comparison = 1
+      else if (!b.used_at) comparison = -1
+      else comparison = new Date(a.used_at).getTime() - new Date(b.used_at).getTime()
+    }
+    return sortDirection === 'asc' ? comparison : -comparison
+  })
+
+  const toggleSort = (field: 'created_at' | 'used_at' | 'code') => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')
+    } else {
+      setSortField(field)
+      setSortDirection('desc')
+    }
+  }
+
+  const SortIcon = ({ field }: { field: 'created_at' | 'used_at' | 'code' }) => {
+    if (sortField !== field) return <ArrowUpDown className="h-3 w-3 text-gray-400" />
+    return sortDirection === 'asc' 
+      ? <ArrowUp className="h-3 w-3 text-primary-600" />
+      : <ArrowDown className="h-3 w-3 text-primary-600" />
   }
 
   const handleTransfer = async () => {
@@ -451,16 +491,48 @@ export default function PartnerReferralsPage() {
                 <p>No codes found</p>
               </div>
             ) : (
-              <div className="divide-y">
-                {codes.map(code => (
+              <div>
+                {/* Sortable Header */}
+                <div className="grid grid-cols-12 gap-2 px-4 py-3 bg-gray-50 border-b text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <div className="col-span-1"></div>
+                  <div className="col-span-3">
+                    <button 
+                      onClick={() => toggleSort('code')}
+                      className="flex items-center gap-1 hover:text-gray-700"
+                    >
+                      Code <SortIcon field="code" />
+                    </button>
+                  </div>
+                  <div className="col-span-2">Details</div>
+                  <div className="col-span-2">
+                    <button 
+                      onClick={() => toggleSort('created_at')}
+                      className="flex items-center gap-1 hover:text-gray-700"
+                    >
+                      Created <SortIcon field="created_at" />
+                    </button>
+                  </div>
+                  <div className="col-span-2">
+                    <button 
+                      onClick={() => toggleSort('used_at')}
+                      className="flex items-center gap-1 hover:text-gray-700"
+                    >
+                      Used <SortIcon field="used_at" />
+                    </button>
+                  </div>
+                  <div className="col-span-2 text-right">Actions</div>
+                </div>
+                
+                <div className="divide-y">
+                {sortedCodes.map(code => (
                   <div 
                     key={code.id} 
-                    className={`p-4 flex items-center justify-between ${
+                    className={`grid grid-cols-12 gap-2 px-4 py-3 items-center ${
                       code.is_used ? 'bg-gray-50' : ''
                     } ${selectedCodes.has(code.id) ? 'bg-primary-50' : ''}`}
                   >
-                    <div className="flex items-center gap-4">
-                      {/* Checkbox for available codes when transfer is possible */}
+                    {/* Checkbox & Status */}
+                    <div className="col-span-1 flex items-center gap-2">
                       {linkedPartners.length > 0 && !code.is_used && (
                         <input
                           type="checkbox"
@@ -474,21 +546,41 @@ export default function PartnerReferralsPage() {
                       ) : (
                         <CheckCircle className="h-5 w-5 text-green-500" />
                       )}
-                      <div>
-                        <p className={`font-mono font-medium ${code.is_used ? 'text-gray-400' : ''}`}>
-                          {code.code}
-                        </p>
-                        <p className="text-xs text-gray-500">
-                          {code.is_used 
-                            ? <span>Used {formatDateOnly(code.used_at!)}, {formatTimeWithZone(code.used_at!)}</span>
-                            : `${code.discount_percent}% discount • ${code.commission_percent}% commission`
-                          }
-                        </p>
-                      </div>
                     </div>
                     
+                    {/* Code */}
+                    <div className="col-span-3">
+                      <p className={`font-mono font-medium ${code.is_used ? 'text-gray-400' : ''}`}>
+                        {code.code}
+                      </p>
+                    </div>
+                    
+                    {/* Details */}
+                    <div className="col-span-2">
+                      <p className="text-xs text-gray-500">
+                        {code.discount_percent}% discount<br />
+                        {code.commission_percent}% commission
+                      </p>
+                    </div>
+                    
+                    {/* Created Date */}
+                    <div className="col-span-2">
+                      <p className="text-sm text-gray-600">{formatDateOnly(code.created_at)}</p>
+                    </div>
+                    
+                    {/* Used Date */}
+                    <div className="col-span-2">
+                      {code.is_used && code.used_at ? (
+                        <p className="text-sm text-gray-600">{formatDateOnly(code.used_at)}</p>
+                      ) : (
+                        <span className="text-xs text-gray-400">—</span>
+                      )}
+                    </div>
+                    
+                    {/* Actions */}
+                    <div className="col-span-2 flex items-center justify-end gap-1">
                     {!code.is_used && (
-                      <div className="flex items-center gap-2">
+                      <>
                         <button
                           onClick={() => copyCode(code.code)}
                           className="p-2 text-gray-600 hover:bg-gray-100 rounded"
@@ -511,10 +603,12 @@ export default function PartnerReferralsPage() {
                             <ExternalLink className="h-4 w-4" />
                           )}
                         </button>
-                      </div>
+                      </>
                     )}
+                    </div>
                   </div>
                 ))}
+                </div>
               </div>
             )}
           </div>
