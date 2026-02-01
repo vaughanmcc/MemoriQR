@@ -1176,9 +1176,9 @@ export default function PartnerReferralsPage() {
                               method: 'POST',
                               headers: { 'Content-Type': 'application/json' },
                               body: JSON.stringify({
-                                referral_code_id: selectedShareCodeId,
-                                recipient_email: shareEmail,
-                                recipient_name: shareName || undefined,
+                                referralCodeId: selectedShareCodeId,
+                                recipientEmail: shareEmail,
+                                recipientName: shareName || undefined,
                                 message: shareMessage || undefined
                               })
                             })
