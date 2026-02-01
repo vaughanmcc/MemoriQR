@@ -250,6 +250,87 @@ Run these in Supabase SQL Editor before deploying to production:
 
 ---
 
+## 13. Partner Commissions Page (`/partner/commissions`)
+
+### 13.1 Commission History
+- View all earned commissions with status (pending, approved, paid)
+- Monthly breakdown charts
+- Filter by status
+
+### 13.2 Payout History
+- View past payouts with amounts and dates
+- Payment reference tracking
+
+**Files:** `src/app/partner/commissions/page.tsx`
+
+---
+
+## 14. Partner Marketing Materials (`/partner/materials`)
+
+### 14.1 Downloadable Assets
+- Brochures (General, Pet, Human, Price List)
+- Logos (Full color, White, Black)
+- Counter displays and signage
+- Social media assets
+
+### 14.2 Categories
+- `brochures` - PDF brochures
+- `logos` - Logo files
+- `displays` - Counter/shelf displays
+- `social` - Social media graphics
+
+**Files:** `src/app/partner/materials/page.tsx`
+
+---
+
+## 15. Referral Code Requests
+
+### 15.1 Partner Request Flow
+- Partners can request additional referral codes from `/partner/referrals`
+- Request modal with quantity (max 100) and reason (required if > 10 codes)
+- Status tracking: pending → approved/rejected
+
+### 15.2 Admin Approval
+- `/admin/referral-requests` API endpoint
+- Admin can approve/reject with notes
+- Auto-generates batch when approved
+
+**Files:** `src/app/partner/referrals/page.tsx`, `src/app/api/partner/referrals/request/route.ts`, `src/app/api/admin/referral-requests/route.ts`
+
+**Migration:** `021_referral_code_requests.sql`
+
+---
+
+## 16. Additional Pipedream Workflows
+
+### 16.1 Commission Approved Handler
+- Notifies partners when commissions are approved for payout
+- Shows approved amount and commission count
+- Handler: `pipedream/commission-approved-handler.js`
+- Env var: `PIPEDREAM_COMMISSION_WEBHOOK_URL`
+
+### 16.2 Security Change Handler
+- Alerts partners when sensitive account details change (bank account, email)
+- Sends to original email address for security
+- Includes change type, timestamp, and IP address
+- Handler: `pipedream/security-change-handler.js`
+- Env var: `PIPEDREAM_SECURITY_WEBHOOK_URL`
+
+**Files:** `pipedream/commission-approved-handler.js`, `pipedream/security-change-handler.js`
+
+---
+
+## Database Migrations Required
+
+Run these in Supabase SQL Editor before deploying to production:
+
+```sql
+-- Run migrations 014-021 in order
+-- Check supabase/migrations/ folder for each file
+```
+
+---
+
 ## Testing Checklist
 
 Before merging to `main`, verify:
@@ -264,18 +345,12 @@ Before merging to `main`, verify:
 - [ ] Activation codes: generate, assign, unassign
 - [ ] Referral codes: generate, track redemption
 - [ ] Commission payout workflow
+- [ ] Partner commissions page displays correctly
+- [ ] Partner materials page with downloads
+- [ ] Partner referral code request flow
+- [ ] Commission approved email notification
+- [ ] Security change email notification
 
 ---
 
 *Last updated: February 1, 2026*
-| Dashboard Enhancements | 2 |
-| Application/Approval | 8 |
-| Admin Dashboard | 4 |
-| Commission Workflow | 5 |
-| Code Generator | 8 |
-| Admin Tools | 10 |
-| Bug Fixes | 41 |
-
----
-
-*Generated: January 25, 2026*

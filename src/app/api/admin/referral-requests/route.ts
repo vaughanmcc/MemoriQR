@@ -2,6 +2,14 @@ import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/server'
 import { cookies } from 'next/headers'
 
+// Helper to check admin authentication
+async function checkAdminAuth(): Promise<boolean> {
+  const cookieStore = await cookies()
+  const session = cookieStore.get('admin-session')?.value
+  const correctPassword = process.env.ADMIN_PASSWORD
+  return !!correctPassword && session === correctPassword
+}
+
 interface CodeRequest {
   id: string
   partner_id: string
@@ -25,10 +33,7 @@ interface CodeRequest {
 
 // GET /api/admin/referral-requests - Get all referral code requests
 export async function GET(request: Request) {
-  const cookieStore = await cookies()
-  const adminAuth = cookieStore.get('admin_auth')
-
-  if (!adminAuth || adminAuth.value !== process.env.ADMIN_AUTH_TOKEN) {
+  if (!await checkAdminAuth()) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
@@ -60,10 +65,7 @@ export async function GET(request: Request) {
 
 // POST /api/admin/referral-requests - Approve or reject a request
 export async function POST(request: Request) {
-  const cookieStore = await cookies()
-  const adminAuth = cookieStore.get('admin_auth')
-
-  if (!adminAuth || adminAuth.value !== process.env.ADMIN_AUTH_TOKEN) {
+  if (!await checkAdminAuth()) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 

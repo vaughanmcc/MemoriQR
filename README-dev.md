@@ -149,6 +149,12 @@ Handles most emails:
 - `referral_codes_generated` - Lead gen codes ready
 - `partner_codes_generated` - Wholesale codes ready
 
+### 4. Commission Approved (`PIPEDREAM_COMMISSION_WEBHOOK_URL`)
+- `commission_approved` - Partner commission approved for payout
+
+### 5. Security Change (`PIPEDREAM_SECURITY_WEBHOOK_URL`)
+- `security_change` - Bank account or email changed alert
+
 See [pipedream/README.md](pipedream/README.md) for setup instructions.
 
 ## 💼 Partner System
@@ -171,6 +177,9 @@ See [pipedream/README.md](pipedream/README.md) for setup instructions.
 - `/partner/settings` - Profile, banking, notifications
 - `/partner/faq` - Help documentation
 - `/partner/codes` - View assigned codes
+- `/partner/referrals` - View referral codes, request more
+- `/partner/commissions` - Commission history and payouts
+- `/partner/materials` - Download marketing materials
 
 ## 🛠️ Admin Routes
 
@@ -192,6 +201,7 @@ Key tables:
 - `orders` - Purchase orders
 - `retail_activation_codes` - Wholesale codes
 - `referral_codes` - Lead gen codes
+- `referral_code_requests` - Partner code requests
 - `partners` - Partner accounts
 - `partner_sessions` - Login sessions
 - `partner_commissions` - Commission tracking

@@ -52,6 +52,9 @@ stripe listen --forward-to localhost:3000/api/webhooks/stripe
 | `/partner/settings` | Partner profile and notification settings |
 | `/partner/faq` | Partner FAQ |
 | `/partner/codes` | View and manage assigned activation codes |
+| `/partner/referrals` | View referral codes, request new codes |
+| `/partner/commissions` | View commission history and payouts |
+| `/partner/materials` | Download marketing materials (brochures, logos, etc.) |
 
 ### Admin Routes
 | Route | Purpose |
@@ -106,8 +109,8 @@ Partners can receive emails for:
 |----------|---------|---------|
 | Main Handler | `PIPEDREAM_WEBHOOK_URL` | Contact form, order emails, memorial emails, partner emails |
 | Referral Redeemed | `PIPEDREAM_REFERRAL_WEBHOOK_URL` | Commission notification when referral used |
-| Partner Codes | `PIPEDREAM_PARTNER_CODES_WEBHOOK_URL` | Codes generated notification |
-
+| Partner Codes | `PIPEDREAM_PARTNER_CODES_WEBHOOK_URL` | Codes generated notification || Commission Approved | `PIPEDREAM_COMMISSION_WEBHOOK_URL` | Notify partner when commissions approved |
+| Security Change | `PIPEDREAM_SECURITY_WEBHOOK_URL` | Alert partner when bank/email changed |
 ## Documentation
 
 - [Business Plan](docs/business-plan.md) - Pricing, costs, strategy
@@ -134,6 +137,8 @@ NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=
 PIPEDREAM_WEBHOOK_URL=https://eo7epxu5aypc0vj.m.pipedream.net
 PIPEDREAM_REFERRAL_WEBHOOK_URL=https://eo5xpf69y0qbaul.m.pipedream.net
 PIPEDREAM_PARTNER_CODES_WEBHOOK_URL=https://eop33i8rs8xu5av.m.pipedream.net
+PIPEDREAM_COMMISSION_WEBHOOK_URL=<your-webhook-url>
+PIPEDREAM_SECURITY_WEBHOOK_URL=<your-webhook-url>
 
 # App URLs
 NEXT_PUBLIC_BASE_URL=https://dev.memoriqr.co.nz
@@ -168,6 +173,7 @@ Applied migrations (in order):
 20. `018_partner_batch_stripe_payment.sql` - Batch payments
 21. `019_referral_codes_order_fk.sql` - Foreign key fix
 22. `020_partner_contact_name.sql` - Contact name field
+23. `021_referral_code_requests.sql` - Partner referral code requests
 
 ## Current Branch
 

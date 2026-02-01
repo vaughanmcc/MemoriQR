@@ -4,6 +4,55 @@
 
 ---
 
+## February 1, 2026 - Partner Portal Enhancements & Email Handlers
+
+**Completed:**
+- ✅ **Partner Commissions Page** (`/partner/commissions`):
+  - Full commission history with status tracking (pending, approved, paid)
+  - Monthly breakdown with earnings visualization
+  - Payout history section with payment references
+  - Filter by commission status
+
+- ✅ **Partner Marketing Materials Page** (`/partner/materials`):
+  - Downloadable marketing assets organized by category
+  - Brochures: General, Pet, Human, Price List (PDFs)
+  - Logos: Full color, White, Black (PNG with transparency)
+  - Counter displays and shelf signage
+  - Social media graphics for sharing
+
+- ✅ **Referral Code Request System**:
+  - Partners can request additional referral codes from portal
+  - Request modal with quantity selector (max 100)
+  - Reason required for requests > 10 codes
+  - Migration 021: `referral_code_requests` table
+  - Admin approval workflow via `/admin/referral-requests`
+  - Auto-generates batch when approved
+
+- ✅ **Commission Approved Email Workflow**:
+  - New Pipedream workflow for commission approval notifications
+  - Handler: `pipedream/commission-approved-handler.js`
+  - Env var: `PIPEDREAM_COMMISSION_WEBHOOK_URL`
+  - Notifies partner when commissions approved for payout
+
+- ✅ **Security Change Email Workflow**:
+  - New Pipedream workflow for security alerts
+  - Handler: `pipedream/security-change-handler.js`
+  - Env var: `PIPEDREAM_SECURITY_WEBHOOK_URL`
+  - Alerts partner when bank account or email changed
+  - Sends to original email for fraud protection
+  - Includes change type, timestamp, IP address
+
+**Key Files Created/Modified:**
+- `src/app/partner/commissions/page.tsx` (NEW) - Commissions page
+- `src/app/partner/materials/page.tsx` (NEW) - Materials download page
+- `src/app/api/partner/referrals/request/route.ts` (NEW) - Request codes API
+- `src/app/api/admin/referral-requests/route.ts` (NEW) - Admin approve/reject API
+- `supabase/migrations/021_referral_code_requests.sql` - Request tracking table
+- `pipedream/commission-approved-handler.js` - Commission email handler
+- `pipedream/security-change-handler.js` - Security alert email handler
+
+---
+
 ## January 30, 2026 - Date/Time Display Formatting & Partner Notifications
 
 **Completed:**
