@@ -1878,7 +1878,7 @@ export default function AdminToolsPage() {
                       {codeLookupResult.code.usedAt && (
                         <p className="text-xs text-stone-500 mt-1">
                           Used: {new Date(codeLookupResult.code.usedAt).toLocaleString('en-NZ', { 
-                            day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZoneName: 'short'
+                            day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZoneName: 'short', timeZone: 'Pacific/Auckland'
                           })}
                         </p>
                       )}
@@ -1926,7 +1926,7 @@ export default function AdminToolsPage() {
                               <div className="flex justify-between">
                                 <dt className="text-stone-500">Expires:</dt>
                                 <dd className="font-medium text-stone-800">
-                                  {new Date(codeLookupResult.code.expiresAt).toLocaleString('en-NZ', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZoneName: 'short' })}
+                                  {new Date(codeLookupResult.code.expiresAt).toLocaleString('en-NZ', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZoneName: 'short', timeZone: 'Pacific/Auckland' })}
                                 </dd>
                               </div>
                             )}
@@ -1942,6 +1942,7 @@ export default function AdminToolsPage() {
                               hour: '2-digit',
                               minute: '2-digit',
                               timeZoneName: 'short',
+                              timeZone: 'Pacific/Auckland'
                             })}
                           </dd>
                         </div>
