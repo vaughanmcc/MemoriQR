@@ -84,6 +84,8 @@ export async function GET(request: NextRequest) {
     const recentActivations = referralCodesData?.filter(c => 
       c.is_used && c.used_at && new Date(c.used_at) > thirtyDaysAgo
     ).length || 0
+    const totalReferralCodes = referralCodesData?.length || 0
+    const usedReferralCodes = referralCodesData?.filter(c => c.is_used).length || 0
 
     // Get code batches
     const { data: batchesData } = await supabase
@@ -128,7 +130,9 @@ export async function GET(request: NextRequest) {
         totalEarned,
         pendingCommission,
         paidCommission,
-        recentActivations
+        recentActivations,
+        totalReferralCodes,
+        usedReferralCodes
       },
       recentBatches: batchesData || [],
       recentCommissions: recentCommissions || [],

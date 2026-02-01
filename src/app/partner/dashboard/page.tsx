@@ -41,6 +41,8 @@ interface DashboardData {
     pendingCommission: number
     paidCommission: number
     recentActivations: number
+    totalReferralCodes: number
+    usedReferralCodes: number
   }
   recentBatches: any[]
   recentCommissions: any[]
@@ -178,7 +180,7 @@ export default function PartnerDashboardPage() {
           <StatCard
             title="Referrals (30 days)"
             value={stats.recentActivations}
-            subtitle="Recent referral redemptions"
+            subtitle={`${stats.usedReferralCodes} used of ${stats.totalReferralCodes} total`}
             icon={<TrendingUp className="h-6 w-6 text-green-600" />}
             color="green"
             href="/partner/referrals"
