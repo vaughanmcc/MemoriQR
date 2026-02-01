@@ -162,19 +162,24 @@ export async function POST(request: Request) {
     }
 
     // For requests over 10, create pending request for admin review
-    const { error: requestError } = await (supabase
+    console.log('Creating pending request for partner:', partner.id, 'quantity:', quantity)
+    
+    const { data: insertedRequest, error: requestError } = await (supabase
       .from('referral_code_requests' as any)
       .insert({
         partner_id: partner.id,
         quantity,
         reason: reason.trim(),
         status: 'pending'
-      } as any) as any)
+      } as any)
+      .select() as any)
+
+    console.log('Insert result:', { insertedRequest, requestError })
 
     if (requestError) {
       console.error('Failed to create request:', requestError)
       return NextResponse.json(
-        { error: 'Failed to submit request' },
+        { error: 'Failed to submit request', details: requestError },
         { status: 500 }
       )
     }
