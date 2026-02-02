@@ -92,12 +92,32 @@ export default function AdminPartnersPage() {
   );
 }
 
+interface PartnerActivity {
+  id: string;
+  activity_type: string;
+  previous_status: string | null;
+  new_status: string | null;
+  reason: string | null;
+  notes: string | null;
+  created_at: string;
+}
+
+interface PartnerStats {
+  activationCodes: number;
+  usedActivationCodes: number;
+  referralCodes: number;
+  usedReferralCodes: number;
+}
+
 function AdminPartnersContent() {
   const [partners, setPartners] = useState<Partner[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedPartner, setSelectedPartner] = useState<Partner | null>(null);
+  const [partnerActivity, setPartnerActivity] = useState<PartnerActivity[]>([]);
+  const [partnerStats, setPartnerStats] = useState<PartnerStats | null>(null);
+  const [detailLoading, setDetailLoading] = useState(false);
   const [editingPartner, setEditingPartner] = useState<Partner | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
   const [revokingTrust, setRevokingTrust] = useState(false);
@@ -181,6 +201,33 @@ function AdminPartnersContent() {
   useEffect(() => {
     fetchPartners();
   }, [fetchPartners]);
+
+  // Fetch detailed partner info when selected
+  const fetchPartnerDetails = async (partnerId: string) => {
+    setDetailLoading(true);
+    try {
+      const res = await fetch(`/api/admin/partners/${partnerId}`);
+      if (res.ok) {
+        const data = await res.json();
+        setPartnerActivity(data.activityLog || []);
+        setPartnerStats(data.stats || null);
+      }
+    } catch (err) {
+      console.error('Failed to fetch partner details:', err);
+    } finally {
+      setDetailLoading(false);
+    }
+  };
+
+  // Load details when partner is selected
+  useEffect(() => {
+    if (selectedPartner) {
+      fetchPartnerDetails(selectedPartner.id);
+    } else {
+      setPartnerActivity([]);
+      setPartnerStats(null);
+    }
+  }, [selectedPartner]);
 
   const handleAction = async (partnerId: string, action: 'approve' | 'reject' | 'suspend' | 'activate', reason?: string) => {
     setActionLoading(true);
@@ -557,7 +604,7 @@ function AdminPartnersContent() {
       {/* Partner Detail Modal */}
       {selectedPartner && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6 border-b">
               <div className="flex items-center justify-between">
                 <h3 className="text-xl font-bold text-stone-800">{selectedPartner.business_name}</h3>
@@ -631,6 +678,64 @@ function AdminPartnersContent() {
                   <div>{formatDateOnly(selectedPartner.created_at)}</div>
                   <div className="text-xs">{formatTimeWithZone(selectedPartner.created_at)}</div>
                 </div>
+              </div>
+
+              {/* Code Stats */}
+              {partnerStats && (
+                <div className="pt-4 border-t">
+                  <label className="text-sm text-stone-500 font-medium">Codes</label>
+                  <div className="grid grid-cols-2 gap-3 mt-2">
+                    <div className="bg-stone-50 p-3 rounded-lg">
+                      <p className="text-xs text-stone-500">Activation Codes</p>
+                      <p className="font-semibold">{partnerStats.usedActivationCodes} / {partnerStats.activationCodes} used</p>
+                    </div>
+                    <div className="bg-stone-50 p-3 rounded-lg">
+                      <p className="text-xs text-stone-500">Referral Codes</p>
+                      <p className="font-semibold">{partnerStats.usedReferralCodes} / {partnerStats.referralCodes} used</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Activity History */}
+              <div className="pt-4 border-t">
+                <label className="text-sm text-stone-500 font-medium">Activity History</label>
+                {detailLoading ? (
+                  <div className="text-center py-4 text-stone-400">Loading...</div>
+                ) : partnerActivity.length === 0 ? (
+                  <p className="text-sm text-stone-400 mt-2">No activity recorded yet</p>
+                ) : (
+                  <div className="mt-2 max-h-48 overflow-y-auto space-y-2">
+                    {partnerActivity.map((activity) => (
+                      <div key={activity.id} className="bg-stone-50 p-3 rounded-lg text-sm">
+                        <div className="flex items-center justify-between">
+                          <span className={`font-medium ${
+                            activity.activity_type === 'approved' || activity.activity_type === 'approve' ? 'text-green-600' :
+                            activity.activity_type === 'suspended' || activity.activity_type === 'suspend' ? 'text-red-600' :
+                            activity.activity_type === 'rejected' || activity.activity_type === 'reject' ? 'text-stone-600' :
+                            activity.activity_type === 'activate' ? 'text-green-600' :
+                            'text-stone-700'
+                          }`}>
+                            {activity.activity_type.charAt(0).toUpperCase() + activity.activity_type.slice(1)}
+                          </span>
+                          <span className="text-xs text-stone-400">
+                            {formatDateOnly(activity.created_at)}
+                          </span>
+                        </div>
+                        {activity.previous_status && activity.new_status && (
+                          <p className="text-xs text-stone-500 mt-1">
+                            {activity.previous_status} → {activity.new_status}
+                          </p>
+                        )}
+                        {activity.reason && (
+                          <p className="text-xs text-stone-600 mt-1 italic">
+                            &ldquo;{activity.reason}&rdquo;
+                          </p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
 

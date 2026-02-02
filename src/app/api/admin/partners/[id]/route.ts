@@ -36,7 +36,47 @@ export async function GET(
       return NextResponse.json({ error: 'Partner not found' }, { status: 404 });
     }
 
-    return NextResponse.json({ partner });
+    // Fetch activity history
+    const { data: activityLog } = await supabase
+      .from('partner_activity_log')
+      .select('*')
+      .eq('partner_id', id)
+      .order('created_at', { ascending: false })
+      .limit(50);
+
+    // Fetch code stats
+    const { count: activationCodeCount } = await supabase
+      .from('retail_activation_codes')
+      .select('*', { count: 'exact', head: true })
+      .eq('partner_id', id);
+
+    const { count: referralCodeCount } = await supabase
+      .from('referral_codes')
+      .select('*', { count: 'exact', head: true })
+      .eq('partner_id', id);
+
+    const { count: usedActivationCodes } = await supabase
+      .from('retail_activation_codes')
+      .select('*', { count: 'exact', head: true })
+      .eq('partner_id', id)
+      .eq('is_used', true);
+
+    const { count: usedReferralCodes } = await supabase
+      .from('referral_codes')
+      .select('*', { count: 'exact', head: true })
+      .eq('partner_id', id)
+      .eq('is_used', true);
+
+    return NextResponse.json({ 
+      partner,
+      activityLog: activityLog || [],
+      stats: {
+        activationCodes: activationCodeCount || 0,
+        usedActivationCodes: usedActivationCodes || 0,
+        referralCodes: referralCodeCount || 0,
+        usedReferralCodes: usedReferralCodes || 0,
+      }
+    });
   } catch (error) {
     console.error('Get partner error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
@@ -156,6 +196,22 @@ export async function PATCH(
       return NextResponse.json({ 
         error: `Failed to update partner: ${updateError.message || 'Unknown error'}` 
       }, { status: 500 });
+    }
+
+    // Log activity if there was a status change
+    if (action && newStatus !== partner.status) {
+      await supabase.from('partner_activity_log').insert({
+        partner_id: id,
+        activity_type: action,
+        performed_by_admin: true,
+        previous_status: partner.status,
+        new_status: newStatus,
+        reason: reason || null,
+        metadata: { 
+          action,
+          timestamp: new Date().toISOString()
+        }
+      });
     }
 
     // Send notification emails
