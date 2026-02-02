@@ -180,7 +180,8 @@ export async function POST(request: NextRequest) {
         const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://memoriqr.com'
         const orderUrl = `${baseUrl}/order?ref=${encodeURIComponent(referralCode.code)}`
 
-        await fetch(PIPEDREAM_PARTNER_CODES_WEBHOOK_URL, {
+        console.log('Sending referral_code_share to:', PIPEDREAM_PARTNER_CODES_WEBHOOK_URL)
+        const emailResponse = await fetch(PIPEDREAM_PARTNER_CODES_WEBHOOK_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -195,10 +196,13 @@ export async function POST(request: NextRequest) {
             orderUrl,
           }),
         })
+        console.log('referral_code_share response:', emailResponse.status, await emailResponse.text().catch(() => ''))
       } catch (emailError) {
         console.error('Failed to send share email:', emailError)
         // Don't fail the request if email fails - the share is still recorded
       }
+    } else {
+      console.log('PIPEDREAM_PARTNER_CODES_WEBHOOK_URL is not set!')
     }
 
     return NextResponse.json({ 
