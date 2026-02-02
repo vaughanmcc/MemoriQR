@@ -25,6 +25,27 @@ export const RENEWAL_PRICING = {
   tenYear: 199,
 }
 
+// Extension pricing (as per business plan)
+export const EXTENSION_PRICING = {
+  '1_year': { price: 29, years: 1, label: '1 Year' },
+  '5_year': { price: 99, years: 5, label: '5 Years' },
+  'lifetime': { price: 299, years: null, label: 'Lifetime' },
+} as const
+
+export type ExtensionType = keyof typeof EXTENSION_PRICING
+
+// Grace period settings
+export const GRACE_PERIOD_DAYS = 30 // Memorial viewable but not editable
+export const DATA_PRESERVATION_DAYS = 14 // Data kept after grace period before deletion
+export const TOTAL_DAYS_BEFORE_DELETION = GRACE_PERIOD_DAYS + DATA_PRESERVATION_DAYS // 44 days total
+
+// Reminder email schedule (days before expiry)
+export const REMINDER_SCHEDULE = {
+  first: 90,
+  second: 30,
+  final: 7,
+} as const
+
 // Upgrade pricing (Future Feature)
 export const UPGRADE_PRICING = {
   additionalPhotos: 10,    // +20 photos for $10

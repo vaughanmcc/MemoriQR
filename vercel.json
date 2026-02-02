@@ -5,12 +5,28 @@
   "devCommand": "npm run dev",
   "installCommand": "npm install",
   "regions": ["syd1"],
+  "crons": [
+    {
+      "path": "/api/cron/expiry-reminders",
+      "schedule": "0 18 * * *"
+    },
+    {
+      "path": "/api/cron/data-cleanup",
+      "schedule": "0 3 * * *"
+    }
+  ],
   "functions": {
     "src/app/api/memorial/videos/route.ts": {
       "maxDuration": 60
     },
     "src/app/api/memorial/photos/route.ts": {
       "maxDuration": 30
+    },
+    "src/app/api/cron/expiry-reminders/route.ts": {
+      "maxDuration": 60
+    },
+    "src/app/api/cron/data-cleanup/route.ts": {
+      "maxDuration": 120
     }
   },
   "env": {

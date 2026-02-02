@@ -173,6 +173,138 @@ async function handlePartnerCodePurchase(session: Stripe.Checkout.Session, supab
   }
 }
 
+// Handle memorial renewal/extension payment completion
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function handleMemorialRenewal(session: Stripe.Checkout.Session, supabase: SupabaseClient<any, 'public', any>) {
+  const memorialId = session.metadata?.memorial_id
+  const extensionType = session.metadata?.extension_type
+  const yearsAdded = session.metadata?.years_added
+  const previousExpiresAt = session.metadata?.previous_expires_at
+  const newExpiresAt = session.metadata?.new_expires_at
+  const wasExpired = session.metadata?.was_expired === 'true'
+  const wasInGracePeriod = session.metadata?.was_in_grace_period === 'true'
+  const daysRemaining = parseInt(session.metadata?.days_remaining || '0')
+  const customerId = session.metadata?.customer_id
+
+  if (!memorialId) {
+    console.error('Missing memorial_id in renewal metadata')
+    return
+  }
+
+  console.log(`Processing memorial renewal: ${memorialId}, type: ${extensionType}`)
+
+  const isLifetime = extensionType === 'lifetime' || yearsAdded === 'lifetime'
+
+  // Update memorial record
+  const updateData: Record<string, unknown> = {
+    renewal_status: 'renewed',
+    updated_at: new Date().toISOString(),
+    // Clear reminder tracking for new period
+    reminder_sent_90_days_at: null,
+    reminder_sent_30_days_at: null,
+    reminder_sent_7_days_at: null,
+    grace_period_reminder_sent_at: null,
+    data_deletion_scheduled_at: null,
+    // Rotate renewal token for security
+    renewal_token: null, // Will be regenerated on next reminder
+    renewal_token_expires_at: null,
+  }
+
+  if (isLifetime) {
+    updateData.hosting_duration = 999
+    updateData.hosting_expires_at = null
+  } else if (newExpiresAt && newExpiresAt !== 'lifetime') {
+    updateData.hosting_expires_at = newExpiresAt
+  }
+
+  const { error: updateError } = await supabase
+    .from('memorial_records')
+    .update(updateData)
+    .eq('id', memorialId)
+
+  if (updateError) {
+    console.error('Failed to update memorial:', updateError)
+    return
+  }
+
+  // Create renewal record
+  const { error: renewalError } = await supabase
+    .from('memorial_renewals')
+    .insert({
+      memorial_id: memorialId,
+      customer_id: customerId || null,
+      renewal_type: extensionType,
+      years_added: isLifetime ? null : parseInt(yearsAdded || '1'),
+      amount_paid: session.amount_total ? session.amount_total / 100 : 0,
+      stripe_payment_id: session.payment_intent as string,
+      stripe_session_id: session.id,
+      previous_expires_at: previousExpiresAt || new Date().toISOString(),
+      new_expires_at: isLifetime ? null : newExpiresAt,
+      was_expired: wasExpired,
+      was_in_grace_period: wasInGracePeriod,
+      days_remaining: daysRemaining,
+    })
+
+  if (renewalError) {
+    console.error('Failed to create renewal record:', renewalError)
+  }
+
+  // Log activity
+  await supabase.from('activity_log').insert({
+    memorial_id: memorialId,
+    activity_type: 'renewed',
+    details: {
+      extension_type: extensionType,
+      years_added: yearsAdded,
+      amount_paid: session.amount_total ? session.amount_total / 100 : 0,
+      was_expired: wasExpired,
+      was_in_grace_period: wasInGracePeriod,
+      new_expires_at: newExpiresAt,
+    },
+  })
+
+  // Send confirmation email via Pipedream
+  const webhookUrl = process.env.PIPEDREAM_WEBHOOK_URL
+  if (webhookUrl) {
+    const { data: memorial } = await supabase
+      .from('memorial_records')
+      .select('deceased_name, memorial_slug, hosting_expires_at, customers(email, full_name)')
+      .eq('id', memorialId)
+      .single()
+
+    if (memorial) {
+      const customerEmail = (memorial.customers as { email?: string } | null)?.email
+      const customerName = (memorial.customers as { full_name?: string } | null)?.full_name
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_BASE_URL || 'https://memoriqr.co.nz'
+
+      try {
+        await fetch(webhookUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: 'renewal_confirmation',
+            customer_email: customerEmail,
+            customer_name: customerName,
+            deceased_name: memorial.deceased_name,
+            memorial_slug: memorial.memorial_slug,
+            memorial_url: `${baseUrl}/memorial/${memorial.memorial_slug}`,
+            extension_type: extensionType,
+            is_lifetime: isLifetime,
+            new_expires_at: isLifetime ? null : memorial.hosting_expires_at,
+            amount_paid: session.amount_total ? session.amount_total / 100 : 0,
+            currency: session.currency?.toUpperCase() || 'NZD',
+          }),
+        })
+        console.log(`Renewal confirmation email sent to ${customerEmail}`)
+      } catch (emailError) {
+        console.error('Failed to send renewal confirmation:', emailError)
+      }
+    }
+  }
+
+  console.log(`Memorial ${memorialId} renewed successfully: ${extensionType}`)
+}
+
 export async function POST(request: NextRequest) {
   const body = await request.text()
   const headersList = await headers()
@@ -210,6 +342,12 @@ export async function POST(request: NextRequest) {
       // Check if this is a partner code purchase
       if (session.metadata?.type === 'partner_code_purchase') {
         await handlePartnerCodePurchase(session, supabase)
+        break
+      }
+
+      // Check if this is a memorial renewal/extension
+      if (session.metadata?.type === 'memorial_renewal') {
+        await handleMemorialRenewal(session, supabase)
         break
       }
 
