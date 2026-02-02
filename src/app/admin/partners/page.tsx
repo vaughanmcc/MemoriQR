@@ -96,6 +96,7 @@ function AdminPartnersContent() {
   const [partners, setPartners] = useState<Partner[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
   const [selectedPartner, setSelectedPartner] = useState<Partner | null>(null);
   const [editingPartner, setEditingPartner] = useState<Partner | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
@@ -421,7 +422,7 @@ function AdminPartnersContent() {
 
         {/* Filters */}
         <div className="bg-white rounded-xl shadow p-4 mb-6">
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2 mb-4">
             {['all', 'pending', 'active', 'suspended', 'rejected'].map((status) => (
               <Link
                 key={status}
@@ -441,6 +442,30 @@ function AdminPartnersContent() {
               </Link>
             ))}
           </div>
+          
+          {/* Search */}
+          <div className="relative">
+            <input
+              type="text"
+              placeholder="Search by business name, contact name, or email..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full px-4 py-2 pl-10 border border-stone-300 rounded-lg focus:ring-2 focus:ring-stone-500 focus:border-stone-500"
+            />
+            <svg className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-stone-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600"
+              >
+                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Partners Table */}
@@ -458,14 +483,28 @@ function AdminPartnersContent() {
               </tr>
             </thead>
             <tbody className="divide-y divide-stone-100">
-              {partners.length === 0 ? (
-                <tr>
-                  <td colSpan={7} className="px-6 py-12 text-center text-stone-500">
-                    No partners found
-                  </td>
-                </tr>
-              ) : (
-                partners.map((partner) => (
+              {(() => {
+                const filteredPartners = partners.filter(partner => {
+                  if (!searchQuery.trim()) return true;
+                  const query = searchQuery.toLowerCase().trim();
+                  return (
+                    partner.business_name?.toLowerCase().includes(query) ||
+                    partner.contact_name?.toLowerCase().includes(query) ||
+                    partner.email?.toLowerCase().includes(query)
+                  );
+                });
+                
+                if (filteredPartners.length === 0) {
+                  return (
+                    <tr>
+                      <td colSpan={7} className="px-6 py-12 text-center text-stone-500">
+                        {searchQuery ? 'No partners match your search' : 'No partners found'}
+                      </td>
+                    </tr>
+                  );
+                }
+                
+                return filteredPartners.map((partner) => (
                   <tr key={partner.id} className="hover:bg-stone-50">
                     <td className="px-6 py-4">
                       <p className="font-medium text-stone-800">{partner.business_name}</p>
@@ -508,8 +547,8 @@ function AdminPartnersContent() {
                       </button>
                     </td>
                   </tr>
-                ))
-              )}
+                ));
+              })()}
             </tbody>
           </table>
         </div>
