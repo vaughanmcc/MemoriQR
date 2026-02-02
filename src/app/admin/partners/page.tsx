@@ -190,8 +190,10 @@ function AdminPartnersContent() {
         body: JSON.stringify({ action, reason }),
       });
 
+      const data = await res.json();
+      
       if (!res.ok) {
-        throw new Error('Failed to update partner');
+        throw new Error(data.error || 'Failed to update partner');
       }
 
       // Refresh the list
