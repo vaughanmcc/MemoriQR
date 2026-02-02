@@ -290,6 +290,25 @@ export async function POST(request: NextRequest) {
         })
         .eq('activation_code', activationCode)
 
+      // Log activation code usage activity
+      await supabase
+        .from('activation_code_activity_log')
+        .insert({
+          activation_code: activationCode,
+          activity_type: 'used',
+          performed_by_admin: false,
+          from_partner_id: partnerId || null,
+          to_partner_id: partnerId || null,
+          notes: `Activated for memorial: ${deceasedName}`,
+          metadata: { 
+            memorial_id: memorialId,
+            deceased_name: deceasedName,
+            product_type: productType,
+            hosting_duration: hostingDuration,
+            used_at: new Date().toISOString()
+          }
+        })
+
       // Notify partner that activation code was used
       if (partnerId) {
         const { data: partner } = await supabase

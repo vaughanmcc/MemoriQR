@@ -164,6 +164,35 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Log activity for generated codes
+    const activityLogs = codes.map(code => ({
+      activation_code: code,
+      activity_type: 'generated',
+      performed_by_admin: true,
+      from_partner_id: null,
+      to_partner_id: partnerId || null,
+      from_partner_name: null,
+      to_partner_name: partnerId ? (partnerName || 'Partner') : null,
+      notes: partnerId ? `Generated and assigned to partner` : `Generated (unassigned)`,
+      metadata: { 
+        batch_id: batchId,
+        batch_name: batchName,
+        variant,
+        product_type: variantConfig.product,
+        hosting_duration: variantConfig.duration,
+        generated_at: new Date().toISOString()
+      }
+    }))
+
+    const { error: logError } = await supabase
+      .from('activation_code_activity_log')
+      .insert(activityLogs)
+
+    if (logError) {
+      console.error('Error logging code generation activity:', logError)
+      // Don't fail - activity logging is non-critical
+    }
+
     console.log(`Generated ${codes.length} retail activation codes for variant ${variant} (batch: ${batchId})${partnerId ? ` assigned to partner ${partnerName}` : ''}`)
 
     // Send email notification to partner if codes were assigned to them

@@ -746,7 +746,7 @@ export default function PartnerReferralsPage() {
                 <div className="text-center py-8 text-gray-500">
                   <Tag className="h-12 w-12 mx-auto mb-4 text-gray-400" />
                   <p className="font-medium">No available codes to share</p>
-                  <p className="text-sm mt-1">Request more codes or wait for used codes to become available.</p>
+                  <p className="text-sm mt-1">Request more referral codes or wait for used codes to become available.</p>
                 </div>
               ) : (
                 <form onSubmit={sendShare} className="space-y-4">
@@ -902,7 +902,7 @@ export default function PartnerReferralsPage() {
           </div>
         )}
 
-        {/* Request More Codes CTA */}
+        {/* Request More Referral Codes CTA */}
         <div className="mt-8 bg-white rounded-lg shadow p-6 text-center">
           <h3 className="font-semibold mb-2">Need more referral codes?</h3>
           <p className="text-gray-600 text-sm mb-4">
@@ -913,7 +913,7 @@ export default function PartnerReferralsPage() {
             className="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
           >
             <Plus className="h-4 w-4" />
-            Request More Codes
+            Request More Referral Codes
           </button>
         </div>
 

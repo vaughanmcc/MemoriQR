@@ -302,6 +302,26 @@ export async function POST(request: NextRequest) {
                 })
                 .eq('id', referralCodeId)
 
+              // Log referral code redemption activity
+              await supabase
+                .from('referral_code_activity_log')
+                .insert({
+                  referral_code_id: referralCodeId,
+                  code: referralCode,
+                  activity_type: 'redeemed',
+                  performed_by_admin: false,
+                  from_partner_id: refCodeData.partner_id,
+                  to_partner_id: refCodeData.partner_id,
+                  notes: `Used on order ${orderNumber}`,
+                  metadata: { 
+                    order_number: orderNumber,
+                    order_id: orderData.id,
+                    order_total: orderTotal,
+                    commission_amount: commissionAmount,
+                    redeemed_at: new Date().toISOString()
+                  }
+                })
+
               console.log(`Commission of $${commissionAmount} recorded for partner ${refCodeData.partner_id}`)
 
               // Send email notification to partner if they haven't opted out

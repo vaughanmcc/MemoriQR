@@ -174,6 +174,29 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to share code' }, { status: 500 })
     }
 
+    // Log share activity
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (supabase as any)
+      .from('referral_code_activity_log')
+      .insert({
+        referral_code_id: referralCodeId,
+        code: referralCode.code,
+        activity_type: 'shared',
+        performed_by_partner_id: partner.id,
+        performed_by_admin: false,
+        from_partner_id: partner.id,
+        to_partner_id: partner.id,
+        from_partner_name: partner.partner_name,
+        to_partner_name: partner.partner_name,
+        notes: `Shared with ${recipientName || recipientEmail.trim().toLowerCase()}`,
+        metadata: { 
+          share_id: share.id,
+          recipient_email: recipientEmail.trim().toLowerCase(),
+          recipient_name: recipientName?.trim() || null,
+          shared_at: new Date().toISOString()
+        }
+      })
+
     // Send email via Pipedream (partner codes workflow)
     if (PIPEDREAM_PARTNER_CODES_WEBHOOK_URL) {
       try {
