@@ -180,25 +180,36 @@ export async function POST(request: NextRequest) {
         const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://memoriqr.com'
         const orderUrl = `${baseUrl}/order?ref=${encodeURIComponent(referralCode.code)}`
 
-        await fetch(PIPEDREAM_PARTNER_CODES_WEBHOOK_URL, {
+        const webhookPayload = {
+          type: 'referral_code_share',
+          to: recipientEmail.trim().toLowerCase(),
+          recipientName: recipientName?.trim() || null,
+          partnerName: partner.partner_name,
+          referralCode: referralCode.code,
+          discountPercent: referralCode.discount_percent || partner.default_discount_percent || 0,
+          freeShipping: referralCode.free_shipping || false,
+          personalMessage: message?.trim() || null,
+          orderUrl,
+        }
+        
+        console.log('[Share] Sending to Pipedream:', {
+          url: PIPEDREAM_PARTNER_CODES_WEBHOOK_URL,
+          payload: webhookPayload,
+        })
+
+        const response = await fetch(PIPEDREAM_PARTNER_CODES_WEBHOOK_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            type: 'referral_code_share',
-            to: recipientEmail.trim().toLowerCase(),
-            recipientName: recipientName?.trim() || null,
-            partnerName: partner.partner_name,
-            referralCode: referralCode.code,
-            discountPercent: referralCode.discount_percent || partner.default_discount_percent || 0,
-            freeShipping: referralCode.free_shipping || false,
-            personalMessage: message?.trim() || null,
-            orderUrl,
-          }),
+          body: JSON.stringify(webhookPayload),
         })
+        
+        console.log('[Share] Pipedream response status:', response.status)
       } catch (emailError) {
         console.error('Failed to send share email:', emailError)
         // Don't fail the request if email fails - the share is still recorded
       }
+    } else {
+      console.warn('[Share] PIPEDREAM_PARTNER_CODES_WEBHOOK_URL not set!')
     }
 
     return NextResponse.json({ 
