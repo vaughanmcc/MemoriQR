@@ -111,6 +111,7 @@ export async function POST(request: NextRequest) {
     }
     if (webhookUrl) {
       try {
+        console.log('Sending partner_login_code to webhook:', webhookUrl)
         const response = await fetch(webhookUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -126,9 +127,10 @@ export async function POST(request: NextRequest) {
             reply_to: 'partners@memoriqr.co.nz'
           })
         })
+        const responseText = await response.text().catch(() => 'unknown error')
+        console.log('partner_login_code webhook response:', response.status, responseText)
         if (!response.ok) {
-          const errorText = await response.text().catch(() => 'unknown error')
-          console.error('Login code webhook failed:', response.status, errorText)
+          console.error('Login code webhook failed:', response.status, responseText)
         }
       } catch (emailError) {
         console.error('Failed to send login code email:', emailError)
