@@ -155,6 +155,7 @@ export async function PATCH(
     }
 
     // Update partner
+    console.log('Updating partner with data:', JSON.stringify(updateData, null, 2));
     const { error: updateError } = await supabase
       .from('partners')
       .update(updateData)
@@ -162,7 +163,15 @@ export async function PATCH(
 
     if (updateError) {
       console.error('Update partner error:', updateError);
-      return NextResponse.json({ error: 'Failed to update partner' }, { status: 500 });
+      console.error('Update error details:', {
+        code: updateError.code,
+        message: updateError.message,
+        details: updateError.details,
+        hint: updateError.hint
+      });
+      return NextResponse.json({ 
+        error: `Failed to update partner: ${updateError.message || 'Unknown error'}` 
+      }, { status: 500 });
     }
 
     // Send notification emails
