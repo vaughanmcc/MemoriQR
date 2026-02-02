@@ -2,16 +2,6 @@
 
 This document describes the Pipedream workflows used by MemoriQR.
 
-## Quick Reference
-
-| JS File | Pipedream Workflow | Notes |
-|---------|-------------------|-------|
-| email-handler.js | MemoriQR Supabase Webhook WF | Main webhook for order emails |
-| partner-codes-notification-handler.js | MemoriQR Partner Order Notification | Partner codes generated/transferred |
-| referral-redeemed-handler.js | Referral_Redeemed_WF | Referral code redemption notifications |
-| commission-approved-handler.js | MemoriQR Commission Approved | Commission approval notifications |
-| security-change-handler.js | MemoriQR Security Alerts | Password/email change alerts |
-
 ## Project Details
 
 - **Pipedream Project:** MemoriQR Supabase webhook
