@@ -88,6 +88,28 @@ export async function POST(request: NextRequest) {
 
     console.log(`Assigned ${codesToAssign.length} codes to partner ${partnerDisplayName} (${partnerId})`)
 
+    // Log activity for each code
+    const activityLogs = codesToAssign.map(code => ({
+      activation_code: code,
+      activity_type: 'assigned',
+      performed_by_admin: true,
+      from_partner_id: null,
+      to_partner_id: partnerId,
+      from_partner_name: null,
+      to_partner_name: partnerDisplayName,
+      notes: `Assigned by admin`,
+      metadata: { assigned_at: new Date().toISOString() }
+    }))
+
+    const { error: logError } = await supabase
+      .from('activation_code_activity_log')
+      .insert(activityLogs)
+
+    if (logError) {
+      console.error('Error logging activity:', logError)
+      // Don't fail - activity logging is non-critical
+    }
+
     // Send email notification to partner
     if (partnerEmail && codesToAssign.length > 0 && PIPEDREAM_PARTNER_CODES_WEBHOOK_URL) {
       const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_BASE_URL || 'https://memoriqr.com'
@@ -188,6 +210,28 @@ export async function DELETE(request: NextRequest) {
 
     if (updateError) {
       return NextResponse.json({ error: 'Failed to unassign codes' }, { status: 500 })
+    }
+
+    // Log activity for each code
+    const activityLogs = unassignableCodes.map((code: { activation_code: string; partner_id: string; partners: { partner_name?: string } | null }) => ({
+      activation_code: code.activation_code,
+      activity_type: 'unassigned',
+      performed_by_admin: true,
+      from_partner_id: code.partner_id,
+      to_partner_id: null,
+      from_partner_name: (code.partners as { partner_name?: string } | null)?.partner_name || 'Partner',
+      to_partner_name: null,
+      notes: `Unassigned by admin`,
+      metadata: { unassigned_at: new Date().toISOString() }
+    }))
+
+    const { error: logError } = await supabase
+      .from('activation_code_activity_log')
+      .insert(activityLogs)
+
+    if (logError) {
+      console.error('Error logging unassign activity:', logError)
+      // Don't fail - activity logging is non-critical
     }
 
     // Send email notification to each affected partner
