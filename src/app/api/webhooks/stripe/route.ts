@@ -14,6 +14,8 @@ const PIPEDREAM_WEBHOOK_URL = process.env.PIPEDREAM_WEBHOOK_URL
 const PIPEDREAM_REFERRAL_WEBHOOK_URL = process.env.PIPEDREAM_REFERRAL_WEBHOOK_URL || PIPEDREAM_WEBHOOK_URL
 // Webhook for partner code notifications
 const PIPEDREAM_PARTNER_CODES_WEBHOOK_URL = process.env.PIPEDREAM_PARTNER_CODES_WEBHOOK_URL || PIPEDREAM_WEBHOOK_URL
+// Webhook for renewal/expiry emails
+const PIPEDREAM_RENEWAL_WEBHOOK_URL = process.env.PIPEDREAM_RENEWAL_WEBHOOK_URL || PIPEDREAM_WEBHOOK_URL
 
 // Generate a unique activation code
 function generateActivationCode(): string {
@@ -259,8 +261,8 @@ async function handleMemorialRenewal(session: Stripe.Checkout.Session, supabase:
     },
   })
 
-  // Send confirmation email via Pipedream
-  const webhookUrl = process.env.PIPEDREAM_WEBHOOK_URL
+  // Send confirmation email via Pipedream (renewal workflow)
+  const webhookUrl = process.env.PIPEDREAM_RENEWAL_WEBHOOK_URL
   if (webhookUrl) {
     const { data: memorial } = await supabase
       .from('memorial_records')

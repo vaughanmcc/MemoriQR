@@ -6,7 +6,7 @@ import crypto from 'crypto'
 // This endpoint should be called by Vercel Cron daily at 6am NZ time
 // Secured by CRON_SECRET environment variable
 
-const PIPEDREAM_WEBHOOK_URL = process.env.PIPEDREAM_WEBHOOK_URL
+const PIPEDREAM_RENEWAL_WEBHOOK_URL = process.env.PIPEDREAM_RENEWAL_WEBHOOK_URL
 
 // Generate a secure renewal token
 function generateRenewalToken(): string {
@@ -149,7 +149,7 @@ interface MemorialWithReminders {
         const memorialUrl = `${baseUrl}/memorial/${memorial.memorial_slug}`
 
         // Send reminder via Pipedream
-        if (PIPEDREAM_WEBHOOK_URL) {
+        if (PIPEDREAM_RENEWAL_WEBHOOK_URL) {
           const emailData = {
             type: 'expiry_reminder',
             reminder_type: reminderType,
@@ -164,7 +164,7 @@ interface MemorialWithReminders {
             grace_days_remaining: isExpired ? GRACE_PERIOD_DAYS - daysIntoGrace : null,
           }
 
-          const response = await fetch(PIPEDREAM_WEBHOOK_URL, {
+          const response = await fetch(PIPEDREAM_RENEWAL_WEBHOOK_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(emailData),
