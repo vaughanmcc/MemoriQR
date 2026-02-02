@@ -76,18 +76,10 @@ export default defineComponent({
         activation_url, 
         sender_name, 
         reply_to,
-        surface_preparation_note,
-        referral_code,
-        discount_amount,
-        discount_percent
+        surface_preparation_note
       } = body;
       
       const productDisplay = getProductDisplay(product_type);
-      
-      // Discount section for referral codes
-      const discountSection = referral_code && discount_amount > 0 ? `
-<tr><td style="padding: 10px; border-bottom: 1px solid #eee; color: #666;">Discount Applied:</td><td style="padding: 10px; border-bottom: 1px solid #eee; font-weight: 500; color: #059669;">${discount_percent}% off (Code: ${referral_code})</td></tr>` : '';
-      const discountText = referral_code && discount_amount > 0 ? `\nDiscount: ${discount_percent}% off (Code: ${referral_code})` : '';
       
       // Surface preparation section - show for all product types
       const surfacePrepSection = surface_preparation_note ? `
@@ -115,7 +107,6 @@ export default defineComponent({
 <tr><td style="padding: 10px; border-bottom: 1px solid #eee; color: #666;">Memorial for:</td><td style="padding: 10px; border-bottom: 1px solid #eee; font-weight: 500;">${deceased_name}</td></tr>
 <tr><td style="padding: 10px; border-bottom: 1px solid #eee; color: #666;">Product:</td><td style="padding: 10px; border-bottom: 1px solid #eee; font-weight: 500;">${productDisplay}</td></tr>
 <tr><td style="padding: 10px; border-bottom: 1px solid #eee; color: #666;">Hosting:</td><td style="padding: 10px; border-bottom: 1px solid #eee; font-weight: 500;">${hosting_duration} years</td></tr>
-${discountSection}
 </table>
 
 ${surfacePrepSection}
@@ -130,7 +121,7 @@ ${surfacePrepSection}
 <p style="color: #888; font-size: 14px; margin: 0;">© 2026 MemoriQR - Preserving Memories Forever</p>
 </div>
 </div>`,
-        text: `Thank you for your order, ${customer_name}!\n\nOrder: ${order_number}\nMemorial for: ${deceased_name}\nProduct: ${productDisplay}\nHosting: ${hosting_duration} years${discountText}${surfacePrepText}\n\nActivate your memorial: ${activation_url}`
+        text: `Thank you for your order, ${customer_name}!\n\nOrder: ${order_number}\nMemorial for: ${deceased_name}\nProduct: ${productDisplay}\nHosting: ${hosting_duration} years${surfacePrepText}\n\nActivate your memorial: ${activation_url}`
       };
     }
     
