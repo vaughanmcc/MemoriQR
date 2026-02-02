@@ -193,8 +193,6 @@ async function handleMemorialRenewal(session: Stripe.Checkout.Session, supabase:
 
   console.log(`Processing memorial renewal: ${memorialId}, type: ${extensionType}`)
 
-  const isLifetime = extensionType === 'lifetime' || yearsAdded === 'lifetime'
-
   // Update memorial record
   const updateData: Record<string, unknown> = {
     renewal_status: 'renewed',
@@ -210,10 +208,8 @@ async function handleMemorialRenewal(session: Stripe.Checkout.Session, supabase:
     renewal_token_expires_at: null,
   }
 
-  if (isLifetime) {
-    updateData.hosting_duration = 999
-    updateData.hosting_expires_at = null
-  } else if (newExpiresAt && newExpiresAt !== 'lifetime') {
+  // Set new expiry date
+  if (newExpiresAt) {
     updateData.hosting_expires_at = newExpiresAt
   }
 
@@ -234,12 +230,12 @@ async function handleMemorialRenewal(session: Stripe.Checkout.Session, supabase:
       memorial_id: memorialId,
       customer_id: customerId || null,
       renewal_type: extensionType,
-      years_added: isLifetime ? null : parseInt(yearsAdded || '1'),
+      years_added: parseInt(yearsAdded || '1'),
       amount_paid: session.amount_total ? session.amount_total / 100 : 0,
       stripe_payment_id: session.payment_intent as string,
       stripe_session_id: session.id,
       previous_expires_at: previousExpiresAt || new Date().toISOString(),
-      new_expires_at: isLifetime ? null : newExpiresAt,
+      new_expires_at: newExpiresAt,
       was_expired: wasExpired,
       was_in_grace_period: wasInGracePeriod,
       days_remaining: daysRemaining,
@@ -289,8 +285,7 @@ async function handleMemorialRenewal(session: Stripe.Checkout.Session, supabase:
             memorial_slug: memorial.memorial_slug,
             memorial_url: `${baseUrl}/memorial/${memorial.memorial_slug}`,
             extension_type: extensionType,
-            is_lifetime: isLifetime,
-            new_expires_at: isLifetime ? null : memorial.hosting_expires_at,
+            new_expires_at: memorial.hosting_expires_at,
             amount_paid: session.amount_total ? session.amount_total / 100 : 0,
             currency: session.currency?.toUpperCase() || 'NZD',
           }),

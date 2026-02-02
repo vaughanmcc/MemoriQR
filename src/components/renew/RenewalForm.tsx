@@ -26,10 +26,10 @@ const extensionOptions: Array<{
     popular: true,
   },
   {
-    id: 'lifetime',
-    label: 'Lifetime',
-    price: EXTENSION_PRICING['lifetime'].price,
-    description: 'Never worry about renewals again',
+    id: '10_year',
+    label: '10 Years',
+    price: EXTENSION_PRICING['10_year'].price,
+    description: 'Maximum peace of mind',
   },
 ]
 
@@ -132,9 +132,8 @@ export function RenewalForm() {
   // Calculate new expiry date for preview
   const getNewExpiryDate = () => {
     if (!memorial) return null
-    if (selectedOption === 'lifetime') return 'Never'
     
-    const years = EXTENSION_PRICING[selectedOption].years!
+    const years = EXTENSION_PRICING[selectedOption].years
     const baseDate = memorial.isExpired 
       ? new Date() 
       : new Date(memorial.expiresAt!)

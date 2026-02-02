@@ -29,7 +29,7 @@ export const RENEWAL_PRICING = {
 export const EXTENSION_PRICING = {
   '1_year': { price: 29, years: 1, label: '1 Year' },
   '5_year': { price: 99, years: 5, label: '5 Years' },
-  'lifetime': { price: 299, years: null, label: 'Lifetime' },
+  '10_year': { price: 179, years: 10, label: '10 Years' },
 } as const
 
 export type ExtensionType = keyof typeof EXTENSION_PRICING

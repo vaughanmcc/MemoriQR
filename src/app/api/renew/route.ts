@@ -99,17 +99,15 @@ export async function POST(request: NextRequest) {
     }
 
     // Calculate the new expiry date
-    let newExpiresAt: Date | null = null
-    if (extensionType !== 'lifetime') {
-      if (isExpired) {
-        // If expired, start from today
-        newExpiresAt = new Date()
-        newExpiresAt.setFullYear(newExpiresAt.getFullYear() + extension.years!)
-      } else {
-        // If still active, add to existing expiry
-        newExpiresAt = new Date(expiresAt!)
-        newExpiresAt.setFullYear(newExpiresAt.getFullYear() + extension.years!)
-      }
+    let newExpiresAt: Date
+    if (isExpired) {
+      // If expired, start from today
+      newExpiresAt = new Date()
+      newExpiresAt.setFullYear(newExpiresAt.getFullYear() + extension.years)
+    } else {
+      // If still active, add to existing expiry
+      newExpiresAt = new Date(expiresAt!)
+      newExpiresAt.setFullYear(newExpiresAt.getFullYear() + extension.years)
     }
 
     const customerEmail = (memorial.customers as { email?: string } | null)?.email
@@ -128,9 +126,7 @@ export async function POST(request: NextRequest) {
             currency: CURRENCY,
             product_data: {
               name: `Memorial Hosting Extension - ${extension.label}`,
-              description: extensionType === 'lifetime' 
-                ? `Lifetime hosting for "${memorial.deceased_name}"`
-                : `Extend hosting for "${memorial.deceased_name}" by ${extension.years} year${extension.years! > 1 ? 's' : ''}`,
+              description: `Extend hosting for "${memorial.deceased_name}" by ${extension.years} year${extension.years > 1 ? 's' : ''}`,
             },
             unit_amount: getPriceInCents(extension.price),
           },
@@ -143,9 +139,9 @@ export async function POST(request: NextRequest) {
         memorial_slug: memorial.memorial_slug,
         customer_id: memorial.customer_id || '',
         extension_type: extensionType,
-        years_added: extension.years?.toString() || 'lifetime',
+        years_added: extension.years.toString(),
         previous_expires_at: memorial.hosting_expires_at || '',
-        new_expires_at: newExpiresAt?.toISOString() || 'lifetime',
+        new_expires_at: newExpiresAt.toISOString(),
         was_expired: isExpired ? 'true' : 'false',
         was_in_grace_period: isInGracePeriod ? 'true' : 'false',
         days_remaining: daysRemaining?.toString() || '0',
@@ -160,8 +156,7 @@ export async function POST(request: NextRequest) {
         slug: memorial.memorial_slug,
         name: memorial.deceased_name,
         currentExpiry: memorial.hosting_expires_at,
-        newExpiry: newExpiresAt?.toISOString() || null,
-        isLifetime: extensionType === 'lifetime',
+        newExpiry: newExpiresAt.toISOString(),
       }
     })
   } catch (error) {

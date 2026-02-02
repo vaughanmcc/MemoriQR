@@ -38,7 +38,6 @@ export default async function RenewalSuccessPage({ searchParams }: Props) {
   const memorialId = session.metadata?.memorial_id
   const memorialSlug = session.metadata?.memorial_slug
   const extensionType = session.metadata?.extension_type
-  const isLifetime = extensionType === 'lifetime'
 
   // Get updated memorial info
   const supabase = createAdminClient()
@@ -64,7 +63,7 @@ export default async function RenewalSuccessPage({ searchParams }: Props) {
   const extensionLabel = {
     '1_year': '1 Year',
     '5_year': '5 Years',
-    'lifetime': 'Lifetime',
+    '10_year': '10 Years',
   }[extensionType || '1_year']
 
   return (
@@ -98,7 +97,7 @@ export default async function RenewalSuccessPage({ searchParams }: Props) {
                   
                   <div className="flex justify-between items-center">
                     <span className="text-gray-500">New Expiry:</span>
-                    {isLifetime || memorial.hosting_duration === 999 ? (
+                    {memorial.hosting_duration === 999 ? (
                       <span className="font-medium text-green-600 flex items-center gap-1">
                         <Infinity className="h-4 w-4" />
                         Never
