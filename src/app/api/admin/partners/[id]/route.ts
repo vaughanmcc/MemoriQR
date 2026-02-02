@@ -96,27 +96,11 @@ export async function PATCH(
           break;
         case 'activate': {
           // Check for duplicate partners before reactivating
-          const partnerEmail = partner.contact_email?.toLowerCase();
+          // Only block if same business name + type exists (different emails are OK for different businesses)
           const partnerName = partner.partner_name;
           const partnerType = partner.partner_type;
           
-          if (partnerEmail && partnerName && partnerType) {
-            const { data: duplicates } = await supabase
-              .from('partners')
-              .select('id, partner_name, contact_email, partner_type, status')
-              .eq('contact_email', partnerEmail)
-              .eq('partner_type', partnerType)
-              .neq('id', id)
-              .in('status', ['active', 'pending']);
-            
-            if (duplicates && duplicates.length > 0) {
-              const existingPartner = duplicates[0];
-              return NextResponse.json({ 
-                error: `Cannot reactivate: A partner with the same email and business type already exists (${existingPartner.partner_name}, status: ${existingPartner.status})` 
-              }, { status: 400 });
-            }
-            
-            // Also check for same business name + type combination
+          if (partnerName && partnerType) {
             // Extract business name (without contact name in parentheses)
             const businessNameOnly = partnerName.replace(/\s*\([^)]+\)\s*$/, '').trim().toLowerCase();
             const { data: nameDuplicates } = await supabase
