@@ -1369,9 +1369,14 @@ export default function AdminToolsPage() {
               {selectedMemorial && !isLoadingMemorial && (
                 <div className="space-y-6">
                   <div className="flex items-center justify-between">
-                    <h4 className="text-lg font-bold text-stone-800">
-                      Memorial: {selectedMemorial.deceased_name}
-                    </h4>
+                    <div>
+                      <h4 className="text-lg font-bold text-stone-800">
+                        Memorial: {selectedMemorial.deceased_name}
+                      </h4>
+                      <p className="text-sm text-stone-500 font-mono">
+                        Slug: {selectedMemorial.memorial_slug}
+                      </p>
+                    </div>
                     <button
                       onClick={() => setSelectedMemorial(null)}
                       className="text-stone-500 hover:text-stone-700 text-sm"
