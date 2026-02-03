@@ -62,10 +62,10 @@ export function RenewalForm() {
       setError('Payment was cancelled. You can try again below.')
     }
     
-    if (slug) {
-      setSearchQuery(slug)
-      // Auto-search if we have a slug
-      handleSearchWithQuery(slug, token || undefined)
+    if (slug || token) {
+      if (slug) setSearchQuery(slug)
+      // Auto-search if we have a slug or token
+      handleSearchWithQuery(slug || '', token || undefined)
     }
   }, [searchParams])
 
@@ -83,10 +83,11 @@ export function RenewalForm() {
       const data = await response.json()
 
       if (!response.ok) {
-        throw new Error(data.error || 'Memorial not found')
+        throw new Error(data.error || (token ? 'Memorial not found. The renewal link may have expired.' : 'Memorial not found'))
       }
 
       setMemorial(data.memorial)
+      setSearchQuery(data.memorial.slug)
       setStep('options')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong')
