@@ -1598,7 +1598,14 @@ export default function AdminToolsPage() {
                       <div className="flex items-center justify-between">
                         <div>
                           <span className="text-xs text-stone-500 block">Edit Token (for direct edit access)</span>
-                          <span className="text-sm font-mono text-stone-600">{selectedMemorial.edit_token}</span>
+                          <a 
+                            href={`/memorial/edit?slug=${selectedMemorial.memorial_slug}&token=${selectedMemorial.edit_token}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-sm font-mono text-amber-700 hover:text-amber-800 hover:underline"
+                          >
+                            {selectedMemorial.edit_token}
+                          </a>
                         </div>
                         <button
                           onClick={() => copyToClipboard(selectedMemorial.edit_token)}
