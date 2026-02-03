@@ -4,7 +4,7 @@
 
 ## Executive Summary
 
-MemoriQR creates lasting digital memorials for pets and people through NFC tags and QR-engraved Metalphoto® plates. Customers scan these physical items to access personalized memorial webpages with photos, videos, and stories - hosted for 5, 10, or 25 years prepaid.
+MemoriQR creates lasting digital memorials for pets and people through NFC tags and QR-engraved Metalphoto® plates. Customers scan these physical items to access personalized memorial webpages with photos, videos, and stories - hosted for 5 or 10 years prepaid depending on package tier.
 
 **Business Model:** Direct-to-consumer e-commerce + B2B2C (retail partners)
 **Location:** Auckland, New Zealand - targeting NZ + Australia
@@ -14,22 +14,22 @@ MemoriQR creates lasting digital memorials for pets and people through NFC tags 
 
 ## Pricing Structure
 
-### 5-YEAR MEMORIAL - 20 photos, 2 videos
-- NFC Tag only: $99 NZD
-- QR Plate only: $149 NZD
-- Both: $199 NZD
+### STANDARD - $149 NZD
+- NFC Tag + 5 years hosting
+- 20 photos, 2 videos
+- 5 memorial themes, 5 photo frames
 
-### 10-YEAR MEMORIAL - 40 photos, 3 videos
-- NFC Tag only: $149 NZD
-- QR Plate only: $199 NZD
-- Both: $249 NZD
+### HEADSTONE - $199 NZD (Most Popular)
+- QR Plate only + 10 years hosting
+- 40 photos, 3 videos
+- 10 memorial themes, 10 photo frames
 
-### 25-YEAR MEMORIAL - 60 photos, 5 videos
-- NFC Tag only: $199 NZD
-- QR Plate only: $279 NZD
-- Both: $349 NZD
+### PREMIUM - $279 NZD
+- NFC Tag + QR Plate + 10 years hosting
+- 40 photos, 3 videos
+- 10 memorial themes, 10 photo frames
 
-**Renewal:** $24/year | **Bulk:** 10 years for $99
+**Renewal:** $29/year | **Extensions:** 1 year $29, 5 years $99, 10 years $179
 
 ---
 
@@ -179,9 +179,9 @@ Memorial webpage with:
 3. 30-day grace period after expiry
 4. Retail codes single-use only
 5. Videos must be YouTube unlisted
-6. Renewal reminders at 30/7/1 days
+6. Renewal reminders at 90/30/7 days before expiry
 7. NFC-only ships immediately (2-3 days)
-8. $24/year renewal pricing locked
+8. $29/year renewal pricing
 
 ---
 
