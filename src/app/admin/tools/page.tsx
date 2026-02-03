@@ -1175,16 +1175,16 @@ export default function AdminToolsPage() {
                         <div>
                           <span className="text-xs text-stone-500 block">Edit Memorial URL</span>
                           <a
-                            href={`${baseUrl}/memorial/edit?slug=${orderDetails.memorial.memorial_slug}`}
+                            href={`${baseUrl}/memorial/edit?token=${orderDetails.memorial.edit_token}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="text-blue-600 hover:underline text-sm font-mono"
                           >
-                            {baseUrl}/memorial/edit?slug={orderDetails.memorial.memorial_slug}
+                            {baseUrl}/memorial/edit?token=...
                           </a>
                         </div>
                         <button
-                          onClick={() => copyToClipboard(`${baseUrl}/memorial/edit?slug=${orderDetails.memorial?.memorial_slug}`)}
+                          onClick={() => copyToClipboard(`${baseUrl}/memorial/edit?token=${orderDetails.memorial?.edit_token}`)}
                           className="px-3 py-1 bg-stone-200 hover:bg-stone-300 rounded text-xs"
                         >
                           Copy
@@ -1561,16 +1561,16 @@ export default function AdminToolsPage() {
                         <div>
                           <span className="text-xs text-stone-500 block">Edit Memorial URL</span>
                           <a
-                            href={`${baseUrl}/memorial/edit?slug=${selectedMemorial.memorial_slug}`}
+                            href={`${baseUrl}/memorial/edit?token=${selectedMemorial.edit_token}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="text-blue-600 hover:underline text-sm font-mono"
                           >
-                            {baseUrl}/memorial/edit?slug={selectedMemorial.memorial_slug}
+                            {baseUrl}/memorial/edit?token=...
                           </a>
                         </div>
                         <button
-                          onClick={() => copyToClipboard(`${baseUrl}/memorial/edit?slug=${selectedMemorial.memorial_slug}`)}
+                          onClick={() => copyToClipboard(`${baseUrl}/memorial/edit?token=${selectedMemorial.edit_token}`)}
                           className="px-3 py-1 bg-stone-200 hover:bg-stone-300 rounded text-xs"
                         >
                           Copy
