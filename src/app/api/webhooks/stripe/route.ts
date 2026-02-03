@@ -557,20 +557,30 @@ export async function POST(request: NextRequest) {
 
       // Send order confirmation email via Pipedream
       const webhookUrl = process.env.PIPEDREAM_WEBHOOK_URL
+      console.log(`[ORDER ${orderNumber}] Attempting to send confirmation email. Webhook URL configured: ${!!webhookUrl}`)
+      
       if (webhookUrl) {
         // Get customer details including shipping address
-        const { data: customer } = await supabase
+        const { data: customer, error: customerError } = await supabase
           .from('customers')
           .select('email, full_name, shipping_address')
           .eq('id', customerId)
           .single()
 
+        if (customerError) {
+          console.error(`[ORDER ${orderNumber}] Failed to fetch customer: ${customerError.message}`)
+        }
+
         // Get memorial details
-        const { data: memorial } = await supabase
+        const { data: memorial, error: memorialError } = await supabase
           .from('memorial_records')
           .select('deceased_name, memorial_slug')
           .eq('id', memorialId)
           .single()
+
+        if (memorialError) {
+          console.error(`[ORDER ${orderNumber}] Failed to fetch memorial: ${memorialError.message}`)
+        }
 
         if (customer && memorial) {
           // Extract the code from order number (remove MQR- prefix)
@@ -587,8 +597,10 @@ export async function POST(request: NextRequest) {
           console.log('Stripe session customer_details:', JSON.stringify(session.customer_details, null, 2))
           
           try {
+            console.log(`[ORDER ${orderNumber}] Sending order confirmation email to ${customer.email}`)
+            
             // Send customer order confirmation
-            await fetch(webhookUrl, {
+            const emailResponse = await fetch(webhookUrl, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
@@ -608,6 +620,13 @@ export async function POST(request: NextRequest) {
                 surface_preparation_note: 'Before attaching your NFC tag or QR plate, please ensure the surface is clean, flat, and properly prepared. Remove any dust, dirt, or moisture. The surface must be free of chemicals such as oils (including wood treatments), waxes, silicones, or other contaminants that may prevent proper adhesion.',
               }),
             })
+            
+            if (!emailResponse.ok) {
+              const errorText = await emailResponse.text()
+              console.error(`[ORDER ${orderNumber}] Email webhook failed: ${emailResponse.status} - ${errorText}`)
+            } else {
+              console.log(`[ORDER ${orderNumber}] Order confirmation email sent successfully`)
+            }
 
             // Get shipping address - prefer Stripe's collected address, fall back to our DB
             const shippingAddress = session.shipping_details?.address 
@@ -615,7 +634,8 @@ export async function POST(request: NextRequest) {
               : (customer.shipping_address ? JSON.stringify(customer.shipping_address) : null)
 
             // Send admin notification for fulfillment
-            await fetch(webhookUrl, {
+            console.log(`[ORDER ${orderNumber}] Sending admin notification`)
+            const adminResponse = await fetch(webhookUrl, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
@@ -636,10 +656,20 @@ export async function POST(request: NextRequest) {
                 shipping_name: session.shipping_details?.name || customer.full_name,
               }),
             })
+            
+            if (!adminResponse.ok) {
+              console.error(`[ORDER ${orderNumber}] Admin notification failed: ${adminResponse.status}`)
+            } else {
+              console.log(`[ORDER ${orderNumber}] Admin notification sent successfully`)
+            }
           } catch (emailError) {
-            console.error('Failed to send order confirmation:', emailError)
+            console.error(`[ORDER ${orderNumber}] Failed to send order confirmation:`, emailError)
           }
+        } else {
+          console.error(`[ORDER ${orderNumber}] Missing customer or memorial data. Customer: ${!!customer}, Memorial: ${!!memorial}`)
         }
+      } else {
+        console.warn(`[ORDER ${orderNumber}] No PIPEDREAM_WEBHOOK_URL configured, skipping email`)
       }
 
       console.log(`Order ${orderNumber} payment completed`)
