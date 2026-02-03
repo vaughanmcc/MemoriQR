@@ -50,6 +50,12 @@ export function Header() {
           >
             Activate Tag
           </Link>
+          <Link
+            href="/renew"
+            className="text-base font-medium text-gray-600 hover:text-primary-600 transition-colors"
+          >
+            Renew Hosting
+          </Link>
           <Link href="/order" className="btn-primary text-base py-2.5 px-5">
             Get Started
           </Link>
@@ -90,6 +96,13 @@ export function Header() {
               onClick={() => setMobileMenuOpen(false)}
             >
               Activate Tag
+            </Link>
+            <Link
+              href="/renew"
+              className="block text-base font-medium text-gray-600 hover:text-primary-600"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              Renew Hosting
             </Link>
             <Link
               href="/order"
