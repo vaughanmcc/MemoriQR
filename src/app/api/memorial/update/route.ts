@@ -1,17 +1,28 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { cookies } from 'next/headers'
 import { createAdminClient } from '@/lib/supabase/server'
 import { sanitizeText } from '@/lib/utils'
+
+// Check if the request is from an authenticated admin
+async function isAdminRequest(): Promise<boolean> {
+  const cookieStore = await cookies()
+  const session = cookieStore.get('admin-session')?.value
+  const correctPassword = process.env.ADMIN_PASSWORD
+  return !!correctPassword && session === correctPassword
+}
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
     const { token, session, memorialText, theme, frame } = body
+    const isAdmin = await isAdminRequest()
 
     if (!token) {
       return NextResponse.json({ error: 'Edit token is required' }, { status: 400 })
     }
 
-    if (!session) {
+    // Admin users can bypass session verification
+    if (!session && !isAdmin) {
       return NextResponse.json({ error: 'Session expired. Please refresh the page and verify your email again.' }, { status: 401 })
     }
 
@@ -28,18 +39,21 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid edit token. Please use the original edit link from your email.' }, { status: 403 })
     }
 
-    // Verify session token is valid and not expired
-    const { data: sessionData, error: sessionError } = await supabase
-      .from('edit_verification_codes')
-      .select('*')
-      .eq('memorial_id', memorial.id)
-      .eq('code', `SESSION:${session}`)
-      .is('used_at', null)
-      .gt('expires_at', new Date().toISOString())
-      .single()
+    // Admin users bypass session verification
+    if (!isAdmin) {
+      // Verify session token is valid and not expired
+      const { data: sessionData, error: sessionError } = await supabase
+        .from('edit_verification_codes')
+        .select('*')
+        .eq('memorial_id', memorial.id)
+        .eq('code', `SESSION:${session}`)
+        .is('used_at', null)
+        .gt('expires_at', new Date().toISOString())
+        .single()
 
-    if (sessionError || !sessionData) {
-      return NextResponse.json({ error: 'Session expired. Please refresh the page and verify your email again.' }, { status: 401 })
+      if (sessionError || !sessionData) {
+        return NextResponse.json({ error: 'Session expired. Please refresh the page and verify your email again.' }, { status: 401 })
+      }
     }
 
     // Validate theme and frame against plan limits
