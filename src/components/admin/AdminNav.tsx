@@ -9,6 +9,7 @@ interface NavStats {
   pendingCommissions: number;
   pendingFulfillment: number;
   pendingReferralRequests: number;
+  renewalsDue: number;
 }
 
 interface AdminNavProps {
@@ -33,6 +34,7 @@ export function AdminNav({ onLogout }: AdminNavProps) {
           pendingCommissions: data.pendingCommissions ?? 0,
           pendingFulfillment: data.pendingFulfillment ?? 0,
           pendingReferralRequests: data.pendingReferralRequests ?? 0,
+          renewalsDue: data.renewalsDue ?? 0,
         });
       }
     } catch (err) {
@@ -105,9 +107,9 @@ export function AdminNav({ onLogout }: AdminNavProps) {
             </Link>
             <Link href="/admin/memorials" className={navLinkClass('/admin/memorials')}>
               Memorials
-              {(stats?.pendingFulfillment ?? 0) > 0 && (
-                <span className="absolute -top-1 -right-1 bg-orange-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
-                  {stats?.pendingFulfillment}
+              {(stats?.renewalsDue ?? 0) > 0 && (
+                <span className="absolute -top-1 -right-1 bg-amber-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+                  {stats?.renewalsDue}
                 </span>
               )}
             </Link>
