@@ -26,6 +26,7 @@ export async function GET(request: NextRequest) {
     const supabase = createAdminClient()
 
     // Build query - note: views_count (not view_count), no activation_code on this table
+    // Use !left to force left join so memorials without related records still appear
     let query = supabase
       .from('memorial_records')
       .select(`
@@ -42,8 +43,8 @@ export async function GET(request: NextRequest) {
         hosting_expires_at,
         created_at,
         updated_at,
-        customer:customers(id, full_name, email),
-        activation_codes:retail_activation_codes(activation_code)
+        customer:customers!left(id, full_name, email),
+        activation_codes:retail_activation_codes!left(activation_code)
       `)
       .order('created_at', { ascending: false })
 
