@@ -359,6 +359,8 @@ export default function AdminToolsPage() {
     switch (memorialSortField) {
       case 'deceased_name':
         return dir * a.deceased_name.localeCompare(b.deceased_name);
+      case 'memorial_slug':
+        return dir * a.memorial_slug.localeCompare(b.memorial_slug);
       case 'deceased_type':
         return dir * a.deceased_type.localeCompare(b.deceased_type);
       case 'customer':
@@ -1273,6 +1275,12 @@ export default function AdminToolsPage() {
                         </th>
                         <th 
                           className="pb-2 pr-4 cursor-pointer hover:text-stone-900 select-none"
+                          onClick={() => handleMemorialSort('memorial_slug')}
+                        >
+                          Slug<SortIndicator active={memorialSortField === 'memorial_slug'} direction={memorialSortDirection} />
+                        </th>
+                        <th 
+                          className="pb-2 pr-4 cursor-pointer hover:text-stone-900 select-none"
                           onClick={() => handleMemorialSort('deceased_type')}
                         >
                           Type<SortIndicator active={memorialSortField === 'deceased_type'} direction={memorialSortDirection} />
@@ -1308,6 +1316,7 @@ export default function AdminToolsPage() {
                       {sortedMemorialResults.map((m) => (
                         <tr key={m.id} className="border-b hover:bg-stone-50">
                           <td className="py-3 pr-4 font-medium">{m.deceased_name}</td>
+                          <td className="py-3 pr-4 text-xs font-mono text-stone-600">{m.memorial_slug}</td>
                           <td className="py-3 pr-4 capitalize">
                             {m.deceased_type}
                             {m.species && ` (${m.species})`}
