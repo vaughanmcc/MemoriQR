@@ -1218,7 +1218,7 @@ export default function AdminToolsPage() {
             <div className="bg-white rounded-xl shadow p-6">
               <h3 className="text-lg font-bold text-stone-800 mb-2">Search Memorials</h3>
               <p className="text-sm text-stone-600 mb-4">
-                Search by deceased name, memorial slug, or customer email
+                Search by deceased name, memorial slug, order number (MQR-...), or customer email
               </p>
               
               <form onSubmit={handleMemorialSearch} className="mb-6">
@@ -1227,7 +1227,7 @@ export default function AdminToolsPage() {
                     type="text"
                     value={memorialSearchQuery}
                     onChange={(e) => setMemorialSearchQuery(e.target.value)}
-                    placeholder="Enter deceased name, slug, or customer email..."
+                    placeholder="Enter name, slug, order number, or email..."
                     className="flex-1 max-w-lg px-4 py-2 border rounded-lg focus:ring-2 focus:ring-stone-500 focus:border-transparent"
                   />
                   <button

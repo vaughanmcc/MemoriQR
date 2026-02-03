@@ -48,6 +48,43 @@ export async function GET(request: NextRequest) {
   // Search by deceased name, slug, or customer email
   const searchPattern = `%${query}%`;
 
+  // Check if query looks like an order number (MQR-XXXXXXXX format)
+  const isOrderNumber = query.toUpperCase().startsWith('MQR-') || /^[A-Z0-9]{2,}-[A-Z0-9-]+$/i.test(query);
+
+  // If it looks like an order number, search by order first
+  if (isOrderNumber) {
+    const { data: orderMemorial } = await supabase
+      .from('orders')
+      .select(`
+        memorial_records!inner(
+          id,
+          memorial_slug,
+          deceased_name,
+          deceased_type,
+          species,
+          is_published,
+          hosting_expires_at,
+          renewal_status,
+          views_count,
+          created_at,
+          customer:customers(id, full_name, email)
+        )
+      `)
+      .ilike('order_number', `%${query}%`)
+      .limit(10);
+
+    if (orderMemorial && orderMemorial.length > 0) {
+      // Extract memorials from orders
+      const memorialsFromOrders = orderMemorial
+        .map((o: { memorial_records: unknown }) => o.memorial_records)
+        .filter(Boolean);
+      
+      if (memorialsFromOrders.length > 0) {
+        return NextResponse.json({ memorials: memorialsFromOrders });
+      }
+    }
+  }
+
   const { data: memorials, error } = await supabase
     .from('memorial_records')
     .select(`

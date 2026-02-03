@@ -74,16 +74,99 @@ Memorial webpage with:
 
 ## Cost Analysis
 
-### Year 1 (100 memorials): ~$90-95/month
-### Year 2 (500 memorials): ~$125-130/month
-### Year 3 (2000 memorials): ~$140-145/month
+### Fixed Costs
+
+| Service | Cost | Notes |
+|---------|------|-------|
+| GitHub Copilot+ | $39/mo | AI coding assistant |
+| GitHub Repo | $20/mo | Private repository |
+| Vercel Pro | ~$20/mo | Next.js hosting |
+| Supabase | $0-25/mo | Database (free tier initially) |
+| Hostinger | $83.88 AUD/yr (~$7/mo) | Email hosting |
+| DomainsDirect | $27.03/yr (~$2/mo) | memoriqr.co.nz domain |
+| One NZ | $46/mo | Mobile plan (incl GST) |
+| Cloudinary | $0 | Free tier (25GB) |
+| YouTube | $0 | Video hosting (unlisted) |
+| Pipedream | $0-19/mo | Email workflows |
+
+**Monthly Fixed:** ~$134-176/mo (depending on tiers)
+
+### Seritag NFC Tag Pricing (USD)
+
+**Once-off artwork setup:** $84.50 USD
+
+**Per Tag Cost (USD):**
+| Quantity | Per Tag | + Logo ($0.20) | Total/Tag |
+|----------|---------|----------------|-----------|
+| 5-99 | $0.81 | $0.20 | $1.01 |
+| 100-999 | $0.76 | $0.20 | $0.96 |
+| 1,000-4,999 | $0.68 | $0.20 | $0.88 |
+| 5,000-9,999 | $0.60 | $0.20 | $0.80 |
+| 10,000-19,999 | $0.59 | $0.20 | $0.79 |
+
+**Estimated NZD Cost (@ 1.70 USD/NZD):**
+| Quantity | Per Tag (NZD) | Notes |
+|----------|---------------|-------|
+| 5-99 | ~$1.72 | Small batch |
+| 100-999 | ~$1.63 | Medium batch |
+| 1,000+ | ~$1.50 | Volume pricing |
+
+*Note: Previously estimated $7/tag included shipping + handling*
+
+### Lead Generation / Referral Cards (USD)
+
+| Item | Cost |
+|------|------|
+| 1,500 cards | $180 USD |
+| Shipping | $180 USD |
+| **Total** | **$360 USD (~$612 NZD)** |
+
+**Per Card Cost:** $0.24 USD (~$0.41 NZD) incl shipping
+
+### Metal Image NZ Pricing
+
+**Once-off artwork setup:** $241.50 incl GST
+
+**Base Plate Cost (incl GST):**
+| Quantity | Per Plate |
+|----------|-----------|
+| 28 | $5.46 |
+| 56 | $3.86 |
+| 120 | $2.63 |
+
+**QR Etching (incl GST):**
+| Quantity | Per Plate |
+|----------|-----------|
+| 1 | $42.67 |
+| 2 | $28.44 |
+| 3-4 | $21.33 |
+| 5-9 | $14.22 |
+| 10-19 | $10.04 |
+| 20-29 | $8.53 |
+| 30-39 | $6.10 |
+| 40+ | $4.27 |
+
+**Total Plate Cost (Base + QR Etching):**
+| Quantity | Per Plate | Notes |
+|----------|-----------|-------|
+| 1 | ~$48.13 | Single order |
+| 28 | ~$13.99 | $5.46 + $8.53 |
+| 56 | ~$8.13 | $3.86 + $4.27 |
+| 120 | ~$6.90 | $2.63 + $4.27 |
 
 ### Variable Costs per Memorial
-- NFC tag: $7
-- QR plate: $45 (when applicable)
+- NFC tag: $1.50-1.75 (Seritag, volume dependent) + shipping
+- QR plate: $7-48 (volume dependent, see above)
 - Shipping: $10
-- Stripe fees: ~$6
-- **Average: $45-65**
+- Stripe fees: 2.9% + $0.30 (~$6 avg)
+- **Average: $20-65** (lower at volume)
+
+### Projected Monthly Costs by Scale
+| Year | Memorials | Est. Monthly |
+|------|-----------|--------------|
+| Year 1 | 100 | ~$90-95/mo |
+| Year 2 | 500 | ~$125-130/mo |
+| Year 3 | 2,000 | ~$140-145/mo |
 
 ### Break-Even: ~35 memorials (Month 3-4)
 
