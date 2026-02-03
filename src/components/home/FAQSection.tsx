@@ -30,11 +30,11 @@ const faqs = [
   },
   {
     question: 'How long does hosting last?',
-    answer: 'You choose your hosting duration at checkout: 5, 10, or 25 years prepaid. After your prepaid period, you can renew for $24/year. We\'ll send reminders before expiry, and there\'s a 30-day grace period if you need more time.',
+    answer: 'Hosting is included with your package: Standard includes 5 years, while Headstone and Premium include 10 years prepaid. After your prepaid period, you can renew for $29/year or get 5 years for $99. We\'ll send reminders before expiry, and there\'s a 30-day grace period if you need more time.',
   },
   {
     question: 'Why do you use curated photo galleries instead of unlimited?',
-    answer: 'We believe in quality over quantity. Choose your 20, 40, or 60 most meaningful photos (depending on plan) to create a fast-loading memorial that truly tells their story. Benefits: 1) Your memorial loads in under 2 seconds on any device. 2) Curated galleries create more impact – each photo you choose captures something special. 3) Sustainable service – we can guarantee your memorial will be here for the full 5, 10, or 25 years you\'ve prepaid. Need more space? Upgrade anytime for $10 per 20 additional photos or $15 per additional video.',
+    answer: 'We believe in quality over quantity. Choose your 20 most meaningful photos (Standard) or 40 photos (Headstone/Premium) to create a fast-loading memorial that truly tells their story. Benefits: 1) Your memorial loads in under 2 seconds on any device. 2) Curated galleries create more impact – each photo you choose captures something special. 3) Sustainable service – we can guarantee your memorial will be here for the full hosting period. Need more space? Upgrade anytime for $10 per 20 additional photos or $15 per additional video.',
   },
   {
     question: 'Can I add or change photos later?',
