@@ -3,13 +3,9 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Check, ChevronRight, Loader2, Tag, X } from 'lucide-react'
-import { DEFAULT_PRICING, formatPriceNZD } from '@/lib/pricing'
-import { PRICING_LABELS, DURATION_LABELS, PRODUCT_DESCRIPTIONS, SPECIES_OPTIONS } from '@/types'
-import type { HostingDuration, ProductType } from '@/types/database'
+import { TIER_PRICING, TIER_OPTIONS, formatPriceNZD, TierType } from '@/lib/pricing'
+import { SPECIES_OPTIONS } from '@/types'
 import { AddressAutocomplete } from '@/components/shared/AddressAutocomplete'
-
-const durations: HostingDuration[] = [5, 10, 25]
-const productTypes: ProductType[] = ['nfc_only', 'qr_only', 'both']
 
 interface ReferralInfo {
   valid: boolean;
@@ -45,11 +41,8 @@ export function OrderForm() {
   // Ref to form container for scrolling
   const formRef = useRef<HTMLDivElement>(null)
   
-  // Form state
-  const [duration, setDuration] = useState<HostingDuration>(
-    (parseInt(searchParams.get('duration') || '10') as HostingDuration) || 10
-  )
-  const [productType, setProductType] = useState<ProductType>('both')
+  // Form state - now using simplified tier selection
+  const [selectedTier, setSelectedTier] = useState<TierType>('headstone')
   const [deceasedType, setDeceasedType] = useState<'pet' | 'human'>('pet')
   const [deceasedName, setDeceasedName] = useState('')
   const [species, setSpecies] = useState('')
@@ -65,7 +58,9 @@ export function OrderForm() {
   const [postalCode, setPostalCode] = useState('')
   const [country, setCountry] = useState<'NZ' | 'AU'>('NZ')
 
-  const price = DEFAULT_PRICING[duration][productType]
+  // Get selected tier config
+  const tierConfig = TIER_PRICING[selectedTier]
+  const price = tierConfig.price
   
   // Calculate discount if referral code is applied
   const discountAmount = referralInfo?.valid && referralInfo.discountPercent > 0
@@ -198,8 +193,9 @@ export function OrderForm() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          hostingDuration: duration,
-          productType,
+          hostingDuration: tierConfig.hostingDuration,
+          productType: tierConfig.productType,
+          tier: selectedTier,
           deceasedType,
           deceasedName,
           species: deceasedType === 'pet' ? resolvedSpecies || null : null,
@@ -280,59 +276,46 @@ export function OrderForm() {
                 Choose Your Package
               </h2>
               
-              {/* Duration selection */}
-              <div className="mb-8">
-                <label className="label">Hosting Duration</label>
-                <div className="grid grid-cols-3 gap-4">
-                  {durations.map((d) => (
+              {/* Tier selection */}
+              <div className="space-y-3">
+                {TIER_OPTIONS.map((tierId) => {
+                  const tier = TIER_PRICING[tierId]
+                  return (
                     <button
-                      key={d}
-                      onClick={() => setDuration(d)}
-                      className={`p-4 rounded-lg border-2 text-center transition-colors ${
-                        duration === d
-                          ? 'border-primary-500 bg-primary-50'
-                          : 'border-gray-200 hover:border-gray-300'
-                      }`}
-                    >
-                      <div className="font-semibold text-gray-900">
-                        {DURATION_LABELS[d]}
-                      </div>
-                      <div className="text-sm text-gray-500">prepaid</div>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Product type selection */}
-              <div>
-                <label className="label">Product Type</label>
-                <div className="space-y-3">
-                  {productTypes.map((type) => (
-                    <button
-                      key={type}
-                      onClick={() => setProductType(type)}
+                      key={tierId}
+                      onClick={() => setSelectedTier(tierId)}
                       className={`w-full p-4 rounded-lg border-2 text-left transition-colors ${
-                        productType === type
+                        selectedTier === tierId
                           ? 'border-primary-500 bg-primary-50'
                           : 'border-gray-200 hover:border-gray-300'
                       }`}
                     >
                       <div className="flex justify-between items-center">
                         <div>
-                          <div className="font-semibold text-gray-900">
-                            {PRICING_LABELS[type]}
+                          <div className="flex items-center gap-2">
+                            <span className="font-semibold text-gray-900">
+                              {tier.name}
+                            </span>
+                            {tier.popular && (
+                              <span className="text-xs bg-primary-100 text-primary-700 px-2 py-0.5 rounded">
+                                Popular
+                              </span>
+                            )}
                           </div>
-                          <div className="text-sm text-gray-500">
-                            {PRODUCT_DESCRIPTIONS[type]}
+                          <div className="text-sm text-primary-600 font-medium">
+                            {tier.contents}
+                          </div>
+                          <div className="text-sm text-gray-500 mt-1">
+                            {tier.description}
                           </div>
                         </div>
                         <div className="text-lg font-bold text-primary-600">
-                          {formatPriceNZD(DEFAULT_PRICING[duration][type])}
+                          {formatPriceNZD(tier.price)}
                         </div>
                       </div>
                     </button>
-                  ))}
-                </div>
+                  )
+                })}
               </div>
             </div>
 
@@ -669,7 +652,7 @@ export function OrderForm() {
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
                   <span className="text-gray-600">Package</span>
-                  <span className="font-medium">{DURATION_LABELS[duration]} - {PRICING_LABELS[productType]}</span>
+                  <span className="font-medium">{tierConfig.name} - {tierConfig.contents}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Memorial for</span>

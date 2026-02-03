@@ -3,21 +3,68 @@ import { HostingDuration, ProductType, CurrentPricing } from '@/types/database'
 // Fallback pricing if database is unavailable
 export const DEFAULT_PRICING: Record<HostingDuration, Record<ProductType, number>> = {
   5: {
-    nfc_only: 99,
+    nfc_only: 149,
     qr_only: 149,
     both: 199,
   },
   10: {
-    nfc_only: 149,
+    nfc_only: 199,
     qr_only: 199,
-    both: 249,
+    both: 279,
   },
   25: {
-    nfc_only: 199,
+    nfc_only: 249,
     qr_only: 279,
     both: 349,
   },
 }
+
+// Simplified 3-tier pricing model
+export type TierType = 'standard' | 'headstone' | 'premium'
+
+export interface TierConfig {
+  id: TierType
+  name: string
+  price: number
+  productType: ProductType
+  hostingDuration: HostingDuration
+  contents: string
+  description: string
+  popular?: boolean
+}
+
+export const TIER_PRICING: Record<TierType, TierConfig> = {
+  standard: {
+    id: 'standard',
+    name: 'Standard',
+    price: 149,
+    productType: 'nfc_only',
+    hostingDuration: 5,
+    contents: 'NFC tag + 5 years',
+    description: 'Tap-to-view NFC sticker. Ships in 2-3 days.',
+  },
+  headstone: {
+    id: 'headstone',
+    name: 'Headstone',
+    price: 199,
+    productType: 'qr_only',
+    hostingDuration: 10,
+    contents: 'QR plate only + 10 years',
+    description: 'Weather-proof Metalphoto® anodised aluminium plate. Ships in 7-10 days.',
+    popular: true,
+  },
+  premium: {
+    id: 'premium',
+    name: 'Premium',
+    price: 279,
+    productType: 'both',
+    hostingDuration: 10,
+    contents: 'NFC + QR plate + 10 years',
+    description: 'Complete set with both NFC tag and QR plate. Ships in 7-10 days.',
+  },
+}
+
+export const TIER_OPTIONS: TierType[] = ['standard', 'headstone', 'premium']
 
 export const RENEWAL_PRICING = {
   yearly: 24,
