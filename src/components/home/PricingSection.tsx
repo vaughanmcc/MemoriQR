@@ -1,6 +1,6 @@
 import { Check, Sparkles } from 'lucide-react'
 import Link from 'next/link'
-import { formatPriceNZD, TIER_PRICING, TIER_OPTIONS, TierType } from '@/lib/pricing'
+import { formatPrice, TIER_PRICING, TIER_OPTIONS, TierType, Locale, Currency } from '@/lib/pricing'
 
 // Features that vary by tier
 const tierFeatures: Record<TierType, string[]> = {
@@ -39,11 +39,14 @@ const tierFeatures: Record<TierType, string[]> = {
 interface PricingCardProps {
   tier: TierType
   isPopular?: boolean
+  locale?: Locale
+  orderPath?: string
 }
 
-function PricingCard({ tier, isPopular }: PricingCardProps) {
+function PricingCard({ tier, isPopular, locale = 'nz', orderPath = '/order' }: PricingCardProps) {
   const config = TIER_PRICING[tier]
   const pricePerYear = Math.round(config.price / config.hostingDuration)
+  const currency: Currency = locale === 'au' ? 'AUD' : 'NZD'
 
   return (
     <div className={`relative bg-white rounded-2xl border-2 ${isPopular ? 'border-primary-500 shadow-xl' : 'border-gray-100 shadow-sm'} overflow-hidden`}>
@@ -69,7 +72,7 @@ function PricingCard({ tier, isPopular }: PricingCardProps) {
         {/* Price */}
         <div className="text-center mb-6">
           <div className="text-4xl font-bold text-gray-900">
-            {formatPriceNZD(config.price)}
+            {formatPrice(config.price, currency)}
           </div>
           <p className="text-sm text-gray-500 mt-1">
             {config.description}
@@ -98,7 +101,7 @@ function PricingCard({ tier, isPopular }: PricingCardProps) {
 
         {/* CTA */}
         <Link
-          href="/order"
+          href={orderPath}
           className={`block text-center w-full py-3 rounded-lg font-medium transition-colors ${
             isPopular
               ? 'bg-primary-600 text-white hover:bg-primary-700'
@@ -112,7 +115,13 @@ function PricingCard({ tier, isPopular }: PricingCardProps) {
   )
 }
 
-export function PricingSection() {
+interface PricingSectionProps {
+  locale?: Locale
+}
+
+export function PricingSection({ locale = 'nz' }: PricingSectionProps) {
+  const orderPath = locale === 'au' ? '/australia/order' : '/order'
+  
   return (
     <section id="pricing" className="section bg-memorial-warm">
       <div className="container-wide">
@@ -129,9 +138,9 @@ export function PricingSection() {
 
         {/* Pricing cards */}
         <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-          <PricingCard tier="standard" />
-          <PricingCard tier="headstone" isPopular />
-          <PricingCard tier="premium" />
+          <PricingCard tier="standard" locale={locale} orderPath={orderPath} />
+          <PricingCard tier="headstone" isPopular locale={locale} orderPath={orderPath} />
+          <PricingCard tier="premium" locale={locale} orderPath={orderPath} />
         </div>
 
         {/* Renewal info */}

@@ -138,6 +138,9 @@ export function getPricePerYear(duration: HostingDuration, productType: ProductT
   return Math.round((total / duration) * 100) / 100
 }
 
+export type Currency = 'NZD' | 'AUD'
+export type Locale = 'nz' | 'au'
+
 export function formatPriceNZD(amount: number): string {
   return new Intl.NumberFormat('en-NZ', {
     style: 'currency',
@@ -145,6 +148,26 @@ export function formatPriceNZD(amount: number): string {
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
   }).format(amount)
+}
+
+export function formatPrice(amount: number, currency: Currency = 'NZD'): string {
+  const locale = currency === 'AUD' ? 'en-AU' : 'en-NZ'
+  return new Intl.NumberFormat(locale, {
+    style: 'currency',
+    currency,
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(amount)
+}
+
+// Get tier pricing for a specific locale (same prices, different currency display)
+export function getTierPricingForLocale(locale: Locale = 'nz') {
+  const currency: Currency = locale === 'au' ? 'AUD' : 'NZD'
+  return {
+    tiers: TIER_PRICING,
+    currency,
+    formatPrice: (amount: number) => formatPrice(amount, currency),
+  }
 }
 
 export function calculateExpiryDate(orderDate: Date, durationYears: HostingDuration): Date {

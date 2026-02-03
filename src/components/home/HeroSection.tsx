@@ -1,7 +1,15 @@
 import Link from 'next/link'
 import { Heart, Sparkles } from 'lucide-react'
 
-export function HeroSection() {
+interface HeroSectionProps {
+  locale?: 'nz' | 'au'
+}
+
+export function HeroSection({ locale = 'nz' }: HeroSectionProps) {
+  const orderPath = locale === 'au' ? '/australia/order' : '/order'
+  const howItWorksPath = locale === 'au' ? '/australia/how-it-works' : '/#how-it-works'
+  const badge = locale === 'au' ? 'Serving Australia & New Zealand' : 'Now serving New Zealand & Australia'
+  
   return (
     <section className="relative overflow-hidden memorial-gradient">
       {/* Background decoration */}
@@ -12,7 +20,7 @@ export function HeroSection() {
           {/* Badge */}
           <div className="inline-flex items-center gap-2.5 bg-primary-50 text-primary-700 px-6 py-3 rounded-full text-lg font-semibold mb-8">
             <Sparkles className="h-5 w-5" />
-            <span>Now serving New Zealand & Australia</span>
+            <span>{badge}</span>
           </div>
 
           {/* Headline */}
@@ -31,10 +39,10 @@ export function HeroSection() {
 
           {/* CTA Buttons */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
-            <Link href="/order" className="btn-primary text-base px-8 py-4">
+            <Link href={orderPath} className="btn-primary text-base px-8 py-4">
               Create Memorial
             </Link>
-            <Link href="/#how-it-works" className="btn-outline text-base px-8 py-4">
+            <Link href={howItWorksPath} className="btn-outline text-base px-8 py-4">
               See How It Works
             </Link>
           </div>

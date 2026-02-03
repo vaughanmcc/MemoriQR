@@ -185,6 +185,33 @@ Memorial webpage with:
 
 ---
 
+## Australia Locale Support
+
+MemoriQR uses a subfolder strategy (`/australia/*`) for SEO targeting of the Australian market.
+
+### Implementation
+- **URL Structure:** `/australia`, `/australia/order`, `/australia/how-it-works`, `/australia/about`
+- **Currency Display:** Prices shown in AUD (A$149, A$199, A$279)
+- **Charging Currency:** Transactions processed in NZD (same numeric values)
+- **hreflang Tags:** Implemented for en-NZ, en-AU, x-default
+- **Default Country:** AU pre-selected in order form for `/australia/*` pages
+
+### SEO Keywords (Australia)
+- pet memorial Australia
+- QR pet tag Australia
+- NFC pet tag Australia
+- memorial tag Melbourne / Sydney / Brisbane
+- pet remembrance gift Australia
+- dog memorial tag
+- cat memorial Australia
+
+### Shipping to Australia
+- 7-10 business days delivery
+- Ships from Auckland, New Zealand
+- All Australian states and territories covered
+
+---
+
 ## Risk Summary
 
 **Technical:** Bandwidth spikes, storage abuse, platform outages

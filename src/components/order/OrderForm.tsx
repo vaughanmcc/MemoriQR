@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Check, ChevronRight, Loader2, Tag, X } from 'lucide-react'
-import { TIER_PRICING, TIER_OPTIONS, formatPriceNZD, TierType } from '@/lib/pricing'
+import { TIER_PRICING, TIER_OPTIONS, formatPriceNZD, formatPrice, TierType, Locale, Currency } from '@/lib/pricing'
 import { SPECIES_OPTIONS } from '@/types'
 import { AddressAutocomplete } from '@/components/shared/AddressAutocomplete'
 
@@ -16,9 +16,17 @@ interface ReferralInfo {
   message?: string;
 }
 
-export function OrderForm() {
+interface OrderFormProps {
+  locale?: Locale
+}
+
+export function OrderForm({ locale = 'nz' }: OrderFormProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
+  
+  // Currency display based on locale (charges always in NZD)
+  const displayCurrency: Currency = locale === 'au' ? 'AUD' : 'NZD'
+  const priceFormatter = (amount: number) => formatPrice(amount, displayCurrency)
   
   const [step, setStep] = useState(1)
   const [loading, setLoading] = useState(false)
@@ -56,7 +64,7 @@ export function OrderForm() {
   const [city, setCity] = useState('')
   const [region, setRegion] = useState('')
   const [postalCode, setPostalCode] = useState('')
-  const [country, setCountry] = useState<'NZ' | 'AU'>('NZ')
+  const [country, setCountry] = useState<'NZ' | 'AU'>(locale === 'au' ? 'AU' : 'NZ')
 
   // Get selected tier config
   const tierConfig = TIER_PRICING[selectedTier]
@@ -310,7 +318,7 @@ export function OrderForm() {
                           </div>
                         </div>
                         <div className="text-lg font-bold text-primary-600">
-                          {formatPriceNZD(tier.price)}
+                          {priceFormatter(tier.price)}
                         </div>
                       </div>
                     </button>
@@ -665,14 +673,14 @@ export function OrderForm() {
                     <hr className="my-3" />
                     <div className="flex justify-between">
                       <span className="text-gray-600">Subtotal</span>
-                      <span className="font-medium">{formatPriceNZD(price)}</span>
+                      <span className="font-medium">{priceFormatter(price)}</span>
                     </div>
                     <div className="flex justify-between text-green-600">
                       <span className="flex items-center gap-1">
                         <Tag className="h-3 w-3" />
                         Partner Discount ({referralInfo.discountPercent}%)
                       </span>
-                      <span className="font-medium">-{formatPriceNZD(discountAmount)}</span>
+                      <span className="font-medium">-{priceFormatter(discountAmount)}</span>
                     </div>
                     {referralInfo.freeShipping && (
                       <div className="flex justify-between text-green-600">
@@ -686,11 +694,11 @@ export function OrderForm() {
                 <hr className="my-3" />
                 <div className="flex justify-between text-lg">
                   <span className="font-semibold">Total</span>
-                  <span className="font-bold text-primary-600">{formatPriceNZD(finalPrice)}</span>
+                  <span className="font-bold text-primary-600">{priceFormatter(finalPrice)}</span>
                 </div>
                 {referralInfo && discountAmount > 0 && (
                   <div className="text-xs text-green-600 text-right">
-                    You save {formatPriceNZD(discountAmount)}!
+                    You save {priceFormatter(discountAmount)}!
                   </div>
                 )}
               </div>

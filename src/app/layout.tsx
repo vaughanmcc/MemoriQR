@@ -12,7 +12,7 @@ export const metadata: Metadata = {
     default: 'MemoriQR - Digital Memorials for Pets & People',
     template: '%s | MemoriQR',
   },
-  description: 'Create lasting digital memorials with NFC tags and QR-engraved Metalphoto® plates. Preserve memories of loved ones with photos, videos, and stories - hosted for 5, 10, or 25 years.',
+  description: 'Create lasting digital memorials with NFC tags and QR-engraved Metalphoto® plates. Preserve memories of loved ones with photos, videos, and stories - hosted for 5 or 10 years.',
   keywords: ['pet memorial', 'QR code memorial', 'NFC memorial tag', 'digital memorial', 'pet loss', 'remembrance', 'New Zealand'],
   authors: [{ name: 'MemoriQR' }],
   creator: 'MemoriQR',
@@ -23,6 +23,13 @@ export const metadata: Metadata = {
     telephone: false,
   },
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'https://memoriqr.co.nz'),
+  alternates: {
+    languages: {
+      'en-NZ': 'https://memoriqr.co.nz',
+      'en-AU': 'https://memoriqr.co.nz/australia',
+      'x-default': 'https://memoriqr.co.nz',
+    },
+  },
   openGraph: {
     type: 'website',
     locale: 'en_NZ',

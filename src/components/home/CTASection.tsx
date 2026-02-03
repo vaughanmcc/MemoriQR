@@ -1,6 +1,12 @@
 import Link from 'next/link'
 
-export function CTASection() {
+interface CTASectionProps {
+  locale?: 'nz' | 'au'
+}
+
+export function CTASection({ locale = 'nz' }: CTASectionProps) {
+  const orderPath = locale === 'au' ? '/australia/order' : '/order'
+  
   return (
     <section className="section bg-primary-600 text-white">
       <div className="container-wide text-center">
@@ -21,7 +27,7 @@ export function CTASection() {
         
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <Link
-            href="/order"
+            href={orderPath}
             className="btn bg-white text-primary-600 hover:bg-primary-50 text-base px-8 py-4"
           >
             Get Started Today

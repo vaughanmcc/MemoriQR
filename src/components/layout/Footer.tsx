@@ -108,6 +108,18 @@ export function Footer() {
           <p className="text-sm text-gray-500">
             © {new Date().getFullYear()} MemoriQR. All rights reserved.
           </p>
+          
+          {/* Region selector */}
+          <div className="flex items-center gap-4 text-sm text-gray-400">
+            <span>Region:</span>
+            <Link href="/" className="hover:text-white transition-colors">
+              🇳🇿 New Zealand
+            </Link>
+            <Link href="/australia" className="hover:text-white transition-colors">
+              🇦🇺 Australia
+            </Link>
+          </div>
+          
           <div className="flex items-center gap-2 text-sm text-gray-500">
             <span>Made with</span>
             <Heart className="h-4 w-4 text-red-500 fill-red-500" />
