@@ -92,6 +92,17 @@ export async function GET() {
       .select('*', { count: 'exact', head: true })
       .eq('status', 'pending') as any);
 
+    // Get renewals due (expiring in next 90 days, excluding lifetime)
+    const now = new Date();
+    const ninetyDaysFromNow = new Date(now.getTime() + 90 * 24 * 60 * 60 * 1000);
+    
+    const { count: renewalsDue } = await supabase
+      .from('memorial_records')
+      .select('*', { count: 'exact', head: true })
+      .neq('hosting_duration', 999) // Exclude lifetime
+      .lt('hosting_expires_at', ninetyDaysFromNow.toISOString())
+      .gt('hosting_expires_at', new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString()); // Include grace period
+
     return NextResponse.json({
       totalPartners,
       activePartners,
@@ -100,6 +111,7 @@ export async function GET() {
       pendingCommissions: pendingCommissions ?? 0,
       pendingFulfillment: pendingFulfillment ?? 0,
       pendingReferralRequests: pendingReferralRequests ?? 0,
+      renewalsDue: renewalsDue ?? 0,
       totalMemorials: totalMemorials ?? 0,
       totalOrders,
       totalRevenue,

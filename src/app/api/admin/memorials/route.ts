@@ -21,6 +21,7 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get('status') || 'all'
     const search = searchParams.get('search') || ''
     const fulfillment = searchParams.get('fulfillment') || 'all'
+    const filter = searchParams.get('filter') || ''
 
     const supabase = createAdminClient()
 
@@ -37,12 +38,27 @@ export async function GET(request: NextRequest) {
         is_published,
         fulfillment_status,
         views_count,
+        hosting_duration,
+        hosting_expires_at,
         created_at,
         updated_at,
         customer:customers(id, full_name, email),
         activation_codes:retail_activation_codes(activation_code)
       `)
       .order('created_at', { ascending: false })
+
+    // Apply renewals filter if specified
+    if (filter === 'renewals') {
+      const now = new Date()
+      const ninetyDaysFromNow = new Date(now.getTime() + 90 * 24 * 60 * 60 * 1000)
+      const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
+      
+      query = query
+        .neq('hosting_duration', 999) // Exclude lifetime
+        .lt('hosting_expires_at', ninetyDaysFromNow.toISOString())
+        .gt('hosting_expires_at', thirtyDaysAgo.toISOString()) // Include grace period
+        .order('hosting_expires_at', { ascending: true })
+    }
 
     // Apply filters
     if (status === 'published') {
@@ -107,6 +123,12 @@ export async function GET(request: NextRequest) {
 
     // Calculate counts
     const allMemorials = transformedMemorials
+    
+    // Calculate renewals count
+    const now = new Date()
+    const ninetyDaysFromNow = new Date(now.getTime() + 90 * 24 * 60 * 60 * 1000)
+    const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
+    
     const counts = {
       all: allMemorials.length,
       published: allMemorials.filter((m: { is_published: boolean }) => m.is_published).length,
@@ -114,6 +136,11 @@ export async function GET(request: NextRequest) {
       pending_fulfillment: allMemorials.filter((m: { fulfillment_status: string }) => 
         ['pending', 'processing'].includes(m.fulfillment_status)
       ).length,
+      renewals_due: allMemorials.filter((m: { hosting_duration: number; hosting_expires_at: string }) => {
+        if (m.hosting_duration === 999) return false // Exclude lifetime
+        const expiresAt = new Date(m.hosting_expires_at)
+        return expiresAt < ninetyDaysFromNow && expiresAt > thirtyDaysAgo
+      }).length,
     }
 
     return NextResponse.json({ memorials: filteredMemorials, counts })

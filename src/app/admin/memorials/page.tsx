@@ -32,6 +32,7 @@ interface Counts {
   published: number;
   draft: number;
   pending_fulfillment: number;
+  renewals_due: number;
 }
 
 const FULFILLMENT_STYLES: Record<string, string> = {
@@ -53,19 +54,25 @@ export default function AdminMemorialsPage() {
   const searchParams = useSearchParams();
   const initialStatus = searchParams.get('status') || 'all';
   const initialFulfillment = searchParams.get('fulfillment') || 'all';
+  const initialFilter = searchParams.get('filter') || '';
   
   const [memorials, setMemorials] = useState<Memorial[]>([]);
-  const [counts, setCounts] = useState<Counts>({ all: 0, published: 0, draft: 0, pending_fulfillment: 0 });
+  const [counts, setCounts] = useState<Counts>({ all: 0, published: 0, draft: 0, pending_fulfillment: 0, renewals_due: 0 });
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState(initialStatus);
   const [fulfillmentFilter, setFulfillmentFilter] = useState(initialFulfillment);
+  const [renewalsFilter, setRenewalsFilter] = useState(initialFilter === 'renewals');
   const [search, setSearch] = useState('');
 
   const fetchMemorials = useCallback(async () => {
     try {
       const params = new URLSearchParams();
-      if (statusFilter !== 'all') params.set('status', statusFilter);
-      if (fulfillmentFilter !== 'all') params.set('fulfillment', fulfillmentFilter);
+      if (renewalsFilter) {
+        params.set('filter', 'renewals');
+      } else {
+        if (statusFilter !== 'all') params.set('status', statusFilter);
+        if (fulfillmentFilter !== 'all') params.set('fulfillment', fulfillmentFilter);
+      }
       if (search) params.set('search', search);
 
       const res = await fetch(`/api/admin/memorials?${params}`);
@@ -172,6 +179,32 @@ export default function AdminMemorialsPage() {
                 statusFilter === 'draft' ? 'bg-white/20' : 'bg-gray-200'
               }`}>
                 {counts.draft}
+              </span>
+            </button>
+          </div>
+
+          {/* Renewals Filter */}
+          <div className="flex gap-2">
+            <button
+              onClick={() => {
+                setRenewalsFilter(!renewalsFilter);
+                if (!renewalsFilter) {
+                  // When enabling renewals filter, clear other filters
+                  setStatusFilter('all');
+                  setFulfillmentFilter('all');
+                }
+              }}
+              className={`px-4 py-2 rounded-lg font-medium ${
+                renewalsFilter
+                  ? 'bg-amber-600 text-white'
+                  : 'bg-white text-stone-600 hover:bg-stone-50 border border-amber-300'
+              }`}
+            >
+              ⏰ Renewals Due
+              <span className={`ml-2 px-2 py-0.5 rounded-full text-xs ${
+                renewalsFilter ? 'bg-white/20' : 'bg-amber-100 text-amber-700'
+              }`}>
+                {counts.renewals_due}
               </span>
             </button>
           </div>

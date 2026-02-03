@@ -13,6 +13,7 @@ interface DashboardStats {
   pendingCommissions: number;
   pendingFulfillment: number;
   pendingReferralRequests: number;
+  renewalsDue: number;
   totalMemorials: number;
   totalOrders: number;
   totalRevenue: number;
@@ -133,6 +134,20 @@ export default function AdminDashboardPage() {
             <span className="text-stone-500 text-sm">Total Memorials</span>
             <p className="text-3xl font-bold text-stone-800">{stats?.totalMemorials ?? 0}</p>
             <p className="text-sm text-green-600 mt-1">+{stats?.recentActivations ?? 0} this month</p>
+          </Link>
+
+          {/* Renewals Due */}
+          <Link href="/admin/memorials?filter=renewals" className="bg-white rounded-xl shadow p-6 block hover:shadow-lg transition-shadow cursor-pointer">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-stone-500 text-sm">Renewals Due</span>
+              {(stats?.renewalsDue ?? 0) > 0 && (
+                <span className="bg-amber-100 text-amber-700 text-xs font-medium px-2 py-1 rounded-full">
+                  Expiring Soon
+                </span>
+              )}
+            </div>
+            <p className="text-3xl font-bold text-stone-800">{stats?.renewalsDue ?? 0}</p>
+            <p className="text-sm text-stone-400 mt-1">within 90 days</p>
           </Link>
 
           {/* Revenue */}
