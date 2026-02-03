@@ -393,7 +393,9 @@ ${qr_code_url ? `<div style="border: 1px solid #ddd; border-radius: 8px; padding
 
 <div style="background: linear-gradient(135deg, #fdfcfa 0%, #f7f5f2 100%); border: 1px solid #e8e4df; border-radius: 12px; padding: 25px; margin: 25px 0; text-align: center;">
 <p style="color: #8B7355; margin: 0 0 8px; font-size: 13px; text-transform: uppercase; letter-spacing: 2px; font-weight: 600;">Memorial Page</p>
-<a href="${memorialUrl}" style="color: #5a4a3a; font-size: 15px; text-decoration: none; word-break: break-all; display: block; margin-bottom: 20px;">${memorialUrl}</a>
+<div style="margin-bottom: 20px;">
+<a href="${memorialUrl}" style="color: #5a4a3a; font-size: 15px; text-decoration: none; word-break: break-all;">${memorialUrl}</a>
+</div>
 <a href="${memorialUrl}" style="display: inline-block; background: linear-gradient(135deg, #8B7355 0%, #A08060 100%); color: #fff; text-decoration: none; padding: 14px 35px; border-radius: 8px; font-size: 16px; font-weight: 500; box-shadow: 0 2px 8px rgba(139, 115, 85, 0.3);">Visit Memorial</a>
 <p style="color: #999; font-size: 14px; margin: 18px 0 0; font-style: italic;">💝 Share this link with family and friends</p>
 </div>

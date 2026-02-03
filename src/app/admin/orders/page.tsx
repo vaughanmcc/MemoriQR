@@ -446,14 +446,22 @@ export default function AdminOrdersPage() {
                     </div>
                     <div>
                       <label className="text-sm font-medium text-stone-700">Memorial Page:</label>
-                      <a
-                        href={`${getBaseUrl()}/memorial/${selectedOrder.memorial?.memorial_slug}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="block mt-1 text-sm text-amber-700 hover:underline"
-                      >
-                        {getBaseUrl()}/memorial/{selectedOrder.memorial?.memorial_slug}
-                      </a>
+                      <div className="flex items-center gap-2 mt-1">
+                        <a
+                          href={`${getBaseUrl()}/memorial/${selectedOrder.memorial?.memorial_slug}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex-1 text-sm text-amber-700 hover:underline break-all"
+                        >
+                          {getBaseUrl()}/memorial/{selectedOrder.memorial?.memorial_slug}
+                        </a>
+                        <button
+                          onClick={() => navigator.clipboard.writeText(`${getBaseUrl()}/memorial/${selectedOrder.memorial?.memorial_slug}`)}
+                          className="px-3 py-2 bg-stone-200 hover:bg-stone-300 rounded text-sm"
+                        >
+                          Copy
+                        </button>
+                      </div>
                     </div>
                     {(selectedOrder.product_type === 'qr_only' || selectedOrder.product_type === 'both') && (
                       <div>
