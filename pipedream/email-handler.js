@@ -391,23 +391,11 @@ ${qr_code_url ? `<div style="border: 1px solid #ddd; border-radius: 8px; padding
 
 <p style="color: #555; line-height: 1.6;">We're honoured to let you know that the memorial page for <strong>${memorialName}</strong> has been successfully created and is now live.</p>
 
-<div style="background: #f9f7f4; border-left: 4px solid #8B7355; padding: 20px; margin: 20px 0;">
-<p style="color: #666; margin: 0 0 10px; font-size: 15px; text-transform: uppercase; letter-spacing: 1px;">Memorial Page</p>
-<table style="width: 100%; border-collapse: collapse;">
-<tr>
-<td style="padding: 0;">
-<a href="${memorialUrl}" style="color: #8B7355; font-size: 16px; text-decoration: none; word-break: break-all;">${memorialUrl}</a>
-</td>
-<td style="width: 80px; text-align: right; vertical-align: middle;">
-<a href="${memorialUrl}" onclick="navigator.clipboard.writeText('${memorialUrl}'); return false;" style="display: inline-block; background: #8B7355; color: #fff; text-decoration: none; padding: 8px 12px; border-radius: 4px; font-size: 14px; font-weight: bold;">📋 Copy</a>
-</td>
-</tr>
-</table>
-<p style="color: #888; font-size: 15px; margin: 12px 0 0; font-style: italic;">💝 Share this link with family and friends so they can visit the digital memorial.</p>
-</div>
-
-<div style="text-align: center; margin: 25px 0;">
-<a href="${memorialUrl}" style="display: inline-block; background: linear-gradient(135deg, #8B7355 0%, #A08060 100%); color: #fff; text-decoration: none; padding: 15px 40px; border-radius: 8px; font-size: 16px;">View Memorial Page</a>
+<div style="background: linear-gradient(135deg, #fdfcfa 0%, #f7f5f2 100%); border: 1px solid #e8e4df; border-radius: 12px; padding: 25px; margin: 25px 0; text-align: center;">
+<p style="color: #8B7355; margin: 0 0 8px; font-size: 13px; text-transform: uppercase; letter-spacing: 2px; font-weight: 600;">Memorial Page</p>
+<a href="${memorialUrl}" style="color: #5a4a3a; font-size: 15px; text-decoration: none; word-break: break-all; display: block; margin-bottom: 20px;">${memorialUrl}</a>
+<a href="${memorialUrl}" style="display: inline-block; background: linear-gradient(135deg, #8B7355 0%, #A08060 100%); color: #fff; text-decoration: none; padding: 14px 35px; border-radius: 8px; font-size: 16px; font-weight: 500; box-shadow: 0 2px 8px rgba(139, 115, 85, 0.3);">Visit Memorial</a>
+<p style="color: #999; font-size: 14px; margin: 18px 0 0; font-style: italic;">💝 Share this link with family and friends</p>
 </div>
 
 <div style="background: #f9f7f4; padding: 25px; border-radius: 8px; margin: 25px 0;">
