@@ -14,11 +14,16 @@ function generateRenewalToken(): string {
 }
 
 export async function GET(request: NextRequest) {
-  // Verify cron secret
+  // Verify cron secret (Vercel Pro sends Authorization header automatically)
+  // On Hobby plan, we check if request comes from Vercel's cron system
   const authHeader = request.headers.get('authorization')
   const cronSecret = process.env.CRON_SECRET
+  const userAgent = request.headers.get('user-agent') || ''
+  const isVercelCron = userAgent.includes('vercel-cron')
 
-  if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
+  // Allow if: no secret configured, OR header matches, OR it's Vercel's cron user-agent
+  if (cronSecret && authHeader !== `Bearer ${cronSecret}` && !isVercelCron) {
+    console.log('Cron auth failed:', { authHeader: authHeader?.substring(0, 20), isVercelCron })
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
