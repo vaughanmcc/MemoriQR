@@ -29,7 +29,7 @@ export default function AboutPage() {
             </h1>
             <p className="text-xl text-gray-600 max-w-2xl mx-auto">
               MemoriQR creates weatherproof memorial tags and QR plates 
-              built to last for decades – with optional digital galleries 
+              built to last for decades – each linked to a digital gallery 
               to share photos, videos, and stories.
             </p>
           </div>
@@ -51,8 +51,8 @@ export default function AboutPage() {
                 <p className="text-gray-600 mb-4">
                   Our Metalphoto® plates are built to withstand the harshest 
                   outdoor conditions – UV-resistant for 20+ years, rated to 
-                  300°C+. Combined with NFC technology and optional digital 
-                  photo galleries, they offer a complete memorial solution.
+                  300°C+. Combined with NFC technology and a digital 
+                  photo gallery, they offer a complete memorial solution.
                 </p>
                 <p className="text-gray-600">
                   Based in Auckland, we understand the importance of local 

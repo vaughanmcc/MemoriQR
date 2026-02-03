@@ -12,7 +12,7 @@ export const metadata: Metadata = {
     default: 'MemoriQR - Premium Memorial Tags & QR Plates | NZ',
     template: '%s | MemoriQR',
   },
-  description: 'Premium NFC memorial tags and QR-engraved Metalphoto® plates for pets and people. Weatherproof, UV-resistant memorial products with optional digital photo gallery. Made in New Zealand.',
+  description: 'Premium NFC memorial tags and QR-engraved Metalphoto® plates for pets and people. Weatherproof, UV-resistant memorial products with digital photo gallery included. Made in New Zealand.',
   keywords: [
     // Primary product keywords
     'memorial tag', 'QR memorial plate', 'NFC pet tag', 'memorial plaque',
