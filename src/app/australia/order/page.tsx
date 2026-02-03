@@ -38,11 +38,11 @@ export default function AustraliaOrderPage() {
         <div className="container-wide py-12 md:py-20">
           <div className="text-center mb-12">
             <h1 className="text-3xl md:text-4xl font-serif text-gray-900 mb-4">
-              Create Your Memorial
+              Order Your Memorial Tag
             </h1>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              Select your hosting duration and product type to get started. 
-              You'll be able to upload photos and customize the memorial after checkout.
+              Choose your memorial tag package. Includes weatherproof NFC tag 
+              or QR plate, plus a digital photo gallery to share memories.
             </p>
             
             {/* Activation Code CTA */}

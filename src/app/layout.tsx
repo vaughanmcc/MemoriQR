@@ -9,11 +9,26 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: {
-    default: 'MemoriQR - Digital Memorials for Pets & People',
+    default: 'MemoriQR - Premium Memorial Tags & QR Plates | NZ',
     template: '%s | MemoriQR',
   },
-  description: 'Create lasting digital memorials with NFC tags and QR-engraved Metalphoto® plates. Preserve memories of loved ones with photos, videos, and stories - hosted for 5 or 10 years.',
-  keywords: ['pet memorial', 'QR code memorial', 'NFC memorial tag', 'digital memorial', 'pet loss', 'remembrance', 'New Zealand'],
+  description: 'Premium NFC memorial tags and QR-engraved Metalphoto® plates for pets and people. Weatherproof, UV-resistant memorial products with optional digital photo gallery. Made in New Zealand.',
+  keywords: [
+    // Primary product keywords
+    'memorial tag', 'QR memorial plate', 'NFC pet tag', 'memorial plaque',
+    'pet memorial tag', 'headstone QR code', 'grave marker tag',
+    // Industry/service keywords  
+    'pet crematorium', 'crematorium memorial', 'funeral memorial products',
+    'funeral remembrance gifts', 'cremation memorial', 'ashes memorial',
+    // Emotional/legacy keywords
+    'remembrance', 'living legacy', 'memorial keepsake', 'pet remembrance',
+    'lasting tribute', 'memory keeper', 'legacy memorial',
+    // Pet-specific
+    'dog memorial', 'cat memorial', 'horse memorial', 'pet loss gift',
+    'pet grave marker', 'pet urn tag', 'pet ashes memorial',
+    // Location
+    'New Zealand', 'Auckland', 'memorial NZ',
+  ],
   authors: [{ name: 'MemoriQR' }],
   creator: 'MemoriQR',
   publisher: 'MemoriQR',
@@ -35,8 +50,8 @@ export const metadata: Metadata = {
     locale: 'en_NZ',
     url: 'https://memoriqr.co.nz',
     siteName: 'MemoriQR',
-    title: 'MemoriQR - Digital Memorials for Pets & People',
-    description: 'Create lasting digital memorials with NFC tags and QR-engraved Metalphoto® plates.',
+    title: 'MemoriQR - Premium Memorial Tags & QR Plates',
+    description: 'Premium NFC memorial tags and QR-engraved Metalphoto® plates. Weatherproof memorial products with digital photo gallery.',
     images: [
       {
         url: '/og-image.png',

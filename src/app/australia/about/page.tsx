@@ -43,14 +43,14 @@ export default function AustraliaAboutPage() {
               🇦🇺 Serving Australia
             </div>
             <h1 className="text-4xl md:text-5xl font-serif text-gray-900 mb-6">
-              Preserving Memories,
+              Premium Memorial Products,
               <br />
-              <span className="text-primary-600">One Tag at a Time</span>
+              <span className="text-primary-600">Crafted with Care</span>
             </h1>
             <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              MemoriQR was born from a simple belief: the memories of those 
-              we love deserve to be preserved, shared, and celebrated for 
-              years to come.
+              MemoriQR creates weatherproof memorial tags and QR plates 
+              built to last for decades – with optional digital galleries 
+              to share photos, videos, and stories.
             </p>
           </div>
         </section>
@@ -65,14 +65,14 @@ export default function AustraliaAboutPage() {
                 </h2>
                 <p className="text-gray-600 mb-4">
                   Losing a beloved pet or family member is never easy. We created 
-                  MemoriQR to give families a beautiful, lasting way to remember 
-                  and honor those they've lost.
+                  MemoriQR to give families a beautiful, lasting physical tribute 
+                  to those they've lost.
                 </p>
                 <p className="text-gray-600 mb-4">
-                  Our memorial tags combine premium physical craftsmanship with 
-                  modern technology. A simple scan opens a world of photos, 
-                  videos, and stories – keeping memories alive for future 
-                  generations.
+                  Our Metalphoto® plates are built to withstand the harshest 
+                  outdoor conditions – UV-resistant for 20+ years, rated to 
+                  300°C+. Combined with NFC technology and optional digital 
+                  photo galleries, they offer a complete memorial solution.
                 </p>
                 <p className="text-gray-600">
                   Based in Auckland, New Zealand, we proudly serve families 

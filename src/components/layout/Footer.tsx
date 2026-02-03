@@ -33,9 +33,9 @@ export function Footer() {
               </span>
             </Link>
             <p className="text-gray-400 mb-6 max-w-sm">
-              Creating lasting digital memorials for pets and people. 
-              Premium NFC tags and QR-engraved Metalphoto® plates, 
-              proudly made in New Zealand.
+              Premium memorial tags and QR-engraved Metalphoto® plates 
+              for pets and people. Weatherproof, UV-resistant products 
+              with digital photo galleries. Made in New Zealand.
             </p>
             <div className="space-y-2 text-sm">
               <div className="flex items-center gap-2">

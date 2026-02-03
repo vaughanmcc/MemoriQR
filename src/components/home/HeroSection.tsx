@@ -25,22 +25,22 @@ export function HeroSection({ locale = 'nz' }: HeroSectionProps) {
 
           {/* Headline */}
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-serif text-gray-900 mb-6 leading-tight">
-            Create a Lasting Memorial
+            Premium Memorial Tags
             <br />
-            <span className="text-primary-600">That Lives Forever</span>
+            <span className="text-primary-600">Built to Last Forever</span>
           </h1>
 
           {/* Subheadline */}
           <p className="text-lg md:text-xl text-gray-600 mb-10 max-w-2xl mx-auto">
-            Transform memories of your beloved pet or loved one into a beautiful 
-            digital memorial. Scan our premium NFC tags or QR plates to share 
-            photos, videos, and stories – anywhere, anytime.
+            Weatherproof NFC tags and QR-engraved Metalphoto® plates for 
+            beloved pets and family. Scan to view a beautiful photo gallery 
+            with videos and stories – a lasting tribute to those you love.
           </p>
 
           {/* CTA Buttons */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
             <Link href={orderPath} className="btn-primary text-base px-8 py-4">
-              Create Memorial
+              Order Memorial Tag
             </Link>
             <Link href={howItWorksPath} className="btn-outline text-base px-8 py-4">
               See How It Works

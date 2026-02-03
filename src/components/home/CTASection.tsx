@@ -17,12 +17,12 @@ export function CTASection({ locale = 'nz' }: CTASectionProps) {
         />
         
         <h2 className="text-3xl md:text-4xl font-serif mb-4">
-          Ready to Create a Lasting Memorial?
+          Ready to Order Your Memorial Tag?
         </h2>
         
         <p className="text-xl text-primary-100 mb-8 max-w-2xl mx-auto">
-          Preserve the memories of your beloved pet or loved one with a 
-          beautiful digital memorial that will last for years to come.
+          Honor the memory of your beloved pet or loved one with a 
+          premium Metalphoto® plate or NFC tag – built to last for decades.
         </p>
         
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
