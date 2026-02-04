@@ -232,9 +232,8 @@ export function generateInvoiceHTML(invoice: InvoiceData): string {
       border-bottom: 2px solid #8B7355;
     }
     .logo {
-      font-size: 28px;
-      font-weight: bold;
-      color: #8B7355;
+      height: 50px;
+      width: auto;
     }
     .invoice-title {
       text-align: right;
@@ -361,7 +360,7 @@ export function generateInvoiceHTML(invoice: InvoiceData): string {
 </head>
 <body>
   <div class="header">
-    <div class="logo">MemoriQR</div>
+    <img src="https://memoriqr.co.nz/logo.png" alt="MemoriQR" class="logo">
     <div class="invoice-title">
       <h1>INVOICE</h1>
       <div class="invoice-number">${invoice.invoiceNumber}</div>
