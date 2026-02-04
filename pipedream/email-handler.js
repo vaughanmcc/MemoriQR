@@ -76,7 +76,9 @@ export default defineComponent({
         activation_url, 
         sender_name, 
         reply_to,
-        surface_preparation_note
+        surface_preparation_note,
+        invoice_number,
+        invoice_url
       } = body;
       
       const productDisplay = getProductDisplay(product_type);
@@ -89,6 +91,15 @@ export default defineComponent({
 </div>` : '';
 
       const surfacePrepText = surface_preparation_note ? `\n\nIMPORTANT: SURFACE PREPARATION\n${surface_preparation_note}\n` : '';
+      
+      // Invoice section
+      const invoiceSection = invoice_url ? `
+<div style="background: #f8f9fa; border: 1px solid #e9ecef; padding: 15px; margin: 20px 0; border-radius: 8px; text-align: center;">
+<p style="margin: 0 0 10px; color: #555; font-size: 14px;">📄 Invoice: <strong>${invoice_number}</strong></p>
+<a href="${invoice_url}" style="color: #8B7355; text-decoration: underline; font-size: 14px;">View Invoice</a>
+</div>` : '';
+
+      const invoiceText = invoice_number ? `\n\nINVOICE: ${invoice_number}\nView invoice: ${invoice_url}\n` : '';
       
       return {
         to: customer_email,
@@ -109,6 +120,8 @@ export default defineComponent({
 <tr><td style="padding: 10px; border-bottom: 1px solid #eee; color: #666;">Hosting:</td><td style="padding: 10px; border-bottom: 1px solid #eee; font-weight: 500;">${hosting_duration} years</td></tr>
 </table>
 
+${invoiceSection}
+
 ${surfacePrepSection}
 
 <div style="text-align: center; margin: 30px 0;">
@@ -121,7 +134,7 @@ ${surfacePrepSection}
 <p style="color: #888; font-size: 14px; margin: 0;">© 2026 MemoriQR - Preserving Memories Forever</p>
 </div>
 </div>`,
-        text: `Thank you for your order, ${customer_name}!\n\nOrder: ${order_number}\nMemorial for: ${deceased_name}\nProduct: ${productDisplay}\nHosting: ${hosting_duration} years${surfacePrepText}\n\nActivate your memorial: ${activation_url}`
+        text: `Thank you for your order, ${customer_name}!\n\nOrder: ${order_number}\nMemorial for: ${deceased_name}\nProduct: ${productDisplay}\nHosting: ${hosting_duration} years${invoiceText}${surfacePrepText}\n\nActivate your memorial: ${activation_url}`
       };
     }
     

@@ -107,6 +107,9 @@ export function AdminNav({ onLogout }: AdminNavProps) {
                 </span>
               )}
             </Link>
+            <Link href="/admin/invoices" className={navLinkClass('/admin/invoices')}>
+              Invoices
+            </Link>
             <Link href="/admin/memorials" className={navLinkClass('/admin/memorials')}>
               Memorials
               {(stats?.renewalsDue ?? 0) > 0 && (

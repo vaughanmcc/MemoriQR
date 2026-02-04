@@ -4,6 +4,7 @@ import Stripe from 'stripe'
 import { stripe } from '@/lib/stripe'
 import { createAdminClient } from '@/lib/supabase/server'
 import { generateOptOutToken } from '@/lib/utils'
+import { createOrderInvoice, generateInvoiceHTML, type InvoiceData } from '@/lib/invoice'
 import { SupabaseClient } from '@supabase/supabase-js'
 
 // Force dynamic rendering for webhook
@@ -531,27 +532,61 @@ export async function POST(request: NextRequest) {
       // Get order details to check product type
       const { data: order } = await supabase
         .from('orders')
-        .select('product_type, hosting_duration')
+        .select('id, product_type, hosting_duration')
         .eq('order_number', orderNumber)
         .single()
 
       // If order includes QR plate, create supplier order
       if (order && (order.product_type === 'qr_only' || order.product_type === 'both')) {
-        const { data: orderData } = await supabase
-          .from('orders')
-          .select('id')
-          .eq('order_number', orderNumber)
-          .single()
+        await supabase.from('supplier_orders').insert({
+          order_id: order.id,
+          supplier_name: 'Metal Image NZ',
+          order_details: {
+            qr_url: `${process.env.NEXT_PUBLIC_APP_URL}/memorial/${memorialId}`,
+          },
+          supplier_status: 'pending',
+        })
+      }
 
-        if (orderData) {
-          await supabase.from('supplier_orders').insert({
-            order_id: orderData.id,
-            supplier_name: 'Metal Image NZ',
-            order_details: {
-              qr_url: `${process.env.NEXT_PUBLIC_APP_URL}/memorial/${memorialId}`,
-            },
-            supplier_status: 'pending',
+      // Create invoice for the order
+      let invoiceData: InvoiceData | null = null
+      if (order && customerId) {
+        const { data: customerData } = await supabase
+          .from('customers')
+          .select('email, full_name, shipping_address')
+          .eq('id', customerId)
+          .single()
+        
+        const { data: memorialData } = await supabase
+          .from('memorial_records')
+          .select('deceased_name')
+          .eq('id', memorialId)
+          .single()
+        
+        if (customerData && memorialData) {
+          const referralDiscount = parseFloat(session.metadata?.referral_discount || '0')
+          const referralCode = session.metadata?.referral_code
+          
+          invoiceData = await createOrderInvoice({
+            orderId: order.id,
+            orderNumber,
+            customerId,
+            customerName: customerData.full_name,
+            customerEmail: customerData.email,
+            shippingAddress: session.shipping_details?.address || customerData.shipping_address,
+            productType: order.product_type,
+            hostingDuration: order.hosting_duration,
+            deceasedName: memorialData.deceased_name,
+            amountPaid: session.amount_total ? session.amount_total / 100 : 0,
+            currency: session.currency?.toUpperCase() || 'NZD',
+            discountAmount: referralDiscount,
+            discountCode: referralCode || undefined,
+            stripePaymentId: session.payment_intent as string,
           })
+          
+          if (invoiceData) {
+            console.log(`[ORDER ${orderNumber}] Invoice ${invoiceData.invoiceNumber} created`)
+          }
         }
       }
 
@@ -599,6 +634,11 @@ export async function POST(request: NextRequest) {
           try {
             console.log(`[ORDER ${orderNumber}] Sending order confirmation email to ${customer.email}`)
             
+            // Build invoice URL if invoice was created
+            const invoiceUrl = invoiceData 
+              ? `${baseUrl}/api/invoice?number=${encodeURIComponent(invoiceData.invoiceNumber)}&email=${encodeURIComponent(customer.email)}`
+              : null
+            
             // Send customer order confirmation
             const emailResponse = await fetch(webhookUrl, {
               method: 'POST',
@@ -618,6 +658,9 @@ export async function POST(request: NextRequest) {
                 currency: session.currency?.toUpperCase() || 'NZD',
                 activation_url: activationUrl,
                 surface_preparation_note: 'Before attaching your NFC tag or QR plate, please ensure the surface is clean, flat, and properly prepared. Remove any dust, dirt, or moisture. The surface must be free of chemicals such as oils (including wood treatments), waxes, silicones, or other contaminants that may prevent proper adhesion.',
+                // Invoice details
+                invoice_number: invoiceData?.invoiceNumber || null,
+                invoice_url: invoiceUrl,
               }),
             })
             
