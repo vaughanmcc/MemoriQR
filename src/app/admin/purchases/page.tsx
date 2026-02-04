@@ -28,6 +28,8 @@ interface Purchase {
   paid_at: string | null;
   invoice_url: string | null;
   notes: string | null;
+  stock_added: boolean | null;
+  stock_added_at: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -880,6 +882,25 @@ function PurchaseDetailModal({
                   >
                     Edit Purchase
                   </button>
+                  {purchase.status === 'received' && !purchase.stock_added && (
+                    <a
+                      href={`/admin/inventory?from_purchase=${purchase.id}`}
+                      className="bg-green-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-green-700 inline-flex items-center gap-1"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                      </svg>
+                      Add to Inventory
+                    </a>
+                  )}
+                  {purchase.stock_added && (
+                    <span className="text-green-600 px-4 py-2 text-sm flex items-center gap-1">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      Added to inventory
+                    </span>
+                  )}
                   <button
                     onClick={() => onDelete(purchase.id)}
                     disabled={loading}

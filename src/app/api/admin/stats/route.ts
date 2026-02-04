@@ -109,6 +109,23 @@ export async function GET() {
       .select('*', { count: 'exact', head: true })
       .in('status', ['ordered', 'shipped']) as any);
 
+    // Get low stock count from inventory
+    let lowStockCount = 0;
+    try {
+      const { data: inventoryItems } = await (supabase
+        .from('inventory' as any)
+        .select('quantity_in_stock, quantity_reserved, low_stock_threshold')
+        .eq('is_active', true) as any);
+      
+      if (inventoryItems) {
+        lowStockCount = inventoryItems.filter((item: any) => 
+          (item.quantity_in_stock - (item.quantity_reserved || 0)) <= (item.low_stock_threshold || 10)
+        ).length;
+      }
+    } catch (e) {
+      // Inventory table might not exist yet
+    }
+
     return NextResponse.json({
       totalPartners,
       activePartners,
@@ -119,6 +136,7 @@ export async function GET() {
       pendingReferralRequests: pendingReferralRequests ?? 0,
       renewalsDue: renewalsDue ?? 0,
       pendingPurchases: pendingPurchases ?? 0,
+      lowStockCount,
       totalMemorials: totalMemorials ?? 0,
       totalOrders,
       totalRevenue,

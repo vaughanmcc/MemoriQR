@@ -11,6 +11,7 @@ interface NavStats {
   pendingReferralRequests: number;
   renewalsDue: number;
   pendingPurchases: number;
+  lowStockCount: number;
 }
 
 interface AdminNavProps {
@@ -37,6 +38,7 @@ export function AdminNav({ onLogout }: AdminNavProps) {
           pendingReferralRequests: data.pendingReferralRequests ?? 0,
           renewalsDue: data.renewalsDue ?? 0,
           pendingPurchases: data.pendingPurchases ?? 0,
+          lowStockCount: data.lowStockCount ?? 0,
         });
       }
     } catch (err) {
@@ -123,6 +125,14 @@ export function AdminNav({ onLogout }: AdminNavProps) {
               {(stats?.pendingPurchases ?? 0) > 0 && (
                 <span className="absolute -top-1 -right-1 bg-blue-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
                   {stats?.pendingPurchases}
+                </span>
+              )}
+            </Link>
+            <Link href="/admin/inventory" className={navLinkClass('/admin/inventory')}>
+              Inventory
+              {(stats?.lowStockCount ?? 0) > 0 && (
+                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+                  {stats?.lowStockCount}
                 </span>
               )}
             </Link>
