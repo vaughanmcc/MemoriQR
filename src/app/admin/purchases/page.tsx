@@ -223,6 +223,29 @@ export default function AdminPurchasesPage() {
     }
   };
 
+  const handleUpdatePurchase = async (id: string, updates: Partial<Purchase>) => {
+    setActionLoading(true);
+    try {
+      const res = await fetch('/api/admin/purchases', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, ...updates }),
+      });
+      if (!res.ok) throw new Error('Failed to update');
+      await fetchPurchases();
+      // Refresh the selected purchase with new data
+      const updatedPurchase = purchases.find(p => p.id === id);
+      if (updatedPurchase) {
+        setSelectedPurchase({ ...updatedPurchase, ...updates });
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Failed to update purchase');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   const formatDate = (date: string | null) => {
     if (!date) return '-';
     return new Date(date).toLocaleDateString('en-NZ', {
@@ -448,7 +471,15 @@ export default function AdminPurchasesPage() {
                       type="number"
                       min="1"
                       value={newPurchase.quantity}
-                      onChange={(e) => setNewPurchase({ ...newPurchase, quantity: parseInt(e.target.value) || 1 })}
+                      onChange={(e) => {
+                        const qty = parseInt(e.target.value) || 1;
+                        const unitCost = parseFloat(newPurchase.unit_cost) || 0;
+                        setNewPurchase({ 
+                          ...newPurchase, 
+                          quantity: qty,
+                          total_cost: unitCost > 0 ? (qty * unitCost).toFixed(2) : newPurchase.total_cost
+                        });
+                      }}
                       className="w-full border border-stone-300 rounded-lg px-3 py-2"
                       required
                     />
@@ -459,7 +490,15 @@ export default function AdminPurchasesPage() {
                       type="number"
                       step="0.01"
                       value={newPurchase.unit_cost}
-                      onChange={(e) => setNewPurchase({ ...newPurchase, unit_cost: e.target.value })}
+                      onChange={(e) => {
+                        const unitCost = parseFloat(e.target.value) || 0;
+                        const total = unitCost * newPurchase.quantity;
+                        setNewPurchase({ 
+                          ...newPurchase, 
+                          unit_cost: e.target.value,
+                          total_cost: total > 0 ? total.toFixed(2) : ''
+                        });
+                      }}
                       className="w-full border border-stone-300 rounded-lg px-3 py-2"
                       placeholder="0.00"
                     />
@@ -471,10 +510,11 @@ export default function AdminPurchasesPage() {
                       step="0.01"
                       value={newPurchase.total_cost}
                       onChange={(e) => setNewPurchase({ ...newPurchase, total_cost: e.target.value })}
-                      className="w-full border border-stone-300 rounded-lg px-3 py-2"
+                      className="w-full border border-stone-300 rounded-lg px-3 py-2 bg-stone-50"
                       placeholder="0.00"
                       required
                     />
+                    <p className="text-xs text-stone-400 mt-1">Auto-calculated from qty × unit cost</p>
                   </div>
                 </div>
 
@@ -538,6 +578,7 @@ export default function AdminPurchasesPage() {
             onClose={() => setSelectedPurchase(null)}
             onStatusUpdate={handleStatusUpdate}
             onUpdateTracking={handleUpdateTracking}
+            onUpdatePurchase={handleUpdatePurchase}
             onDelete={handleDelete}
             onInvoiceUploaded={() => {
               fetchPurchases();
@@ -559,6 +600,7 @@ interface PurchaseDetailModalProps {
   onClose: () => void;
   onStatusUpdate: (id: string, status: string) => void;
   onUpdateTracking: (id: string, tracking: string, carrier: string) => void;
+  onUpdatePurchase: (id: string, updates: Partial<Purchase>) => Promise<void>;
   onDelete: (id: string) => void;
   onInvoiceUploaded: () => void;
   loading: boolean;
@@ -571,6 +613,7 @@ function PurchaseDetailModal({
   onClose,
   onStatusUpdate,
   onUpdateTracking,
+  onUpdatePurchase,
   onDelete,
   onInvoiceUploaded,
   loading,
@@ -581,6 +624,12 @@ function PurchaseDetailModal({
   const [carrier, setCarrier] = useState(purchase.shipping_carrier || '');
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState('');
+  const [isEditing, setIsEditing] = useState(false);
+  const [editData, setEditData] = useState({
+    purchase_number: purchase.purchase_number,
+    description: purchase.description || '',
+    notes: purchase.notes || '',
+  });
 
   const handleInvoiceUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -617,12 +666,32 @@ function PurchaseDetailModal({
       <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         <div className="p-6 border-b border-stone-200 flex justify-between items-start">
           <div>
-            <h2 className="text-xl font-bold text-stone-800">{purchase.purchase_number}</h2>
+            {isEditing ? (
+              <input
+                type="text"
+                value={editData.purchase_number}
+                onChange={(e) => setEditData({ ...editData, purchase_number: e.target.value })}
+                className="text-xl font-bold text-stone-800 border border-stone-300 rounded px-2 py-1 w-48"
+              />
+            ) : (
+              <h2 className="text-xl font-bold text-stone-800">{purchase.purchase_number}</h2>
+            )}
             <p className="text-stone-500">{PURCHASE_TYPES[purchase.purchase_type]}</p>
           </div>
-          <span className={`px-3 py-1 rounded-full text-sm font-medium ${STATUS_STYLES[purchase.status]}`}>
-            {STATUS_LABELS[purchase.status]}
-          </span>
+          <div className="flex items-center gap-2">
+            <select
+              value={purchase.status}
+              onChange={(e) => onStatusUpdate(purchase.id, e.target.value)}
+              disabled={loading}
+              className={`px-3 py-1 rounded-full text-sm font-medium cursor-pointer border-0 ${STATUS_STYLES[purchase.status]}`}
+            >
+              <option value="pending">Pending</option>
+              <option value="ordered">Ordered</option>
+              <option value="shipped">In Transit</option>
+              <option value="received">Received</option>
+              <option value="cancelled">Cancelled</option>
+            </select>
+          </div>
         </div>
 
         <div className="p-6 space-y-6">
@@ -777,40 +846,49 @@ function PurchaseDetailModal({
           <div className="border-t border-stone-200 pt-4">
             <h3 className="text-sm font-semibold text-stone-500 uppercase mb-3">Actions</h3>
             <div className="flex flex-wrap gap-2">
-              {purchase.status === 'pending' && (
-                <button
-                  onClick={() => onStatusUpdate(purchase.id, 'ordered')}
-                  disabled={loading}
-                  className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700 disabled:opacity-50"
-                >
-                  Mark as Ordered
-                </button>
+              {isEditing ? (
+                <>
+                  <button
+                    onClick={async () => {
+                      await onUpdatePurchase(purchase.id, editData);
+                      setIsEditing(false);
+                    }}
+                    disabled={loading}
+                    className="bg-green-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-green-700 disabled:opacity-50"
+                  >
+                    Save Changes
+                  </button>
+                  <button
+                    onClick={() => {
+                      setEditData({
+                        purchase_number: purchase.purchase_number,
+                        description: purchase.description || '',
+                        notes: purchase.notes || '',
+                      });
+                      setIsEditing(false);
+                    }}
+                    className="text-stone-600 hover:text-stone-800 px-4 py-2 text-sm"
+                  >
+                    Cancel Edit
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button
+                    onClick={() => setIsEditing(true)}
+                    className="bg-purple-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-purple-700"
+                  >
+                    Edit Purchase
+                  </button>
+                  <button
+                    onClick={() => onDelete(purchase.id)}
+                    disabled={loading}
+                    className="text-red-600 hover:text-red-800 px-4 py-2 text-sm"
+                  >
+                    Delete
+                  </button>
+                </>
               )}
-              {purchase.status === 'shipped' && (
-                <button
-                  onClick={() => onStatusUpdate(purchase.id, 'received')}
-                  disabled={loading}
-                  className="bg-green-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-green-700 disabled:opacity-50"
-                >
-                  Mark as Received
-                </button>
-              )}
-              {purchase.status !== 'cancelled' && purchase.status !== 'received' && (
-                <button
-                  onClick={() => onStatusUpdate(purchase.id, 'cancelled')}
-                  disabled={loading}
-                  className="bg-red-100 text-red-700 px-4 py-2 rounded-lg text-sm hover:bg-red-200 disabled:opacity-50"
-                >
-                  Cancel
-                </button>
-              )}
-              <button
-                onClick={() => onDelete(purchase.id)}
-                disabled={loading}
-                className="text-red-600 hover:text-red-800 px-4 py-2 text-sm"
-              >
-                Delete
-              </button>
             </div>
           </div>
         </div>
