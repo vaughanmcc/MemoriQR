@@ -86,6 +86,7 @@ CREATE TRIGGER trigger_invoices_updated_at
 -- RLS policies
 ALTER TABLE invoices ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Service role has full access to invoices" ON invoices;
 CREATE POLICY "Service role has full access to invoices"
   ON invoices
   FOR ALL

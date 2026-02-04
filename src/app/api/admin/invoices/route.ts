@@ -28,11 +28,7 @@ export async function GET(request: NextRequest) {
   try {
     let query = supabase
       .from('invoices')
-      .select(`
-        *,
-        customer:customers(full_name, email),
-        order:orders(order_number, product_type)
-      `)
+      .select('*')
       .order('created_at', { ascending: false });
 
     if (type && type !== 'all') {
