@@ -78,11 +78,11 @@ SELECT
   variant,
   SUM(quantity_in_stock) as total_in_stock,
   SUM(quantity_reserved) as total_reserved,
-  SUM(quantity_available) as total_available,
+  SUM(quantity_in_stock - quantity_reserved) as total_available,
   MIN(low_stock_threshold) as low_stock_threshold,
   ROUND(AVG(unit_cost), 2) as avg_unit_cost,
   COUNT(*) as batch_count,
-  bool_or(SUM(quantity_available) <= MIN(low_stock_threshold)) as is_low_stock
+  CASE WHEN SUM(quantity_in_stock - quantity_reserved) <= MIN(low_stock_threshold) THEN true ELSE false END as is_low_stock
 FROM inventory
 WHERE is_active = true
 GROUP BY product_type, variant;
