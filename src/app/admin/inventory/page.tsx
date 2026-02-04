@@ -57,9 +57,8 @@ interface Movement {
 }
 
 const PRODUCT_TYPES: Record<string, string> = {
-  qr_tags: 'QR Tags',
+  qr_tags: 'QR Plates',
   nfc_tags: 'NFC Tags',
-  plates: 'QR Plates',
   frames: 'Frames',
   packaging: 'Packaging',
   other: 'Other',
