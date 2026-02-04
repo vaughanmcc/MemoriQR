@@ -3,7 +3,7 @@
 This document summarizes all features and fixes implemented on the `preview-smoke` branch that are pending merge to `main` (production).
 
 **Branch:** `preview-smoke`  
-**Date:** February 1, 2026
+**Date:** February 4, 2026
 
 ---
 
@@ -212,6 +212,9 @@ Three separate Pipedream workflows:
 | Main | `PIPEDREAM_WEBHOOK_URL` | contact_form, order_confirmation, memorial_created, partner_welcome, partner_approved, partner_suspended, partner_terms_updated, admin_new_order, admin_new_partner_application |
 | Referral Redeemed | `PIPEDREAM_REFERRAL_WEBHOOK_URL` | referral_redeemed |
 | Partner Codes | `PIPEDREAM_PARTNER_CODES_WEBHOOK_URL` | referral_codes_generated, partner_codes_generated |
+| Commission Approved | `PIPEDREAM_COMMISSION_WEBHOOK_URL` | commission_approved |
+| Security Change | `PIPEDREAM_SECURITY_WEBHOOK_URL` | security_change |
+| Low Stock Alert | `PIPEDREAM_LOW_STOCK_WEBHOOK_URL` | low_stock_alert |
 
 ### 11.2 Handler Files
 - `pipedream/email-handler.js` - Main workflow (all email types)
@@ -325,9 +328,96 @@ Run these in Supabase SQL Editor before deploying to production:
 Run these in Supabase SQL Editor before deploying to production:
 
 ```sql
--- Run migrations 014-021 in order
+-- Run migrations 014-030 in order
 -- Check supabase/migrations/ folder for each file
 ```
+
+---
+
+## 17. Business Purchases (`/admin/purchases`)
+
+### 17.1 Purchase Tracking
+- Track orders from suppliers (tags, plates, NFC chips)
+- Record supplier, order date, expected/received dates, cost per unit
+- Status workflow: ordered → shipped → received
+- Quantity received vs ordered tracking
+
+### 17.2 Add to Inventory
+- One-click "Add to Inventory" when stock arrives
+- Links purchase batch to inventory records
+- Enables FIFO cost tracking
+
+**Files:** `src/app/admin/purchases/page.tsx`, `src/app/api/admin/purchases/route.ts`
+
+**Migration:** `027_business_purchases.sql`
+
+---
+
+## 18. Invoice System
+
+### 18.1 Customer Invoices
+- Auto-generated on order payment
+- Stored in `customer_invoices` table
+- On-demand HTML generation (no PDF storage)
+
+### 18.2 Admin Invoice Management (`/admin/invoices`)
+- View all customer invoices
+- Filter by date, customer, paid status
+- Print/download invoices
+- MemoriQR logo displayed at 80px, aligned with "INVOICE" header
+
+**Files:** `src/lib/invoice.ts`, `src/app/admin/invoices/page.tsx`, `src/app/api/admin/invoices/route.ts`
+
+**Migration:** `028_invoice_system.sql`
+
+---
+
+## 19. Inventory/Stock Management (`/admin/inventory`)
+
+### 19.1 Stock Tracking by Purchase Batch
+- Track stock levels by product type (tags, plates, NFC chips)
+- Each item linked to purchase batch for FIFO cost accounting
+- Computed `quantity_available` based on movements
+
+### 19.2 Inventory Dashboard
+- Summary cards showing total stock by product type
+- Low stock warnings (items below threshold)
+- Low stock badge in admin navigation
+
+### 19.3 Stock Adjustments
+- Add new stock from purchases
+- Adjust stock (damage, returns, corrections)
+- Movement history with type tracking:
+  - `purchase` - Received from supplier
+  - `sale` - Sold to customer
+  - `adjustment` - Manual correction
+  - `return` - Customer return
+  - `damage` - Damaged stock
+
+### 19.4 Low Stock Alerts
+- Email notification when stock drops below threshold
+- Dashboard badge shows count of low stock items
+- New Pipedream workflow: `PIPEDREAM_LOW_STOCK_WEBHOOK_URL`
+
+**Files:** `src/app/admin/inventory/page.tsx`, `src/app/api/admin/inventory/route.ts`, `src/app/api/admin/inventory/movements/route.ts`, `pipedream/low-stock-alert-handler.js`
+
+**Migration:** `030_inventory_system.sql`
+
+---
+
+## 20. Admin Navigation Updates
+
+### 20.1 Compacted Navigation
+- Reduced spacing to fit more links (px-2, gap-1, text-sm)
+- Shorter labels: "Batches" (was Code Batches), "Stock" (was Inventory)
+- All links now visible without overflow
+
+### 20.2 New Nav Items
+- Added "Invoices" link
+- Added "Purchases" link
+- Added "Stock" link with low stock badge
+
+**Files:** `src/components/admin/AdminNav.tsx`
 
 ---
 
@@ -350,7 +440,12 @@ Before merging to `main`, verify:
 - [ ] Partner referral code request flow
 - [ ] Commission approved email notification
 - [ ] Security change email notification
+- [ ] Business purchases: create, track status, receive
+- [ ] Invoice display with logo
+- [ ] Inventory: add stock, adjust, view movements
+- [ ] Low stock alert email notification
+- [ ] Admin nav shows all links without overflow
 
 ---
 
-*Last updated: February 1, 2026*
+*Last updated: February 4, 2026*

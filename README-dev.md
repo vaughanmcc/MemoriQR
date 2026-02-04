@@ -155,6 +155,9 @@ Handles most emails:
 ### 5. Security Change (`PIPEDREAM_SECURITY_WEBHOOK_URL`)
 - `security_change` - Bank account or email changed alert
 
+### 6. Low Stock Alert (`PIPEDREAM_LOW_STOCK_WEBHOOK_URL`)
+- `low_stock_alert` - Alert admin when inventory drops below threshold
+
 See [pipedream/README.md](pipedream/README.md) for setup instructions.
 
 ## 💼 Partner System
@@ -192,6 +195,9 @@ See [pipedream/README.md](pipedream/README.md) for setup instructions.
 - `/admin/commissions` - Payout workflow
 - `/admin/tools` - Search, resend emails, memorial management
 - `/admin/memorials` - Memorial management
+- `/admin/purchases` - Business purchases from suppliers
+- `/admin/invoices` - Customer invoice management
+- `/admin/inventory` - Stock/inventory management
 
 ## 📊 Database Schema
 
@@ -205,6 +211,11 @@ Key tables:
 - `partners` - Partner accounts
 - `partner_sessions` - Login sessions
 - `partner_commissions` - Commission tracking
+- `business_purchases` - Supplier purchase orders
+- `business_purchase_items` - Items in each purchase
+- `customer_invoices` - Customer invoice records
+- `inventory` - Stock by purchase batch
+- `inventory_movements` - Stock in/out log
 
 See `supabase/migrations/` for full schema.
 
@@ -245,4 +256,4 @@ See [docs/preview-smoke-summary.md](docs/preview-smoke-summary.md) for pending f
 
 ---
 
-*Last updated: February 1, 2026*
+*Last updated: February 4, 2026*

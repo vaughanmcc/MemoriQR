@@ -67,8 +67,9 @@ stripe listen --forward-to localhost:3000/api/webhooks/stripe
 | `/admin/partners` | Partner management |
 | `/admin/commissions` | Commission payout workflow |
 | `/admin/tools` | Search orders, resend emails, memorial management |
-| `/admin/memorials` | Memorial management |
-
+| `/admin/memorials` | Memorial management || `/admin/purchases` | Business purchases from suppliers |
+| `/admin/invoices` | Customer invoice management |
+| `/admin/inventory` | Stock/inventory management |
 ## Partner System
 
 ### Partner Types
@@ -109,8 +110,10 @@ Partners can receive emails for:
 |----------|---------|---------|
 | Main Handler | `PIPEDREAM_WEBHOOK_URL` | Contact form, order emails, memorial emails, partner emails |
 | Referral Redeemed | `PIPEDREAM_REFERRAL_WEBHOOK_URL` | Commission notification when referral used |
-| Partner Codes | `PIPEDREAM_PARTNER_CODES_WEBHOOK_URL` | Codes generated notification || Commission Approved | `PIPEDREAM_COMMISSION_WEBHOOK_URL` | Notify partner when commissions approved |
+| Partner Codes | `PIPEDREAM_PARTNER_CODES_WEBHOOK_URL` | Codes generated notification |
+| Commission Approved | `PIPEDREAM_COMMISSION_WEBHOOK_URL` | Notify partner when commissions approved |
 | Security Change | `PIPEDREAM_SECURITY_WEBHOOK_URL` | Alert partner when bank/email changed |
+| Low Stock Alert | `PIPEDREAM_LOW_STOCK_WEBHOOK_URL` | Alert admin when inventory is low |
 ## Documentation
 
 - [Business Plan](docs/business-plan.md) - Pricing, costs, strategy
@@ -174,9 +177,16 @@ Applied migrations (in order):
 21. `019_referral_codes_order_fk.sql` - Foreign key fix
 22. `020_partner_contact_name.sql` - Contact name field
 23. `021_referral_code_requests.sql` - Partner referral code requests
+24. `022_partner_activity_log.sql` - Partner activity tracking
+25. `022_partner_referral_invites.sql` - Partner referral invites
+26. `023_memorial_renewal_system.sql` - Memorial renewal handling
+27. `027_business_purchases.sql` - Business purchase tracking
+28. `028_invoice_system.sql` - Customer invoice system
+29. `029_admin_files_storage.sql` - Admin file storage
+30. `030_inventory_system.sql` - Stock/inventory management
 
 ## Current Branch
 
 `preview-smoke` → deploys to dev.memoriqr.co.nz
 
-*Last updated: February 1, 2026*
+*Last updated: February 4, 2026*
