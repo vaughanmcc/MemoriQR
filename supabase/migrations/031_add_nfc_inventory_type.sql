@@ -1,14 +1,14 @@
--- Migration: Add NFC tags to inventory product types
--- Allows tracking NFC tag stock alongside QR plates
--- Also removes 'plates' since qr_tags is the correct key for QR Plates
+-- Migration: Update inventory product types
+-- Use 'qr' for QR Plates, 'nfc' for NFC Tags
 
--- Migrate any existing 'plates' entries to 'qr_tags'
-UPDATE inventory SET product_type = 'qr_tags' WHERE product_type = 'plates';
+-- Migrate any existing entries to new keys
+UPDATE inventory SET product_type = 'qr' WHERE product_type IN ('qr_tags', 'plates');
+UPDATE inventory SET product_type = 'nfc' WHERE product_type = 'nfc_tags';
 
--- Update the product_type constraint to include nfc_tags and use correct types
+-- Update the product_type constraint
 ALTER TABLE inventory 
   DROP CONSTRAINT IF EXISTS inventory_product_type_check;
 
 ALTER TABLE inventory 
   ADD CONSTRAINT inventory_product_type_check 
-  CHECK (product_type IN ('qr_tags', 'nfc_tags', 'frames', 'packaging', 'other'));
+  CHECK (product_type IN ('qr', 'nfc', 'frames', 'packaging', 'other'));

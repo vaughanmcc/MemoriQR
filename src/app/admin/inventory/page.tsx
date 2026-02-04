@@ -57,8 +57,8 @@ interface Movement {
 }
 
 const PRODUCT_TYPES: Record<string, string> = {
-  qr_tags: 'QR Plates',
-  nfc_tags: 'NFC Tags',
+  qr: 'QR Plates',
+  nfc: 'NFC Tags',
   frames: 'Frames',
   packaging: 'Packaging',
   other: 'Other',
@@ -93,7 +93,7 @@ export default function AdminInventoryPage() {
 
   // New inventory form
   const [newItem, setNewItem] = useState({
-    product_type: 'qr_tags',
+    product_type: 'qr',
     variant: '',
     description: '',
     sku: '',
@@ -178,7 +178,7 @@ export default function AdminInventoryPage() {
       await fetchMovements();
       setShowAddForm(false);
       setNewItem({
-        product_type: 'qr_tags',
+        product_type: 'qr',
         variant: '',
         description: '',
         sku: '',

@@ -126,13 +126,13 @@ export async function PATCH(
       }
 
       if (order) {
-        // Deduct QR tags for qr_only or both
+        // Deduct QR plates for qr_only or both
         if (order.product_type === 'qr_only' || order.product_type === 'both') {
-          await deductInventory('qr_tags')
+          await deductInventory('qr')
         }
         // Deduct NFC tags for nfc_only or both
         if (order.product_type === 'nfc_only' || order.product_type === 'both') {
-          await deductInventory('nfc_tags')
+          await deductInventory('nfc')
         }
       }
     } else if (action === 'mark_completed') {
