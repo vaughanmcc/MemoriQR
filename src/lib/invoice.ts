@@ -226,7 +226,7 @@ export function generateInvoiceHTML(invoice: InvoiceData): string {
     .header {
       display: flex;
       justify-content: space-between;
-      align-items: flex-start;
+      align-items: center;
       margin-bottom: 40px;
       padding-bottom: 20px;
       border-bottom: 2px solid #8B7355;
