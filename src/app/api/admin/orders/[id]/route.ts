@@ -82,6 +82,50 @@ export async function PATCH(
       updates.shipped_at = new Date().toISOString()
       if (tracking_number) updates.tracking_number = tracking_number
       if (shipping_carrier) updates.shipping_carrier = shipping_carrier
+
+      // Deduct inventory for QR tags (qr_only or both products)
+      const { data: order } = await supabase
+        .from('orders')
+        .select('product_type')
+        .eq('id', id)
+        .single()
+
+      if (order && (order.product_type === 'qr_only' || order.product_type === 'both')) {
+        // Find oldest available inventory batch (FIFO)
+        const { data: inventory } = await supabase
+          .from('inventory')
+          .select('id, quantity_in_stock, quantity_reserved')
+          .eq('product_type', 'qr_tags')
+          .gt('quantity_in_stock', 0)
+          .order('created_at', { ascending: true })
+          .limit(1)
+          .single()
+
+        if (inventory && inventory.quantity_in_stock > inventory.quantity_reserved) {
+          const quantity_before = inventory.quantity_in_stock
+          const quantity_after = quantity_before - 1
+
+          // Update inventory
+          await supabase
+            .from('inventory')
+            .update({ quantity_in_stock: quantity_after })
+            .eq('id', inventory.id)
+
+          // Log movement
+          await supabase
+            .from('inventory_movements')
+            .insert({
+              inventory_id: inventory.id,
+              movement_type: 'shipped',
+              quantity: -1,
+              quantity_before,
+              quantity_after,
+              order_id: id,
+              reason: 'Order shipped',
+              performed_by: 'system',
+            })
+        }
+      }
     } else if (action === 'mark_completed') {
       updates.order_status = 'completed'
       updates.completed_at = new Date().toISOString()
