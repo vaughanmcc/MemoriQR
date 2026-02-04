@@ -103,6 +103,12 @@ export async function GET() {
       .lt('hosting_expires_at', ninetyDaysFromNow.toISOString())
       .gt('hosting_expires_at', new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString()); // Include grace period
 
+    // Get pending business purchases (ordered but not received)
+    const { count: pendingPurchases } = await (supabase
+      .from('business_purchases' as any)
+      .select('*', { count: 'exact', head: true })
+      .in('status', ['ordered', 'shipped']) as any);
+
     return NextResponse.json({
       totalPartners,
       activePartners,
@@ -112,6 +118,7 @@ export async function GET() {
       pendingFulfillment: pendingFulfillment ?? 0,
       pendingReferralRequests: pendingReferralRequests ?? 0,
       renewalsDue: renewalsDue ?? 0,
+      pendingPurchases: pendingPurchases ?? 0,
       totalMemorials: totalMemorials ?? 0,
       totalOrders,
       totalRevenue,

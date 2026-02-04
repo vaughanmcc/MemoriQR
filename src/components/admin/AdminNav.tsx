@@ -10,6 +10,7 @@ interface NavStats {
   pendingFulfillment: number;
   pendingReferralRequests: number;
   renewalsDue: number;
+  pendingPurchases: number;
 }
 
 interface AdminNavProps {
@@ -35,6 +36,7 @@ export function AdminNav({ onLogout }: AdminNavProps) {
           pendingFulfillment: data.pendingFulfillment ?? 0,
           pendingReferralRequests: data.pendingReferralRequests ?? 0,
           renewalsDue: data.renewalsDue ?? 0,
+          pendingPurchases: data.pendingPurchases ?? 0,
         });
       }
     } catch (err) {
@@ -110,6 +112,14 @@ export function AdminNav({ onLogout }: AdminNavProps) {
               {(stats?.renewalsDue ?? 0) > 0 && (
                 <span className="absolute -top-1 -right-1 bg-amber-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
                   {stats?.renewalsDue}
+                </span>
+              )}
+            </Link>
+            <Link href="/admin/purchases" className={navLinkClass('/admin/purchases')}>
+              Purchases
+              {(stats?.pendingPurchases ?? 0) > 0 && (
+                <span className="absolute -top-1 -right-1 bg-blue-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+                  {stats?.pendingPurchases}
                 </span>
               )}
             </Link>
