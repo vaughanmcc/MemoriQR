@@ -539,6 +539,11 @@ export default function AdminPurchasesPage() {
             onStatusUpdate={handleStatusUpdate}
             onUpdateTracking={handleUpdateTracking}
             onDelete={handleDelete}
+            onInvoiceUploaded={() => {
+              fetchPurchases();
+              // Refresh the selected purchase
+              setSelectedPurchase(null);
+            }}
             loading={actionLoading}
             formatDate={formatDate}
             formatCurrency={formatCurrency}
@@ -555,6 +560,7 @@ interface PurchaseDetailModalProps {
   onStatusUpdate: (id: string, status: string) => void;
   onUpdateTracking: (id: string, tracking: string, carrier: string) => void;
   onDelete: (id: string) => void;
+  onInvoiceUploaded: () => void;
   loading: boolean;
   formatDate: (date: string | null) => string;
   formatCurrency: (amount: number, currency?: string) => string;
@@ -566,12 +572,45 @@ function PurchaseDetailModal({
   onStatusUpdate,
   onUpdateTracking,
   onDelete,
+  onInvoiceUploaded,
   loading,
   formatDate,
   formatCurrency,
 }: PurchaseDetailModalProps) {
   const [tracking, setTracking] = useState(purchase.tracking_number || '');
   const [carrier, setCarrier] = useState(purchase.shipping_carrier || '');
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState('');
+
+  const handleInvoiceUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    setUploadError('');
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('purchaseId', purchase.id);
+
+      const res = await fetch('/api/admin/purchases/invoice', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Upload failed');
+      }
+
+      onInvoiceUploaded();
+    } catch (err) {
+      setUploadError(err instanceof Error ? err.message : 'Upload failed');
+    } finally {
+      setUploading(false);
+    }
+  };
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
@@ -682,6 +721,57 @@ function PurchaseDetailModal({
               <p className="text-stone-700 text-sm whitespace-pre-wrap">{purchase.notes}</p>
             </div>
           )}
+
+          {/* Invoice */}
+          <div>
+            <h3 className="text-sm font-semibold text-stone-500 uppercase mb-2">Supplier Invoice</h3>
+            {purchase.invoice_url ? (
+              <div className="flex items-center gap-3">
+                <a
+                  href={purchase.invoice_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 text-blue-600 hover:text-blue-800"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  View Invoice
+                </a>
+                <span className="text-stone-400">|</span>
+                <label className="text-stone-500 hover:text-stone-700 cursor-pointer text-sm">
+                  Replace
+                  <input
+                    type="file"
+                    accept=".pdf,.jpg,.jpeg,.png,.webp"
+                    onChange={handleInvoiceUpload}
+                    className="hidden"
+                    disabled={uploading}
+                  />
+                </label>
+              </div>
+            ) : (
+              <div>
+                <label className="inline-flex items-center gap-2 bg-stone-100 hover:bg-stone-200 text-stone-700 px-4 py-2 rounded-lg cursor-pointer text-sm transition-colors">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                  </svg>
+                  {uploading ? 'Uploading...' : 'Upload Invoice'}
+                  <input
+                    type="file"
+                    accept=".pdf,.jpg,.jpeg,.png,.webp"
+                    onChange={handleInvoiceUpload}
+                    className="hidden"
+                    disabled={uploading}
+                  />
+                </label>
+                <p className="text-xs text-stone-400 mt-1">PDF or image, max 10MB</p>
+              </div>
+            )}
+            {uploadError && (
+              <p className="text-red-600 text-sm mt-2">{uploadError}</p>
+            )}
+          </div>
 
           {/* Status Actions */}
           <div className="border-t border-stone-200 pt-4">
