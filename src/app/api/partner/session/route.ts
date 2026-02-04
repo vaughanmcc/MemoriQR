@@ -64,6 +64,20 @@ export async function GET(request: NextRequest) {
       )
     }
 
+    // Check if there are other businesses linked to this email
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: linkedPartners, error: linkedError } = await (supabase as any)
+      .from('partners')
+      .select('id, partner_name')
+      .ilike('contact_email', partner.contact_email)
+      .eq('is_active', true)
+      .neq('id', partner.id)
+      .order('partner_name')
+    
+    if (linkedError) {
+      console.error('Error fetching linked partners:', linkedError)
+    }
+
     return NextResponse.json({
       authenticated: true,
       partner: {
@@ -72,7 +86,8 @@ export async function GET(request: NextRequest) {
         type: partner.partner_type,
         email: partner.contact_email,
         commissionRate: partner.commission_rate
-      }
+      },
+      linkedPartners: linkedPartners || []
     })
 
   } catch (error) {

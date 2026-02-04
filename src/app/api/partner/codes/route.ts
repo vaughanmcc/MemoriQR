@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/server'
 import { cookies } from 'next/headers'
+import { stripe } from '@/lib/stripe'
 
 // Helper to get authenticated partner
 async function getAuthenticatedPartner() {
@@ -77,9 +78,13 @@ export async function GET(request: NextRequest) {
       .eq('partner_id', partner.id)
       .order('created_at', { ascending: false })
 
+    // Check if partner has banking details
+    const hasBankingDetails = !!(partner.bank_name && partner.bank_account_number)
+
     return NextResponse.json({
       codes: codes || [],
       batches: batches || [],
+      hasBankingDetails,
       pagination: {
         page,
         limit,
@@ -97,7 +102,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST - Request new batch of codes
+// POST - Purchase new batch of codes via Stripe
 export async function POST(request: NextRequest) {
   try {
     const partner = await getAuthenticatedPartner()
@@ -112,9 +117,9 @@ export async function POST(request: NextRequest) {
     const { quantity, productType, hostingDuration, notes } = await request.json()
 
     // Validate inputs
-    if (!quantity || quantity < 10 || quantity > 500) {
+    if (!quantity || quantity < 1 || quantity > 500) {
       return NextResponse.json(
-        { error: 'Quantity must be between 10 and 500' },
+        { error: 'Quantity must be between 1 and 500' },
         { status: 400 }
       )
     }
@@ -126,10 +131,10 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Hosting duration is optional - null means customer chooses at activation
-    if (hostingDuration !== null && ![5, 10, 25].includes(hostingDuration)) {
+    // Hosting duration is required for wholesale purchases
+    if (hostingDuration === null || ![5, 10, 25].includes(hostingDuration)) {
       return NextResponse.json(
-        { error: 'Invalid hosting duration' },
+        { error: 'Hosting duration is required (5, 10, or 25 years)' },
         { status: 400 }
       )
     }
@@ -137,23 +142,28 @@ export async function POST(request: NextRequest) {
     const supabase = createAdminClient()
 
     // Calculate wholesale pricing (discounted for partners)
-    // If no hosting duration, we'll bill based on actual usage later
     const retailPricing: { [key: string]: { [key: number]: number } } = {
       'nfc_only': { 5: 99, 10: 149, 25: 199 },
       'qr_only': { 5: 149, 10: 199, 25: 279 },
       'both': { 5: 199, 10: 249, 25: 349 }
     }
 
-    // If hosting duration is set, calculate fixed pricing; otherwise use 0 (billed on activation)
-    const retailPrice = hostingDuration ? retailPricing[productType][hostingDuration] : 0
+    const retailPrice = retailPricing[productType][hostingDuration]
     // Partner pays 60% of retail (40% margin for them)
-    const unitCost = retailPrice * 0.6
+    const unitCost = Math.round(retailPrice * 0.6 * 100) / 100 // Round to 2 decimals
     const totalCost = unitCost * quantity
 
     // Generate batch number
-    const batchNumber = `BATCH-${partner.id.substring(0, 4).toUpperCase()}-${Date.now().toString(36).toUpperCase()}`
+    const batchNumber = `WS-${partner.id.substring(0, 4).toUpperCase()}-${Date.now().toString(36).toUpperCase()}`
 
-    // Create batch request
+    // Product display names
+    const productNames: { [key: string]: string } = {
+      'nfc_only': 'NFC Tag Only',
+      'qr_only': 'QR Code Plate Only',
+      'both': 'QR Code Plate + NFC Tag'
+    }
+
+    // Create batch record with pending status
     const { data: batch, error: batchError } = await supabase
       .from('code_batches')
       .insert({
@@ -161,7 +171,7 @@ export async function POST(request: NextRequest) {
         batch_number: batchNumber,
         quantity,
         product_type: productType,
-        hosting_duration: hostingDuration, // Can be null
+        hosting_duration: hostingDuration,
         unit_cost: unitCost,
         total_cost: totalCost,
         status: 'pending',
@@ -174,41 +184,62 @@ export async function POST(request: NextRequest) {
       throw batchError
     }
 
-    // Send notification to admin
-    const webhookUrl = process.env.PIPEDREAM_WEBHOOK_URL
-    if (webhookUrl) {
-      try {
-        await fetch(webhookUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            type: 'partner_code_request',
-            partner_name: partner.partner_name,
-            partner_email: partner.contact_email,
-            batch_number: batchNumber,
-            quantity,
-            product_type: productType,
-            hosting_duration: hostingDuration,
-            unit_cost: unitCost,
-            total_cost: totalCost,
-            notes
-          })
-        })
-      } catch (emailError) {
-        console.error('Failed to send admin notification:', emailError)
-      }
-    }
+    // Create Stripe checkout session
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_BASE_URL || 'https://memoriqr.com'
+    
+    const session = await stripe.checkout.sessions.create({
+      mode: 'payment',
+      customer_email: partner.contact_email || undefined,
+      line_items: [
+        {
+          price_data: {
+            currency: 'nzd',
+            product_data: {
+              name: `Wholesale Activation Codes - ${productNames[productType]}`,
+              description: `${quantity} × ${productNames[productType]} (${hostingDuration} Year Hosting)`,
+              metadata: {
+                batch_id: batch.id,
+                partner_id: partner.id,
+                product_type: productType,
+                hosting_duration: hostingDuration.toString(),
+              }
+            },
+            unit_amount: Math.round(unitCost * 100), // Convert to cents
+          },
+          quantity: quantity,
+        }
+      ],
+      metadata: {
+        type: 'partner_code_purchase',
+        batch_id: batch.id,
+        partner_id: partner.id,
+        partner_name: partner.partner_name || '',
+        batch_number: batchNumber,
+        quantity: quantity.toString(),
+        product_type: productType,
+        hosting_duration: hostingDuration.toString(),
+      },
+      success_url: `${baseUrl}/partner/codes?success=true&batch=${batch.id}`,
+      cancel_url: `${baseUrl}/partner/codes?cancelled=true&batch=${batch.id}`,
+    })
+
+    // Update batch with Stripe session ID
+    await supabase
+      .from('code_batches')
+      .update({ stripe_session_id: session.id })
+      .eq('id', batch.id)
 
     return NextResponse.json({
       success: true,
       batch,
-      message: 'Code batch request submitted. You will receive an email when approved.'
+      checkoutUrl: session.url,
+      message: 'Redirecting to checkout...'
     })
 
   } catch (error) {
     console.error('Request codes error:', error)
     return NextResponse.json(
-      { error: 'Failed to request codes' },
+      { error: 'Failed to create checkout session' },
       { status: 500 }
     )
   }

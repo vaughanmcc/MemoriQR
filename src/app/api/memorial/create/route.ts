@@ -26,6 +26,11 @@ export async function POST(request: NextRequest) {
     const frame = formData.get('frame') as string || 'classic-gold'
     const contactEmail = formData.get('contactEmail') as string | null
     
+    // Shipping address for retail activations
+    const shippingName = formData.get('shippingName') as string | null
+    const shippingAddressJson = formData.get('shippingAddress') as string | null
+    const shippingAddress = shippingAddressJson ? JSON.parse(shippingAddressJson) : null
+    
     const photoFiles = formData.getAll('photos') as File[]
 
     if (!deceasedName) {
@@ -238,7 +243,7 @@ export async function POST(request: NextRequest) {
       const expiryDate = calculateExpiryDate(new Date(), hostingDuration)
       const price = DEFAULT_PRICING[hostingDuration][productType]
 
-      // Create memorial
+      // Create memorial with shipping info and fulfillment status
       const { data: memorial, error: memorialError } = await supabase
         .from('memorial_records')
         .insert({
@@ -259,6 +264,11 @@ export async function POST(request: NextRequest) {
           base_price: price,
           hosting_expires_at: expiryDate.toISOString(),
           contact_email: contactEmail,
+          // Retail-specific fields for fulfillment
+          activation_source: 'retail',
+          fulfillment_status: 'pending',
+          shipping_name: shippingName,
+          shipping_address: shippingAddress,
         })
         .select('id')
         .single()
@@ -279,6 +289,69 @@ export async function POST(request: NextRequest) {
           memorial_id: memorialId,
         })
         .eq('activation_code', activationCode)
+
+      // Log activation code usage activity
+      await supabase
+        .from('activation_code_activity_log')
+        .insert({
+          activation_code: activationCode,
+          activity_type: 'used',
+          performed_by_admin: false,
+          from_partner_id: partnerId || null,
+          to_partner_id: partnerId || null,
+          notes: `Activated for memorial: ${deceasedName}`,
+          metadata: { 
+            memorial_id: memorialId,
+            deceased_name: deceasedName,
+            product_type: productType,
+            hosting_duration: hostingDuration,
+            used_at: new Date().toISOString()
+          }
+        })
+
+      // Notify partner that activation code was used
+      if (partnerId) {
+        const { data: partner } = await supabase
+          .from('partners')
+          .select('id, partner_name, contact_email, notify_referral_redemption, bank_name, bank_account_number')
+          .eq('id', partnerId)
+          .single()
+
+        // Check if partner has banking details
+        const hasBankingDetails = !!(partner?.bank_name && partner?.bank_account_number)
+
+        // Use notify_referral_redemption setting (defaults to true if null)
+        if (partner?.contact_email && partner.notify_referral_redemption !== false) {
+          const webhookUrl = process.env.PIPEDREAM_PARTNER_CODES_WEBHOOK_URL || process.env.PIPEDREAM_WEBHOOK_URL
+          if (webhookUrl) {
+            const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_BASE_URL || 'https://memoriqr.com'
+            const businessName = partner.partner_name?.replace(/\s*\([^)]+\)\s*$/, '') || 'Partner'
+
+            try {
+              await fetch(webhookUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  type: 'activation_code_used',
+                  to: partner.contact_email,
+                  businessName,
+                  activationCode,
+                  deceasedName,
+                  productType,
+                  hostingDuration,
+                  memorialUrl: `${baseUrl}/memorial/${memorialSlug}`,
+                  dashboardUrl: `${baseUrl}/partner/codes`,
+                  hasBankingDetails,
+                  settingsUrl: `${baseUrl}/partner/settings`,
+                }),
+              })
+              console.log(`Activation code used notification sent to ${partner.contact_email}`)
+            } catch (emailError) {
+              console.error('Failed to send activation code used notification:', emailError)
+            }
+          }
+        }
+      }
 
       // Log activity
       await supabase.from('activity_log').insert({
@@ -353,6 +426,30 @@ export async function POST(request: NextRequest) {
             }),
           })
           console.log('Memorial creation email sent to:', customerEmail)
+          
+          // For retail activations, also send fulfillment email to admin
+          if (activationType === 'retail' && shippingAddress) {
+            await fetch(webhookUrl, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                type: 'retail_fulfillment',
+                customer_email: customerEmail,
+                customer_name: shippingName || deceasedName,
+                deceased_name: deceasedName,
+                product_type: productType,
+                hosting_duration: hostingDuration,
+                activation_code: activationCode,
+                shipping_name: shippingName,
+                shipping_address: JSON.stringify(shippingAddress),
+                memorial_url: `${baseUrl}/memorial/${memorialSlug}`,
+                nfc_url: `${baseUrl}/qr/${memorialSlug}`,
+                qr_code_url: `${baseUrl}/api/qr/${memorialSlug}`,
+                partner_id: partnerId,
+              }),
+            })
+            console.log('Retail fulfillment email sent to admin')
+          }
         } else {
           console.warn('PIPEDREAM_WEBHOOK_URL not configured - email not sent')
         }

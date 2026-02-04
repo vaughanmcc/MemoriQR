@@ -48,7 +48,7 @@ export default function PrivacyPage() {
               We do not sell your personal information. We share information only with:
             </p>
             <ul>
-              <li><strong>Service Providers:</strong> Stripe (payments), Cloudinary (image hosting), SendGrid (email)</li>
+              <li><strong>Service Providers:</strong> Stripe (payments), Supabase (data and media hosting), SendGrid (email)</li>
               <li><strong>Suppliers:</strong> For order fulfillment (e.g., engraving details for plate production)</li>
               <li><strong>Legal Requirements:</strong> When required by law or to protect our rights</li>
             </ul>
@@ -62,8 +62,8 @@ export default function PrivacyPage() {
 
             <h2>5. Data Storage and Security</h2>
             <p>
-              Your data is stored securely using industry-standard encryption. Photos are hosted 
-              on Cloudinary, videos on YouTube (unlisted), and other data in our secure database.
+              Your data is stored securely using industry-standard encryption. Photos and videos are hosted 
+              on Supabase Storage, with optional YouTube embedding for videos. All other data is stored in our secure database.
               We use HTTPS encryption for all data transmission.
             </p>
 

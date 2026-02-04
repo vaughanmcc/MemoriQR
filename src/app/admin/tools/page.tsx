@@ -1,0 +1,2603 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import Link from 'next/link';
+import { formatDateOnly, formatTimeWithZone, formatDateTime } from '@/lib/utils';
+import { AdminNav } from '@/components/admin/AdminNav';
+
+interface Order {
+  id: string;
+  order_number: string;
+  order_type: string;
+  product_type: string;
+  hosting_duration: number;
+  total_amount: number;
+  order_status: string;
+  created_at: string;
+  paid_at: string | null;
+  customer: {
+    id: string;
+    full_name: string;
+    email: string;
+    phone: string | null;
+    shipping_address: Record<string, string> | null;
+  } | null;
+  memorial: {
+    id: string;
+    memorial_slug: string;
+    deceased_name: string;
+    deceased_type: string;
+    is_published: boolean;
+  } | null;
+}
+
+interface OrderDetails extends Order {
+  stripe_payment_id: string | null;
+  stripe_session_id: string | null;
+  engraving_text: string | null;
+  qr_code_url: string | null;
+  nfc_tag_id: string | null;
+  tracking_number: string | null;
+  shipping_carrier: string | null;
+  notes: string | null;
+  shipped_at: string | null;
+  completed_at: string | null;
+}
+
+interface ActivationResult {
+  activationCode: string;
+  productType: string;
+  hostingDuration: number;
+  usedAt: string | null;
+  partner: {
+    id: string;
+    name: string;
+    type: string;
+  } | null;
+  memorial: {
+    id: string;
+    slug: string;
+    deceasedName: string;
+    deceasedType: string;
+    isPublished: boolean;
+    expiresAt: string;
+  } | null;
+  customerEmail: string | null;
+  customerName: string | null;
+}
+
+interface MemorialResult {
+  id: string;
+  memorial_slug: string;
+  deceased_name: string;
+  deceased_type: 'pet' | 'human';
+  species: string | null;
+  is_published: boolean;
+  hosting_expires_at: string;
+  renewal_status: 'active' | 'expired' | 'renewed';
+  views_count: number;
+  created_at: string;
+  customer: {
+    id: string;
+    full_name: string;
+    email: string;
+  } | null;
+}
+
+interface MemorialDetails extends MemorialResult {
+  birth_date: string | null;
+  death_date: string | null;
+  memorial_text: string | null;
+  photos_json: unknown[];
+  videos_json: unknown[];
+  hosting_duration: number;
+  product_type: string;
+  theme: string;
+  frame: string;
+  edit_token: string;
+  updated_at: string;
+  customer: {
+    id: string;
+    full_name: string;
+    email: string;
+    phone: string | null;
+  } | null;
+}
+
+type SortDirection = 'asc' | 'desc';
+type OrderSortField = 'order_number' | 'customer' | 'order_type' | 'order_status' | 'created_at';
+type MemorialSortField = 'deceased_name' | 'deceased_type' | 'customer' | 'is_published' | 'hosting_expires_at' | 'views_count';
+
+interface CodeLookupResult {
+  found: boolean;
+  type?: 'activation' | 'referral';
+  message?: string;
+  code?: {
+    code: string;
+    productType?: string;
+    hostingDuration?: number;
+    discountPercent?: number;
+    commissionPercent?: number;
+    freeShipping?: boolean;
+    isUsed: boolean;
+    usedAt: string | null;
+    expiresAt?: string | null;
+    createdAt: string;
+    partner: {
+      id: string;
+      name: string;
+      type: string;
+      email: string;
+    } | null;
+    memorial?: {
+      id: string;
+      slug: string;
+      deceasedName: string;
+      deceasedType: string;
+      isPublished: boolean;
+      expiresAt: string;
+      customer: {
+        id: string;
+        name: string;
+        email: string;
+      } | null;
+    } | null;
+    order?: {
+      id: string;
+      orderNumber: string;
+      totalAmount: number;
+      status: string;
+      createdAt: string;
+      customer: {
+        id: string;
+        name: string;
+        email: string;
+      } | null;
+    } | null;
+    activityHistory?: {
+      id: string;
+      activityType: string;
+      fromPartnerName: string | null;
+      toPartnerName: string | null;
+      performedByAdmin: boolean;
+      notes: string | null;
+      createdAt: string;
+    }[];
+  };
+}
+
+interface PartnerMissingBanking {
+  id: string;
+  partnerName: string;
+  email: string;
+  partnerType: string;
+  status: string;
+  createdAt: string;
+  bankingStatus: {
+    hasName: boolean;
+    hasAccountName: boolean;
+    hasAccountNumber: boolean;
+  };
+  assignedCodesCount: number;
+  usedCodesCount: number;
+}
+
+export default function AdminToolsPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const [activeTab, setActiveTab] = useState<'search' | 'order' | 'resend' | 'memorials' | 'code-lookup' | 'missing-banking' | 'partner-search'>('search');
+  
+  // Search by customer
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<Order[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchError, setSearchError] = useState('');
+
+  // Order lookup
+  const [orderNumber, setOrderNumber] = useState('');
+  const [orderDetails, setOrderDetails] = useState<OrderDetails | null>(null);
+  const [isLoadingOrder, setIsLoadingOrder] = useState(false);
+  const [orderError, setOrderError] = useState('');
+
+  // Resend emails - Order based (for online orders)
+  const [resendOrderNumber, setResendOrderNumber] = useState('');
+  const [resendingType, setResendingType] = useState<'activation' | 'memorial' | null>(null);
+  const [resendResult, setResendResult] = useState<{ success: boolean; message: string } | null>(null);
+  const [resendError, setResendError] = useState('');
+
+  // Activation search (for retail activations)
+  const [activationBusinessName, setActivationBusinessName] = useState('');
+  const [activationPartnerType, setActivationPartnerType] = useState('');
+  const [activationCustomerEmail, setActivationCustomerEmail] = useState('');
+  const [activationResults, setActivationResults] = useState<ActivationResult[]>([]);
+  const [isSearchingActivations, setIsSearchingActivations] = useState(false);
+  const [activationSearchError, setActivationSearchError] = useState('');
+  const [selectedActivation, setSelectedActivation] = useState<ActivationResult | null>(null);
+  const [resendingActivationCode, setResendingActivationCode] = useState<string | null>(null);
+
+  // Code lookup
+  const [codeLookupQuery, setCodeLookupQuery] = useState('');
+  const [codeLookupResult, setCodeLookupResult] = useState<CodeLookupResult | null>(null);
+  const [isLookingUpCode, setIsLookingUpCode] = useState(false);
+  const [codeLookupError, setCodeLookupError] = useState('');
+
+  // Memorial management
+  const [memorialSearchQuery, setMemorialSearchQuery] = useState('');
+  const [memorialResults, setMemorialResults] = useState<MemorialResult[]>([]);
+  const [isSearchingMemorials, setIsSearchingMemorials] = useState(false);
+  const [memorialSearchError, setMemorialSearchError] = useState('');
+  const [selectedMemorial, setSelectedMemorial] = useState<MemorialDetails | null>(null);
+  const [isLoadingMemorial, setIsLoadingMemorial] = useState(false);
+  const [memorialAction, setMemorialAction] = useState<string | null>(null);
+  const [memorialActionResult, setMemorialActionResult] = useState<{ success: boolean; message: string } | null>(null);
+
+  // Sorting state
+  const [orderSortField, setOrderSortField] = useState<OrderSortField>('created_at');
+  const [orderSortDirection, setOrderSortDirection] = useState<SortDirection>('desc');
+  const [memorialSortField, setMemorialSortField] = useState<MemorialSortField>('hosting_expires_at');
+  const [memorialSortDirection, setMemorialSortDirection] = useState<SortDirection>('desc');
+
+  // Missing banking lookup
+  const [partnersMissingBanking, setPartnersMissingBanking] = useState<PartnerMissingBanking[]>([]);
+  const [isLoadingMissingBanking, setIsLoadingMissingBanking] = useState(false);
+  const [missingBankingError, setMissingBankingError] = useState('');
+
+  // Partner search
+  const [partnerSearchQuery, setPartnerSearchQuery] = useState('');
+  const [partnerSearchResults, setPartnerSearchResults] = useState<Array<{
+    id: string;
+    partner_name: string;
+    contact_email: string;
+    partner_type: string;
+    status: string;
+    created_at: string;
+  }>>([]);
+  const [isSearchingPartners, setIsSearchingPartners] = useState(false);
+  const [partnerSearchError, setPartnerSearchError] = useState('');
+  const [allPartners, setAllPartners] = useState<Array<{
+    id: string;
+    partner_name: string;
+    contact_email: string;
+    partner_type: string;
+    status: string;
+    created_at: string;
+  }>>([]);
+  const [isLoadingAllPartners, setIsLoadingAllPartners] = useState(false);
+
+  useEffect(() => {
+    checkAuth();
+  }, []);
+
+  // Handle URL parameters for tab and slug
+  useEffect(() => {
+    const tab = searchParams.get('tab');
+    const slug = searchParams.get('slug');
+    
+    if (tab === 'memorial' || tab === 'memorials') {
+      setActiveTab('memorials');
+      if (slug) {
+        setMemorialSearchQuery(slug);
+        // Auto-search for the memorial
+        handleSelectMemorial(slug);
+      }
+    } else if (tab === 'order') {
+      setActiveTab('order');
+      const orderNum = searchParams.get('order');
+      if (orderNum) {
+        setOrderNumber(orderNum);
+      }
+    } else if (tab === 'code-lookup' || tab === 'code') {
+      setActiveTab('code-lookup');
+      const code = searchParams.get('code');
+      if (code) {
+        setCodeLookupQuery(code);
+      }
+    }
+  }, [searchParams]);
+
+  const checkAuth = async () => {
+    const res = await fetch('/api/admin/session');
+    if (!res.ok) {
+      router.push('/admin');
+    }
+  };
+
+  const handleLogout = async () => {
+    await fetch('/api/admin/session', { method: 'DELETE' });
+    router.push('/admin');
+  };
+
+  // Sort toggle handlers
+  const handleOrderSort = (field: OrderSortField) => {
+    if (orderSortField === field) {
+      setOrderSortDirection(orderSortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setOrderSortField(field);
+      setOrderSortDirection('asc');
+    }
+  };
+
+  const handleMemorialSort = (field: MemorialSortField) => {
+    if (memorialSortField === field) {
+      setMemorialSortDirection(memorialSortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setMemorialSortField(field);
+      setMemorialSortDirection('asc');
+    }
+  };
+
+  // Sort indicator component
+  const SortIndicator = ({ active, direction }: { active: boolean; direction: SortDirection }) => (
+    <span className="ml-1 inline-block">
+      {active ? (direction === 'asc' ? '↑' : '↓') : '↕'}
+    </span>
+  );
+
+  // Sorted results - Orders
+  const sortedSearchResults = [...searchResults].sort((a, b) => {
+    const dir = orderSortDirection === 'asc' ? 1 : -1;
+    switch (orderSortField) {
+      case 'order_number':
+        return dir * a.order_number.localeCompare(b.order_number);
+      case 'customer':
+        return dir * (a.customer?.full_name || '').localeCompare(b.customer?.full_name || '');
+      case 'order_type':
+        return dir * a.order_type.localeCompare(b.order_type);
+      case 'order_status':
+        return dir * a.order_status.localeCompare(b.order_status);
+      case 'created_at':
+        return dir * new Date(a.created_at).getTime() - dir * new Date(b.created_at).getTime();
+      default:
+        return 0;
+    }
+  });
+
+  // Sorted results - Memorials
+  const sortedMemorialResults = [...memorialResults].sort((a, b) => {
+    const dir = memorialSortDirection === 'asc' ? 1 : -1;
+    switch (memorialSortField) {
+      case 'deceased_name':
+        return dir * a.deceased_name.localeCompare(b.deceased_name);
+      case 'memorial_slug':
+        return dir * a.memorial_slug.localeCompare(b.memorial_slug);
+      case 'deceased_type':
+        return dir * a.deceased_type.localeCompare(b.deceased_type);
+      case 'customer':
+        return dir * (a.customer?.full_name || '').localeCompare(b.customer?.full_name || '');
+      case 'is_published':
+        return dir * (a.is_published === b.is_published ? 0 : a.is_published ? -1 : 1);
+      case 'hosting_expires_at':
+        return dir * new Date(a.hosting_expires_at).getTime() - dir * new Date(b.hosting_expires_at).getTime();
+      case 'views_count':
+        return dir * (a.views_count - b.views_count);
+      default:
+        return 0;
+    }
+  });
+
+  // Search orders by customer name/email
+  const handleSearch = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!searchQuery.trim()) {
+      setSearchError('Please enter a customer name or email');
+      return;
+    }
+
+    setIsSearching(true);
+    setSearchError('');
+    setSearchResults([]);
+
+    try {
+      const res = await fetch(`/api/admin/tools/search?q=${encodeURIComponent(searchQuery.trim())}`);
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Search failed');
+      }
+
+      setSearchResults(data.orders || []);
+      if (data.orders?.length === 0) {
+        setSearchError('No orders found for this customer');
+      }
+    } catch (err) {
+      setSearchError(err instanceof Error ? err.message : 'Search failed');
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  // Get order details by order number
+  const handleOrderLookup = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!orderNumber.trim()) return;
+
+    setIsLoadingOrder(true);
+    setOrderError('');
+    setOrderDetails(null);
+
+    try {
+      const res = await fetch(`/api/admin/tools/order?orderNumber=${encodeURIComponent(orderNumber.trim())}`);
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Order not found');
+      }
+
+      setOrderDetails(data.order);
+    } catch (err) {
+      setOrderError(err instanceof Error ? err.message : 'Order lookup failed');
+    } finally {
+      setIsLoadingOrder(false);
+    }
+  };
+
+  // Lookup activation or referral code
+  const handleCodeLookup = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!codeLookupQuery.trim()) {
+      setCodeLookupError('Please enter a code');
+      return;
+    }
+
+    setIsLookingUpCode(true);
+    setCodeLookupError('');
+    setCodeLookupResult(null);
+
+    try {
+      const res = await fetch(`/api/admin/codes/lookup?code=${encodeURIComponent(codeLookupQuery.trim())}`);
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Code lookup failed');
+      }
+
+      setCodeLookupResult(data);
+      if (!data.found) {
+        setCodeLookupError(data.message || 'Code not found');
+      }
+    } catch (err) {
+      setCodeLookupError(err instanceof Error ? err.message : 'Code lookup failed');
+    } finally {
+      setIsLookingUpCode(false);
+    }
+  };
+
+  // Fetch partners missing banking details
+  const fetchMissingBanking = async () => {
+    setIsLoadingMissingBanking(true);
+    setMissingBankingError('');
+
+    try {
+      const res = await fetch('/api/admin/tools/missing-banking');
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to fetch partners');
+      }
+
+      setPartnersMissingBanking(data.partners || []);
+    } catch (err) {
+      setMissingBankingError(err instanceof Error ? err.message : 'Failed to fetch partners');
+    } finally {
+      setIsLoadingMissingBanking(false);
+    }
+  };
+
+  // Search partners
+  const handlePartnerSearch = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!partnerSearchQuery.trim()) return;
+
+    setIsSearchingPartners(true);
+    setPartnerSearchError('');
+
+    try {
+      const res = await fetch(`/api/admin/partners?search=${encodeURIComponent(partnerSearchQuery.trim())}`);
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to search partners');
+      }
+
+      setPartnerSearchResults(data.partners || []);
+    } catch (err) {
+      setPartnerSearchError(err instanceof Error ? err.message : 'Failed to search partners');
+    } finally {
+      setIsSearchingPartners(false);
+    }
+  };
+
+  const loadAllPartners = async () => {
+    setIsLoadingAllPartners(true);
+    setPartnerSearchError('');
+
+    try {
+      const res = await fetch('/api/admin/partners?all=true');
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to load partners');
+      }
+
+      setAllPartners(data.partners || []);
+    } catch (err) {
+      setPartnerSearchError(err instanceof Error ? err.message : 'Failed to load partners');
+    } finally {
+      setIsLoadingAllPartners(false);
+    }
+  };
+
+  const selectPartner = (partner: typeof allPartners[0]) => {
+    setPartnerSearchQuery(partner.partner_name);
+    setPartnerSearchResults([partner]);
+    setAllPartners([]);
+  };
+
+  // Resend activation/memorial emails
+  const handleResendEmails = async (emailType: 'activation' | 'memorial') => {
+    if (!resendOrderNumber.trim()) return;
+
+    setResendingType(emailType);
+    setResendError('');
+    setResendResult(null);
+
+    try {
+      const res = await fetch('/api/admin/tools/resend-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          orderNumber: resendOrderNumber.trim(),
+          emailType,
+        }),
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to resend email');
+      }
+
+      setResendResult({ success: true, message: data.message });
+    } catch (err) {
+      setResendError(err instanceof Error ? err.message : 'Failed to resend email');
+    } finally {
+      setResendingType(null);
+    }
+  };
+
+  // Search activations by partner info and customer email
+  const handleActivationSearch = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!activationBusinessName.trim() && !activationPartnerType && !activationCustomerEmail.trim()) {
+      setActivationSearchError('Please enter at least one search field');
+      return;
+    }
+
+    setIsSearchingActivations(true);
+    setActivationSearchError('');
+    setActivationResults([]);
+    setSelectedActivation(null);
+
+    try {
+      const res = await fetch('/api/admin/tools/search-activations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          businessName: activationBusinessName.trim(),
+          partnerType: activationPartnerType || undefined,
+          customerEmail: activationCustomerEmail.trim(),
+        }),
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Search failed');
+      }
+
+      setActivationResults(data.activations || []);
+      if (data.activations?.length === 0) {
+        setActivationSearchError('No activations found matching your search');
+      }
+    } catch (err) {
+      setActivationSearchError(err instanceof Error ? err.message : 'Search failed');
+    } finally {
+      setIsSearchingActivations(false);
+    }
+  };
+
+  // Resend memorial creation email for activation
+  const handleResendActivationEmail = async (activation: ActivationResult) => {
+    if (!activation.memorial?.slug || !activation.customerEmail) {
+      setActivationSearchError('Cannot resend - missing memorial or email');
+      return;
+    }
+
+    setResendingActivationCode(activation.activationCode);
+    setActivationSearchError('');
+    setResendResult(null);
+
+    try {
+      const res = await fetch('/api/admin/tools/resend-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          memorialSlug: activation.memorial.slug,
+          emailType: 'memorial_created',
+        }),
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to resend email');
+      }
+
+      setResendResult({ success: true, message: data.message });
+    } catch (err) {
+      setActivationSearchError(err instanceof Error ? err.message : 'Failed to resend email');
+    } finally {
+      setResendingActivationCode(null);
+    }
+  };
+
+  // Search memorials
+  const handleMemorialSearch = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!memorialSearchQuery.trim()) {
+      setMemorialSearchError('Please enter a search term');
+      return;
+    }
+
+    setIsSearchingMemorials(true);
+    setMemorialSearchError('');
+    setMemorialResults([]);
+    setSelectedMemorial(null);
+
+    try {
+      const res = await fetch(`/api/admin/tools/memorials?q=${encodeURIComponent(memorialSearchQuery.trim())}`);
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Search failed');
+      }
+
+      setMemorialResults(data.memorials || []);
+      if (data.memorials?.length === 0) {
+        setMemorialSearchError('No memorials found');
+      }
+    } catch (err) {
+      setMemorialSearchError(err instanceof Error ? err.message : 'Search failed');
+    } finally {
+      setIsSearchingMemorials(false);
+    }
+  };
+
+  // Load memorial details
+  const handleSelectMemorial = async (slug: string) => {
+    setIsLoadingMemorial(true);
+    setMemorialActionResult(null);
+
+    try {
+      const res = await fetch(`/api/admin/tools/memorials?slug=${encodeURIComponent(slug)}`);
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to load memorial');
+      }
+
+      setSelectedMemorial(data.memorial);
+    } catch (err) {
+      setMemorialSearchError(err instanceof Error ? err.message : 'Failed to load memorial');
+    } finally {
+      setIsLoadingMemorial(false);
+    }
+  };
+
+  // Perform memorial action (toggle publish, extend, reset views)
+  const handleMemorialAction = async (action: string, value?: number) => {
+    if (!selectedMemorial) return;
+
+    setMemorialAction(action);
+    setMemorialActionResult(null);
+
+    try {
+      const res = await fetch('/api/admin/tools/memorials', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          memorialId: selectedMemorial.id,
+          action,
+          value,
+        }),
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Action failed');
+      }
+
+      setMemorialActionResult({ success: true, message: data.message });
+      // Refresh memorial details
+      await handleSelectMemorial(selectedMemorial.memorial_slug);
+    } catch (err) {
+      setMemorialActionResult({ success: false, message: err instanceof Error ? err.message : 'Action failed' });
+    } finally {
+      setMemorialAction(null);
+    }
+  };
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+  };
+
+  const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://memoriqr.co.nz';
+
+  return (
+    <div className="min-h-screen bg-stone-100">
+      <AdminNav onLogout={handleLogout} />
+
+      {/* Main Content */}
+      <main className="max-w-7xl mx-auto px-4 py-8">
+        <div className="flex items-center justify-between mb-2">
+          <h2 className="text-2xl font-bold text-stone-800">Admin Tools</h2>
+          <Link 
+            href="/admin/dashboard" 
+            className="text-stone-600 hover:text-stone-800 text-sm flex items-center gap-1"
+          >
+            ← Back to Dashboard
+          </Link>
+        </div>
+        <p className="text-stone-600 mb-8">Order lookup, customer search, memorial management, and email tools</p>
+
+        {/* Tab Navigation */}
+        <div className="flex flex-wrap gap-2 mb-6">
+          <button
+            onClick={() => setActiveTab('search')}
+            className={`px-4 py-2 rounded-lg font-medium ${
+              activeTab === 'search'
+                ? 'bg-stone-800 text-white'
+                : 'bg-white text-stone-600 hover:bg-stone-50'
+            }`}
+          >
+            Search Orders
+          </button>
+          <button
+            onClick={() => setActiveTab('order')}
+            className={`px-4 py-2 rounded-lg font-medium ${
+              activeTab === 'order'
+                ? 'bg-stone-800 text-white'
+                : 'bg-white text-stone-600 hover:bg-stone-50'
+            }`}
+          >
+            Order Lookup
+          </button>
+          <button
+            onClick={() => setActiveTab('memorials')}
+            className={`px-4 py-2 rounded-lg font-medium ${
+              activeTab === 'memorials'
+                ? 'bg-stone-800 text-white'
+                : 'bg-white text-stone-600 hover:bg-stone-50'
+            }`}
+          >
+            Memorials
+          </button>
+          <button
+            onClick={() => setActiveTab('resend')}
+            className={`px-4 py-2 rounded-lg font-medium ${
+              activeTab === 'resend'
+                ? 'bg-stone-800 text-white'
+                : 'bg-white text-stone-600 hover:bg-stone-50'
+            }`}
+          >
+            Resend Emails
+          </button>
+          <button
+            onClick={() => setActiveTab('code-lookup')}
+            className={`px-4 py-2 rounded-lg font-medium ${
+              activeTab === 'code-lookup'
+                ? 'bg-stone-800 text-white'
+                : 'bg-white text-stone-600 hover:bg-stone-50'
+            }`}
+          >
+            Code Lookup
+          </button>
+          <button
+            onClick={() => setActiveTab('partner-search')}
+            className={`px-4 py-2 rounded-lg font-medium ${
+              activeTab === 'partner-search'
+                ? 'bg-stone-800 text-white'
+                : 'bg-white text-stone-600 hover:bg-stone-50'
+            }`}
+          >
+            Partner Search
+          </button>
+          <button
+            onClick={() => {
+              setActiveTab('missing-banking');
+              if (partnersMissingBanking.length === 0 && !isLoadingMissingBanking) {
+                fetchMissingBanking();
+              }
+            }}
+            className={`px-4 py-2 rounded-lg font-medium ${
+              activeTab === 'missing-banking'
+                ? 'bg-amber-600 text-white'
+                : 'bg-white text-amber-600 hover:bg-amber-50 border border-amber-200'
+            }`}
+          >
+            Missing Banking
+          </button>
+        </div>
+
+        {/* Search Orders Tab */}
+        {activeTab === 'search' && (
+          <div className="bg-white rounded-xl shadow p-6">
+            <h3 className="text-lg font-bold text-stone-800 mb-2">Search Orders by Customer</h3>
+            <p className="text-sm text-stone-600 mb-4">
+              Search for online orders by customer name or email. For retail activations, use the Resend Emails tab.
+            </p>
+            
+            <form onSubmit={handleSearch} className="mb-6">
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Enter customer name or email..."
+                  className="flex-1 max-w-lg px-4 py-2 border rounded-lg focus:ring-2 focus:ring-stone-500 focus:border-transparent"
+                />
+                <button
+                  type="submit"
+                  disabled={isSearching}
+                  className="px-6 py-2 bg-stone-800 text-white rounded-lg hover:bg-stone-700 disabled:opacity-50"
+                >
+                  {isSearching ? 'Searching...' : 'Search'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSearchQuery('');
+                    setSearchResults([]);
+                    setSearchError('');
+                  }}
+                  className="px-4 py-2 bg-stone-200 text-stone-700 rounded-lg hover:bg-stone-300"
+                >
+                  Clear
+                </button>
+              </div>
+            </form>
+
+            {searchError && (
+              <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 mb-4">
+                {searchError}
+              </div>
+            )}
+
+            {searchResults.length > 0 && (
+              <div className="overflow-x-auto">
+                <p className="text-sm text-stone-600 mb-2">Found {searchResults.length} order(s)</p>
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-stone-200">
+                      <th 
+                        className="text-left py-3 px-2 font-medium text-stone-600 cursor-pointer hover:text-stone-900 select-none"
+                        onClick={() => handleOrderSort('order_number')}
+                      >
+                        Order #<SortIndicator active={orderSortField === 'order_number'} direction={orderSortDirection} />
+                      </th>
+                      <th 
+                        className="text-left py-3 px-2 font-medium text-stone-600 cursor-pointer hover:text-stone-900 select-none"
+                        onClick={() => handleOrderSort('customer')}
+                      >
+                        Customer<SortIndicator active={orderSortField === 'customer'} direction={orderSortDirection} />
+                      </th>
+                      <th 
+                        className="text-left py-3 px-2 font-medium text-stone-600 cursor-pointer hover:text-stone-900 select-none"
+                        onClick={() => handleOrderSort('order_type')}
+                      >
+                        Type<SortIndicator active={orderSortField === 'order_type'} direction={orderSortDirection} />
+                      </th>
+                      <th 
+                        className="text-left py-3 px-2 font-medium text-stone-600 cursor-pointer hover:text-stone-900 select-none"
+                        onClick={() => handleOrderSort('order_status')}
+                      >
+                        Status<SortIndicator active={orderSortField === 'order_status'} direction={orderSortDirection} />
+                      </th>
+                      <th 
+                        className="text-left py-3 px-2 font-medium text-stone-600 cursor-pointer hover:text-stone-900 select-none"
+                        onClick={() => handleOrderSort('created_at')}
+                      >
+                        Date<SortIndicator active={orderSortField === 'created_at'} direction={orderSortDirection} />
+                      </th>
+                      <th className="text-left py-3 px-2 font-medium text-stone-600">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {sortedSearchResults.map((order) => (
+                      <tr key={order.id} className="border-b border-stone-100 hover:bg-stone-50">
+                        <td className="py-3 px-2 font-mono text-xs">{order.order_number}</td>
+                        <td className="py-3 px-2">
+                          <div>{order.customer?.full_name || '-'}</div>
+                          <div className="text-xs text-stone-500">{order.customer?.email || ''}</div>
+                        </td>
+                        <td className="py-3 px-2">
+                          <span className="text-xs">{order.order_type}</span>
+                        </td>
+                        <td className="py-3 px-2">
+                          <span className={`px-2 py-1 rounded text-xs font-medium ${
+                            order.order_status === 'completed' ? 'bg-green-100 text-green-800' :
+                            order.order_status === 'paid' ? 'bg-blue-100 text-blue-800' :
+                            order.order_status === 'shipped' ? 'bg-purple-100 text-purple-800' :
+                            'bg-stone-100 text-stone-800'
+                          }`}>
+                            {order.order_status}
+                          </span>
+                        </td>
+                        <td className="py-3 px-2">
+                          <div>{formatDateOnly(order.created_at)}</div>
+                          <div className="text-xs text-stone-500">{formatTimeWithZone(order.created_at)}</div>
+                        </td>
+                        <td className="py-3 px-2">
+                          <button
+                            onClick={() => {
+                              setOrderNumber(order.order_number);
+                              setActiveTab('order');
+                              setOrderDetails(null);
+                            }}
+                            className="text-stone-600 hover:text-stone-900 text-xs underline"
+                          >
+                            View Details
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            {searchResults.length === 0 && searchQuery && !isSearching && !searchError && (
+              <p className="text-stone-500 text-center py-8">No orders found</p>
+            )}
+          </div>
+        )}
+
+        {/* Order Lookup Tab */}
+        {activeTab === 'order' && (
+          <div className="bg-white rounded-xl shadow p-6">
+            <h3 className="text-lg font-bold text-stone-800 mb-4">Order Lookup by Order Number</h3>
+            
+            <form onSubmit={handleOrderLookup} className="mb-6">
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={orderNumber}
+                  onChange={(e) => setOrderNumber(e.target.value)}
+                  placeholder="Enter order number (e.g. MQR-ABC123)"
+                  className="flex-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-stone-500 focus:border-transparent font-mono"
+                />
+                <button
+                  type="submit"
+                  disabled={isLoadingOrder || !orderNumber.trim()}
+                  className="px-6 py-2 bg-stone-800 text-white rounded-lg hover:bg-stone-700 disabled:opacity-50"
+                >
+                  {isLoadingOrder ? 'Loading...' : 'Lookup'}
+                </button>
+              </div>
+            </form>
+
+            {orderError && (
+              <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 mb-4">
+                {orderError}
+              </div>
+            )}
+
+            {orderDetails && (
+              <div className="space-y-6">
+                {/* Back button and title */}
+                <div className="flex items-center justify-between">
+                  <h4 className="text-lg font-bold text-stone-800">
+                    Order: {orderDetails.order_number}
+                  </h4>
+                  <button
+                    onClick={() => {
+                      setOrderDetails(null);
+                      setOrderNumber('');
+                    }}
+                    className="text-stone-500 hover:text-stone-700 text-sm"
+                  >
+                    ← Back to Lookup
+                  </button>
+                </div>
+
+                {/* Order Info */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-4">
+                    <h4 className="font-medium text-stone-800 border-b pb-2">Order Information</h4>
+                    <div className="grid grid-cols-2 gap-2 text-sm">
+                      <span className="text-stone-500">Order Number:</span>
+                      <span className="font-mono">{orderDetails.order_number}</span>
+                      <span className="text-stone-500">Status:</span>
+                      <span className={`font-medium ${
+                        orderDetails.order_status === 'completed' ? 'text-green-600' :
+                        orderDetails.order_status === 'paid' ? 'text-blue-600' :
+                        'text-stone-800'
+                      }`}>{orderDetails.order_status}</span>
+                      <span className="text-stone-500">Product:</span>
+                      <span>{orderDetails.product_type?.replace('_', ' ')}</span>
+                      <span className="text-stone-500">Duration:</span>
+                      <span>{orderDetails.hosting_duration} years</span>
+                      <span className="text-stone-500">Total:</span>
+                      <span>${orderDetails.total_amount?.toFixed(2)}</span>
+                      <span className="text-stone-500">Created:</span>
+                      <span>{new Date(orderDetails.created_at).toLocaleString()}</span>
+                      {orderDetails.paid_at && (
+                        <>
+                          <span className="text-stone-500">Paid:</span>
+                          <span>{new Date(orderDetails.paid_at).toLocaleString()}</span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    <h4 className="font-medium text-stone-800 border-b pb-2">Customer</h4>
+                    {orderDetails.customer ? (
+                      <div className="grid grid-cols-2 gap-2 text-sm">
+                        <span className="text-stone-500">Name:</span>
+                        <span>{orderDetails.customer.full_name}</span>
+                        <span className="text-stone-500">Email:</span>
+                        <span>{orderDetails.customer.email}</span>
+                        <span className="text-stone-500">Phone:</span>
+                        <span>{orderDetails.customer.phone || '-'}</span>
+                        {orderDetails.customer.shipping_address && (
+                          <>
+                            <span className="text-stone-500">Address:</span>
+                            <span className="text-xs">
+                              {orderDetails.customer.shipping_address.line1}<br />
+                              {orderDetails.customer.shipping_address.city}, {orderDetails.customer.shipping_address.postal_code}
+                            </span>
+                          </>
+                        )}
+                      </div>
+                    ) : (
+                      <p className="text-stone-500 text-sm">No customer data</p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Memorial & URLs */}
+                {orderDetails.memorial && (
+                  <div className="space-y-4">
+                    <h4 className="font-medium text-stone-800 border-b pb-2">Memorial & URLs</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <span className="text-stone-500">Deceased Name:</span>
+                        <span className="ml-2">{orderDetails.memorial.deceased_name}</span>
+                      </div>
+                      <div>
+                        <span className="text-stone-500">Type:</span>
+                        <span className="ml-2 capitalize">{orderDetails.memorial.deceased_type}</span>
+                      </div>
+                      <div>
+                        <span className="text-stone-500">Published:</span>
+                        <span className="ml-2">{orderDetails.memorial.is_published ? 'Yes' : 'No'}</span>
+                      </div>
+                    </div>
+
+                    {/* Plan & Expiry Info */}
+                    <div className="bg-amber-50 border border-amber-200 p-4 rounded-lg">
+                      <h5 className="font-medium text-amber-800 mb-3">Plan & Hosting</h5>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                        <div>
+                          <span className="text-amber-700 block text-xs">Plan</span>
+                          <span className="font-medium text-amber-900">{orderDetails.hosting_duration} Year{orderDetails.hosting_duration !== 1 ? 's' : ''}</span>
+                        </div>
+                        <div>
+                          <span className="text-amber-700 block text-xs">Expires</span>
+                          <span className="font-medium text-amber-900">
+                            {orderDetails.memorial.hosting_expires_at 
+                              ? new Date(orderDetails.memorial.hosting_expires_at).toLocaleDateString('en-NZ', { day: '2-digit', month: '2-digit', year: 'numeric' })
+                              : 'Not set'}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-amber-700 block text-xs">Years Remaining</span>
+                          <span className={`font-medium ${
+                            orderDetails.memorial.hosting_expires_at && new Date(orderDetails.memorial.hosting_expires_at) > new Date()
+                              ? Math.ceil((new Date(orderDetails.memorial.hosting_expires_at).getTime() - Date.now()) / (365.25 * 24 * 60 * 60 * 1000)) <= 1 
+                                ? 'text-red-600' 
+                                : 'text-amber-900'
+                              : 'text-red-600'
+                          }`}>
+                            {orderDetails.memorial.hosting_expires_at 
+                              ? (() => {
+                                  const yearsLeft = (new Date(orderDetails.memorial.hosting_expires_at).getTime() - Date.now()) / (365.25 * 24 * 60 * 60 * 1000);
+                                  if (yearsLeft <= 0) return 'Expired';
+                                  if (yearsLeft < 1) return `${Math.ceil(yearsLeft * 12)} months`;
+                                  return `${Math.ceil(yearsLeft)} year${Math.ceil(yearsLeft) !== 1 ? 's' : ''}`;
+                                })()
+                              : 'N/A'}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-amber-700 block text-xs">Media Uploaded</span>
+                          <span className="font-medium text-amber-900">
+                            {(orderDetails.memorial.photos_json?.length || 0)} photos, {(orderDetails.memorial.videos_json?.length || 0)} videos
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="bg-stone-50 p-4 rounded-lg space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <span className="text-xs text-stone-500 block">Memorial View URL</span>
+                          <a
+                            href={`${baseUrl}/memorial/${orderDetails.memorial.memorial_slug}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-600 hover:underline text-sm font-mono"
+                          >
+                            {baseUrl}/memorial/{orderDetails.memorial.memorial_slug}
+                          </a>
+                        </div>
+                        <button
+                          onClick={() => copyToClipboard(`${baseUrl}/memorial/${orderDetails.memorial?.memorial_slug}`)}
+                          className="px-3 py-1 bg-stone-200 hover:bg-stone-300 rounded text-xs"
+                        >
+                          Copy
+                        </button>
+                      </div>
+
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <span className="text-xs text-stone-500 block">QR Code Image URL</span>
+                          <a
+                            href={`${baseUrl}/api/qr/${orderDetails.memorial.memorial_slug}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-600 hover:underline text-sm font-mono"
+                          >
+                            {baseUrl}/api/qr/{orderDetails.memorial.memorial_slug}
+                          </a>
+                        </div>
+                        <button
+                          onClick={() => copyToClipboard(`${baseUrl}/api/qr/${orderDetails.memorial?.memorial_slug}`)}
+                          className="px-3 py-1 bg-stone-200 hover:bg-stone-300 rounded text-xs"
+                        >
+                          Copy
+                        </button>
+                      </div>
+
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <span className="text-xs text-stone-500 block">Edit Memorial URL</span>
+                          <a
+                            href={`${baseUrl}/memorial/edit?token=${orderDetails.memorial.edit_token}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-600 hover:underline text-sm font-mono"
+                          >
+                            {baseUrl}/memorial/edit?token=...
+                          </a>
+                        </div>
+                        <button
+                          onClick={() => copyToClipboard(`${baseUrl}/memorial/edit?token=${orderDetails.memorial?.edit_token}`)}
+                          className="px-3 py-1 bg-stone-200 hover:bg-stone-300 rounded text-xs"
+                        >
+                          Copy
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Quick Actions */}
+                <div className="flex gap-2 pt-4 border-t">
+                  <button
+                    onClick={() => {
+                      setResendOrderNumber(orderDetails.order_number);
+                      setActiveTab('resend');
+                      setResendResult(null);
+                      setResendError('');
+                    }}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm"
+                  >
+                    Resend Emails
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Memorials Tab */}
+        {activeTab === 'memorials' && (
+          <div className="space-y-6">
+            {/* Search Memorials */}
+            <div className="bg-white rounded-xl shadow p-6">
+              <h3 className="text-lg font-bold text-stone-800 mb-2">Search Memorials</h3>
+              <p className="text-sm text-stone-600 mb-4">
+                Search by deceased name, memorial slug, order number (MQR-...), or customer email
+              </p>
+              
+              <form onSubmit={handleMemorialSearch} className="mb-6">
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={memorialSearchQuery}
+                    onChange={(e) => setMemorialSearchQuery(e.target.value)}
+                    placeholder="Enter name, slug, order number, or email..."
+                    className="flex-1 max-w-lg px-4 py-2 border rounded-lg focus:ring-2 focus:ring-stone-500 focus:border-transparent"
+                  />
+                  <button
+                    type="submit"
+                    disabled={isSearchingMemorials}
+                    className="px-6 py-2 bg-stone-800 text-white rounded-lg hover:bg-stone-700 disabled:opacity-50"
+                  >
+                    {isSearchingMemorials ? 'Searching...' : 'Search'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMemorialSearchQuery('');
+                      setMemorialResults([]);
+                      setMemorialSearchError('');
+                      setSelectedMemorial(null);
+                    }}
+                    className="px-4 py-2 bg-stone-200 text-stone-700 rounded-lg hover:bg-stone-300"
+                  >
+                    Clear
+                  </button>
+                </div>
+              </form>
+
+              {memorialSearchError && (
+                <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 mb-4">
+                  {memorialSearchError}
+                </div>
+              )}
+
+              {/* Search Results */}
+              {memorialResults.length > 0 && !selectedMemorial && (
+                <div className="overflow-x-auto">
+                  <p className="text-sm text-stone-600 mb-2">Found {memorialResults.length} memorial(s)</p>
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b text-left text-stone-500">
+                        <th 
+                          className="pb-2 pr-4 cursor-pointer hover:text-stone-900 select-none"
+                          onClick={() => handleMemorialSort('deceased_name')}
+                        >
+                          Deceased Name<SortIndicator active={memorialSortField === 'deceased_name'} direction={memorialSortDirection} />
+                        </th>
+                        <th 
+                          className="pb-2 pr-4 cursor-pointer hover:text-stone-900 select-none"
+                          onClick={() => handleMemorialSort('memorial_slug')}
+                        >
+                          Slug<SortIndicator active={memorialSortField === 'memorial_slug'} direction={memorialSortDirection} />
+                        </th>
+                        <th 
+                          className="pb-2 pr-4 cursor-pointer hover:text-stone-900 select-none"
+                          onClick={() => handleMemorialSort('deceased_type')}
+                        >
+                          Type<SortIndicator active={memorialSortField === 'deceased_type'} direction={memorialSortDirection} />
+                        </th>
+                        <th 
+                          className="pb-2 pr-4 cursor-pointer hover:text-stone-900 select-none"
+                          onClick={() => handleMemorialSort('customer')}
+                        >
+                          Customer<SortIndicator active={memorialSortField === 'customer'} direction={memorialSortDirection} />
+                        </th>
+                        <th 
+                          className="pb-2 pr-4 cursor-pointer hover:text-stone-900 select-none"
+                          onClick={() => handleMemorialSort('is_published')}
+                        >
+                          Status<SortIndicator active={memorialSortField === 'is_published'} direction={memorialSortDirection} />
+                        </th>
+                        <th 
+                          className="pb-2 pr-4 cursor-pointer hover:text-stone-900 select-none"
+                          onClick={() => handleMemorialSort('hosting_expires_at')}
+                        >
+                          Expires<SortIndicator active={memorialSortField === 'hosting_expires_at'} direction={memorialSortDirection} />
+                        </th>
+                        <th 
+                          className="pb-2 pr-4 cursor-pointer hover:text-stone-900 select-none"
+                          onClick={() => handleMemorialSort('views_count')}
+                        >
+                          Views<SortIndicator active={memorialSortField === 'views_count'} direction={memorialSortDirection} />
+                        </th>
+                        <th className="pb-2"></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {sortedMemorialResults.map((m) => (
+                        <tr key={m.id} className="border-b hover:bg-stone-50">
+                          <td className="py-3 pr-4 font-medium">{m.deceased_name}</td>
+                          <td className="py-3 pr-4 text-xs font-mono text-stone-600">{m.memorial_slug}</td>
+                          <td className="py-3 pr-4 capitalize">
+                            {m.deceased_type}
+                            {m.species && ` (${m.species})`}
+                          </td>
+                          <td className="py-3 pr-4">
+                            {m.customer?.full_name || 'N/A'}
+                            {m.customer?.email && (
+                              <span className="block text-xs text-stone-500">{m.customer.email}</span>
+                            )}
+                          </td>
+                          <td className="py-3 pr-4">
+                            <span className={`px-2 py-1 rounded text-xs ${
+                              m.is_published 
+                                ? 'bg-green-100 text-green-800' 
+                                : 'bg-yellow-100 text-yellow-800'
+                            }`}>
+                              {m.is_published ? 'Published' : 'Draft'}
+                            </span>
+                          </td>
+                          <td className="py-3 pr-4 text-xs">
+                            <div>{formatDateOnly(m.hosting_expires_at)}</div>
+                            <div className="text-xs">{formatTimeWithZone(m.hosting_expires_at)}</div>
+                            <span className={`block ${new Date(m.hosting_expires_at) < new Date() ? 'text-red-600' : 'text-stone-500'}`}>
+                              {new Date(m.hosting_expires_at) < new Date() ? 'Expired' : m.renewal_status}
+                            </span>
+                          </td>
+                          <td className="py-3 pr-4">{m.views_count}</td>
+                          <td className="py-3">
+                            <button
+                              onClick={() => handleSelectMemorial(m.memorial_slug)}
+                              className="px-3 py-1 bg-stone-800 text-white rounded text-xs hover:bg-stone-700"
+                            >
+                              View Details
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+
+              {/* Memorial Details */}
+              {isLoadingMemorial && (
+                <div className="text-center py-8">
+                  <p className="text-stone-600">Loading memorial details...</p>
+                </div>
+              )}
+
+              {selectedMemorial && !isLoadingMemorial && (
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="text-lg font-bold text-stone-800">
+                        Memorial: {selectedMemorial.deceased_name}
+                      </h4>
+                      <p className="text-sm text-stone-500 font-mono">
+                        Slug: {selectedMemorial.memorial_slug}
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => setSelectedMemorial(null)}
+                      className="text-stone-500 hover:text-stone-700 text-sm"
+                    >
+                      ← Back to Results
+                    </button>
+                  </div>
+
+                  {memorialActionResult && (
+                    <div className={`p-4 rounded-lg ${
+                      memorialActionResult.success 
+                        ? 'bg-green-50 border border-green-200 text-green-700' 
+                        : 'bg-red-50 border border-red-200 text-red-700'
+                    }`}>
+                      {memorialActionResult.message}
+                    </div>
+                  )}
+
+                  {/* Memorial Info Grid */}
+                  <div className="grid md:grid-cols-2 gap-6">
+                    {/* Basic Info */}
+                    <div className="bg-stone-50 p-4 rounded-lg space-y-2">
+                      <h5 className="font-medium text-stone-800 mb-3">Memorial Info</h5>
+                      <div className="flex justify-between">
+                        <span className="text-stone-500">Type:</span>
+                        <span className="capitalize">{selectedMemorial.deceased_type}{selectedMemorial.species && ` (${selectedMemorial.species})`}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-stone-500">Birth Date:</span>
+                        <span>{selectedMemorial.birth_date || 'Not set'}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-stone-500">Death Date:</span>
+                        <span>{selectedMemorial.death_date || 'Not set'}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-stone-500">Product:</span>
+                        <span className="capitalize">{selectedMemorial.product_type?.replace('_', ' ')}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-stone-500">Theme:</span>
+                        <span className="capitalize">{selectedMemorial.theme}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-stone-500">Frame:</span>
+                        <span className="capitalize">{selectedMemorial.frame}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-stone-500">Photos:</span>
+                        <span>{Array.isArray(selectedMemorial.photos_json) ? selectedMemorial.photos_json.length : 0}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-stone-500">Videos:</span>
+                        <span>{Array.isArray(selectedMemorial.videos_json) ? selectedMemorial.videos_json.length : 0}</span>
+                      </div>
+                    </div>
+
+                    {/* Status & Hosting */}
+                    <div className="bg-stone-50 p-4 rounded-lg space-y-2">
+                      <h5 className="font-medium text-stone-800 mb-3">Status & Hosting</h5>
+                      <div className="flex justify-between items-center">
+                        <span className="text-stone-500">Published:</span>
+                        <span className={`px-2 py-1 rounded text-xs ${
+                          selectedMemorial.is_published 
+                            ? 'bg-green-100 text-green-800' 
+                            : 'bg-yellow-100 text-yellow-800'
+                        }`}>
+                          {selectedMemorial.is_published ? 'Yes' : 'No'}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-stone-500">Hosting Duration:</span>
+                        <span>{selectedMemorial.hosting_duration} years</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-stone-500">Expires:</span>
+                        <span className={new Date(selectedMemorial.hosting_expires_at) < new Date() ? 'text-red-600 font-medium' : ''}>
+                          {formatDateTime(selectedMemorial.hosting_expires_at)}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-stone-500">Renewal Status:</span>
+                        <span className="capitalize">{selectedMemorial.renewal_status}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-stone-500">Views:</span>
+                        <span>{selectedMemorial.views_count}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-stone-500">Created:</span>
+                        <span>{formatDateTime(selectedMemorial.created_at)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-stone-500">Updated:</span>
+                        <span>{formatDateTime(selectedMemorial.updated_at)}</span>
+                      </div>
+                    </div>
+
+                    {/* Customer Info */}
+                    <div className="bg-stone-50 p-4 rounded-lg space-y-2">
+                      <h5 className="font-medium text-stone-800 mb-3">Customer</h5>
+                      <div className="flex justify-between">
+                        <span className="text-stone-500">Name:</span>
+                        <span>{selectedMemorial.customer?.full_name || 'N/A'}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-stone-500">Email:</span>
+                        <span className="font-mono text-xs">{selectedMemorial.customer?.email || 'N/A'}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-stone-500">Phone:</span>
+                        <span>{selectedMemorial.customer?.phone || 'N/A'}</span>
+                      </div>
+                    </div>
+
+                    {/* Actions */}
+                    <div className="bg-stone-50 p-4 rounded-lg space-y-3">
+                      <h5 className="font-medium text-stone-800 mb-3">Actions</h5>
+                      <button
+                        onClick={() => handleMemorialAction('toggle_publish')}
+                        disabled={memorialAction !== null}
+                        className={`w-full px-4 py-2 rounded-lg text-sm ${
+                          selectedMemorial.is_published
+                            ? 'bg-yellow-600 hover:bg-yellow-700 text-white'
+                            : 'bg-green-600 hover:bg-green-700 text-white'
+                        } disabled:opacity-50`}
+                      >
+                        {memorialAction === 'toggle_publish' 
+                          ? 'Processing...' 
+                          : selectedMemorial.is_published ? 'Unpublish Memorial' : 'Publish Memorial'}
+                      </button>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => handleMemorialAction('extend_expiry', 12)}
+                          disabled={memorialAction !== null}
+                          className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm disabled:opacity-50"
+                        >
+                          {memorialAction === 'extend_expiry' ? 'Extending...' : '+12 Months'}
+                        </button>
+                        <button
+                          onClick={() => handleMemorialAction('extend_expiry', 60)}
+                          disabled={memorialAction !== null}
+                          className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm disabled:opacity-50"
+                        >
+                          +5 Years
+                        </button>
+                      </div>
+                      <button
+                        onClick={() => handleMemorialAction('reset_views')}
+                        disabled={memorialAction !== null}
+                        className="w-full px-4 py-2 bg-stone-600 text-white rounded-lg hover:bg-stone-700 text-sm disabled:opacity-50"
+                      >
+                        {memorialAction === 'reset_views' ? 'Resetting...' : 'Reset View Count'}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* URLs */}
+                  <div className="bg-stone-50 p-4 rounded-lg space-y-3">
+                    <h5 className="font-medium text-stone-800 mb-3">URLs</h5>
+                    <div className="grid gap-3">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <span className="text-xs text-stone-500 block">Memorial View URL</span>
+                          <a
+                            href={`${baseUrl}/memorial/${selectedMemorial.memorial_slug}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-600 hover:underline text-sm font-mono"
+                          >
+                            {baseUrl}/memorial/{selectedMemorial.memorial_slug}
+                          </a>
+                        </div>
+                        <button
+                          onClick={() => copyToClipboard(`${baseUrl}/memorial/${selectedMemorial.memorial_slug}`)}
+                          className="px-3 py-1 bg-stone-200 hover:bg-stone-300 rounded text-xs"
+                        >
+                          Copy
+                        </button>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <span className="text-xs text-stone-500 block">Edit Memorial URL</span>
+                          <a
+                            href={`${baseUrl}/memorial/edit?token=${selectedMemorial.edit_token}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-600 hover:underline text-sm font-mono"
+                          >
+                            {baseUrl}/memorial/edit?token=...
+                          </a>
+                        </div>
+                        <button
+                          onClick={() => copyToClipboard(`${baseUrl}/memorial/edit?token=${selectedMemorial.edit_token}`)}
+                          className="px-3 py-1 bg-stone-200 hover:bg-stone-300 rounded text-xs"
+                        >
+                          Copy
+                        </button>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <span className="text-xs text-stone-500 block">QR Code Image URL</span>
+                          <a
+                            href={`${baseUrl}/api/qr/${selectedMemorial.memorial_slug}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-600 hover:underline text-sm font-mono"
+                          >
+                            {baseUrl}/api/qr/{selectedMemorial.memorial_slug}
+                          </a>
+                        </div>
+                        <button
+                          onClick={() => copyToClipboard(`${baseUrl}/api/qr/${selectedMemorial.memorial_slug}`)}
+                          className="px-3 py-1 bg-stone-200 hover:bg-stone-300 rounded text-xs"
+                        >
+                          Copy
+                        </button>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <span className="text-xs text-stone-500 block">Edit Token (for direct edit access)</span>
+                          <a 
+                            href={`/memorial/edit?slug=${selectedMemorial.memorial_slug}&token=${selectedMemorial.edit_token}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-sm font-mono text-amber-700 hover:text-amber-800 hover:underline"
+                          >
+                            {selectedMemorial.edit_token}
+                          </a>
+                        </div>
+                        <button
+                          onClick={() => copyToClipboard(selectedMemorial.edit_token)}
+                          className="px-3 py-1 bg-stone-200 hover:bg-stone-300 rounded text-xs"
+                        >
+                          Copy
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Memorial Text Preview */}
+                  {selectedMemorial.memorial_text && (
+                    <div className="bg-stone-50 p-4 rounded-lg">
+                      <h5 className="font-medium text-stone-800 mb-3">Memorial Text</h5>
+                      <p className="text-sm text-stone-600 whitespace-pre-wrap">
+                        {selectedMemorial.memorial_text}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Resend Emails Tab */}
+        {activeTab === 'resend' && (
+          <div className="space-y-6">
+            {/* Activation Email Search - Primary for retail */}
+            <div className="bg-white rounded-xl shadow p-6">
+              <h3 className="text-lg font-bold text-stone-800 mb-2">Search Retail Activations</h3>
+              <p className="text-sm text-stone-600 mb-4">
+                Search for retail activations by business name, partner type, or customer email to resend memorial creation emails.
+              </p>
+              
+              <form onSubmit={handleActivationSearch} className="space-y-4">
+                <div className="grid md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-stone-700 mb-1">Business Name</label>
+                    <input
+                      type="text"
+                      value={activationBusinessName}
+                      onChange={(e) => setActivationBusinessName(e.target.value)}
+                      placeholder="e.g. Pet Haven Vets"
+                      className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-stone-500 focus:border-transparent"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-stone-700 mb-1">Partner Type</label>
+                    <select
+                      value={activationPartnerType}
+                      onChange={(e) => setActivationPartnerType(e.target.value)}
+                      className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-stone-500 focus:border-transparent"
+                    >
+                      <option value="">All Types</option>
+                      <option value="vet">Veterinarian</option>
+                      <option value="crematorium">Crematorium</option>
+                      <option value="funeral_home">Funeral Home</option>
+                      <option value="pet_store">Pet Store</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-stone-700 mb-1">Customer Email</label>
+                    <input
+                      type="text"
+                      value={activationCustomerEmail}
+                      onChange={(e) => setActivationCustomerEmail(e.target.value)}
+                      placeholder="customer@example.com"
+                      className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-stone-500 focus:border-transparent"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex gap-3">
+                  <button
+                    type="submit"
+                    disabled={isSearchingActivations}
+                    className="px-6 py-2 bg-stone-800 text-white rounded-lg hover:bg-stone-700 disabled:opacity-50"
+                  >
+                    {isSearchingActivations ? 'Searching...' : 'Search Activations'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActivationBusinessName('');
+                      setActivationPartnerType('');
+                      setActivationCustomerEmail('');
+                      setActivationResults([]);
+                      setActivationSearchError('');
+                      setSelectedActivation(null);
+                      setResendResult(null);
+                    }}
+                    className="px-6 py-2 bg-stone-200 text-stone-700 rounded-lg hover:bg-stone-300"
+                  >
+                    Clear
+                  </button>
+                </div>
+              </form>
+
+              {activationSearchError && (
+                <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
+                  {activationSearchError}
+                </div>
+              )}
+
+              {resendResult && (
+                <div className={`mt-4 p-4 rounded-lg ${
+                  resendResult.success 
+                    ? 'bg-green-50 border border-green-200 text-green-700' 
+                    : 'bg-red-50 border border-red-200 text-red-700'
+                }`}>
+                  {resendResult.message}
+                </div>
+              )}
+
+              {/* Activation Results */}
+              {activationResults.length > 0 && (
+                <div className="mt-6">
+                  <h4 className="font-medium text-stone-800 mb-3">Found {activationResults.length} Activation(s)</h4>
+                  <div className="space-y-3">
+                    {activationResults.map((activation) => (
+                      <div 
+                        key={activation.activationCode}
+                        className={`p-4 border rounded-lg ${
+                          selectedActivation?.activationCode === activation.activationCode
+                            ? 'border-blue-500 bg-blue-50'
+                            : 'border-stone-200 hover:border-stone-300'
+                        }`}
+                      >
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-3 mb-2">
+                              <span className="font-mono text-sm bg-stone-100 px-2 py-1 rounded">
+                                {activation.activationCode}
+                              </span>
+                              <span className={`px-2 py-0.5 rounded text-xs ${
+                                activation.memorial?.isPublished 
+                                  ? 'bg-green-100 text-green-800' 
+                                  : 'bg-amber-100 text-amber-800'
+                              }`}>
+                                {activation.memorial?.isPublished ? 'Published' : 'Draft'}
+                              </span>
+                            </div>
+                            
+                            <div className="grid md:grid-cols-2 gap-x-6 gap-y-1 text-sm">
+                              <div>
+                                <span className="text-stone-500">Partner:</span>{' '}
+                                <span className="font-medium">{activation.partner?.name || 'N/A'}</span>
+                                {activation.partner?.type && (
+                                  <span className="text-stone-500 ml-1">({activation.partner.type})</span>
+                                )}
+                              </div>
+                              <div>
+                                <span className="text-stone-500">Customer:</span>{' '}
+                                <span className="font-medium">{activation.customerEmail || 'No email'}</span>
+                              </div>
+                              <div>
+                                <span className="text-stone-500">Memorial:</span>{' '}
+                                <span className="font-medium">
+                                  {activation.memorial?.deceasedName || 'Not created'}
+                                  {activation.memorial?.deceasedType && (
+                                    <span className="text-stone-500 ml-1">
+                                      ({activation.memorial.deceasedType})
+                                    </span>
+                                  )}
+                                </span>
+                              </div>
+                              <div>
+                                <span className="text-stone-500">Activated:</span>{' '}
+                                <span className="font-medium">
+                                  {activation.usedAt 
+                                    ? formatDateTime(activation.usedAt)
+                                    : 'N/A'
+                                  }
+                                </span>
+                              </div>
+                            </div>
+
+                            {activation.memorial && (
+                              <div className="mt-2 flex gap-2 text-xs">
+                                <a
+                                  href={`${baseUrl}/memorial/${activation.memorial.slug}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-blue-600 hover:underline"
+                                >
+                                  View Memorial →
+                                </a>
+                                <a
+                                  href={`${baseUrl}/memorial/edit?slug=${activation.memorial.slug}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-blue-600 hover:underline"
+                                >
+                                  Edit Memorial →
+                                </a>
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="ml-4">
+                            <button
+                              onClick={() => handleResendActivationEmail(activation)}
+                              disabled={resendingActivationCode !== null || !activation.memorial?.slug || !activation.customerEmail}
+                              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 text-sm whitespace-nowrap"
+                              title={!activation.customerEmail ? 'No email available' : !activation.memorial?.slug ? 'No memorial' : 'Resend email'}
+                            >
+                              {resendingActivationCode === activation.activationCode ? 'Sending...' : 'Resend Email'}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Order-based Email Resend - Secondary for online orders */}
+            <div className="bg-white rounded-xl shadow p-6">
+              <h3 className="text-lg font-bold text-stone-800 mb-2">Resend Order Emails</h3>
+              <p className="text-sm text-stone-600 mb-4">
+                For online orders (not retail activations), resend emails by order number.
+              </p>
+              
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-stone-700 mb-2">Order Number</label>
+                <input
+                  type="text"
+                  value={resendOrderNumber}
+                  onChange={(e) => setResendOrderNumber(e.target.value)}
+                  placeholder="Enter order number (e.g. MQR-ABC123)"
+                  className="w-full max-w-md px-4 py-2 border rounded-lg focus:ring-2 focus:ring-stone-500 focus:border-transparent font-mono"
+                />
+              </div>
+
+              <div className="flex gap-3 mb-4">
+                <button
+                  onClick={() => handleResendEmails('activation')}
+                  disabled={resendingType !== null || !resendOrderNumber.trim()}
+                  className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 text-sm"
+                >
+                  {resendingType === 'activation' ? 'Sending...' : 'Resend Order Confirmation'}
+                </button>
+                <button
+                  onClick={() => handleResendEmails('memorial')}
+                  disabled={resendingType !== null || !resendOrderNumber.trim()}
+                  className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 text-sm"
+                >
+                  {resendingType === 'memorial' ? 'Sending...' : 'Resend Memorial Email'}
+                </button>
+              </div>
+
+              {resendError && (
+                <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
+                  {resendError}
+                </div>
+              )}
+            </div>
+
+            {/* Help Section */}
+            <div className="bg-stone-50 rounded-xl p-6">
+              <h4 className="font-medium text-stone-800 mb-2">Email Types</h4>
+              <div className="grid md:grid-cols-2 gap-4 text-sm text-stone-600">
+                <div>
+                  <strong className="text-stone-800">Retail Activations:</strong>
+                  <p className="mt-1">Search by partner/customer, then resend the memorial creation email with edit link and QR code.</p>
+                </div>
+                <div>
+                  <strong className="text-stone-800">Online Orders:</strong>
+                  <p className="mt-1">Use order number to resend order confirmation or memorial edit instructions.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Code Lookup Tab */}
+        {activeTab === 'code-lookup' && (
+          <div className="bg-white rounded-xl shadow p-6">
+            <h3 className="text-lg font-bold text-stone-800 mb-2">Code Lookup</h3>
+            <p className="text-sm text-stone-600 mb-4">
+              Find which partner an activation code or referral code is assigned to, and who has used it.
+            </p>
+            
+            <form onSubmit={handleCodeLookup} className="mb-6">
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={codeLookupQuery}
+                  onChange={(e) => setCodeLookupQuery(e.target.value.toUpperCase())}
+                  placeholder="Enter code (e.g., MQR-5N-XLRHG9 or REF-ABC12)"
+                  className="flex-1 px-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-stone-500 focus:border-transparent font-mono"
+                />
+                <button
+                  type="submit"
+                  disabled={isLookingUpCode}
+                  className="px-6 py-2 bg-stone-800 text-white rounded-lg hover:bg-stone-700 disabled:opacity-50"
+                >
+                  {isLookingUpCode ? 'Looking up...' : 'Lookup'}
+                </button>
+              </div>
+            </form>
+
+            {codeLookupError && (
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+                {codeLookupError}
+              </div>
+            )}
+
+            {codeLookupResult?.found && codeLookupResult.code && (
+              <div className="border border-stone-200 rounded-lg overflow-hidden">
+                {/* Code Header */}
+                <div className={`p-4 ${codeLookupResult.type === 'activation' ? 'bg-blue-50' : 'bg-purple-50'}`}>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <span className={`inline-block px-2 py-1 rounded text-xs font-medium ${
+                        codeLookupResult.type === 'activation' 
+                          ? 'bg-blue-100 text-blue-800' 
+                          : 'bg-purple-100 text-purple-800'
+                      }`}>
+                        {codeLookupResult.type === 'activation' ? 'Activation Code' : 'Referral Code'}
+                      </span>
+                      <h4 className="text-xl font-mono font-bold text-stone-800 mt-2">{codeLookupResult.code.code}</h4>
+                    </div>
+                    <div className="text-right">
+                      <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${
+                        codeLookupResult.code.isUsed 
+                          ? 'bg-green-100 text-green-800' 
+                          : 'bg-yellow-100 text-yellow-800'
+                      }`}>
+                        {codeLookupResult.code.isUsed ? '✓ Used' : '○ Available'}
+                      </span>
+                      {codeLookupResult.code.usedAt && (
+                        <p className="text-xs text-stone-500 mt-1">
+                          Used: {new Date(codeLookupResult.code.usedAt).toLocaleString('en-NZ', { 
+                            day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZoneName: 'short'
+                          })}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Code Details */}
+                <div className="p-4 border-t border-stone-200">
+                  <div className="grid md:grid-cols-2 gap-6">
+                    {/* Left Column - Code Info */}
+                    <div>
+                      <h5 className="text-sm font-semibold text-stone-500 uppercase mb-3">Code Details</h5>
+                      <dl className="space-y-2 text-sm">
+                        {codeLookupResult.type === 'activation' && (
+                          <>
+                            <div className="flex justify-between">
+                              <dt className="text-stone-500">Product Type:</dt>
+                              <dd className="font-medium text-stone-800">
+                                {codeLookupResult.code.productType === 'both' ? 'QR + NFC' : 
+                                 codeLookupResult.code.productType === 'qr_only' ? 'QR Only' : 'NFC Only'}
+                              </dd>
+                            </div>
+                            <div className="flex justify-between">
+                              <dt className="text-stone-500">Hosting Duration:</dt>
+                              <dd className="font-medium text-stone-800">{codeLookupResult.code.hostingDuration} years</dd>
+                            </div>
+                          </>
+                        )}
+                        {codeLookupResult.type === 'referral' && (
+                          <>
+                            <div className="flex justify-between">
+                              <dt className="text-stone-500">Discount:</dt>
+                              <dd className="font-medium text-stone-800">{codeLookupResult.code.discountPercent}%</dd>
+                            </div>
+                            <div className="flex justify-between">
+                              <dt className="text-stone-500">Commission:</dt>
+                              <dd className="font-medium text-stone-800">{codeLookupResult.code.commissionPercent}%</dd>
+                            </div>
+                            <div className="flex justify-between">
+                              <dt className="text-stone-500">Free Shipping:</dt>
+                              <dd className="font-medium text-stone-800">{codeLookupResult.code.freeShipping ? 'Yes' : 'No'}</dd>
+                            </div>
+                            {codeLookupResult.code.expiresAt && (
+                              <div className="flex justify-between">
+                                <dt className="text-stone-500">Expires:</dt>
+                                <dd className="font-medium text-stone-800">
+                                  {new Date(codeLookupResult.code.expiresAt).toLocaleString('en-NZ', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZoneName: 'short' })}
+                                </dd>
+                              </div>
+                            )}
+                          </>
+                        )}
+                        <div className="flex justify-between">
+                          <dt className="text-stone-500">Created:</dt>
+                          <dd className="font-medium text-stone-800">
+                            {new Date(codeLookupResult.code.createdAt).toLocaleString('en-NZ', {
+                              day: 'numeric',
+                              month: 'short',
+                              year: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit',
+                              timeZoneName: 'short'
+                            })}
+                          </dd>
+                        </div>
+                      </dl>
+                    </div>
+
+                    {/* Right Column - Partner Info */}
+                    <div>
+                      <h5 className="text-sm font-semibold text-stone-500 uppercase mb-3">Assigned Partner</h5>
+                      {codeLookupResult.code.partner ? (
+                        <div className="bg-stone-50 rounded-lg p-3">
+                          <p className="font-medium text-stone-800">{codeLookupResult.code.partner.name}</p>
+                          <p className="text-sm text-stone-500">{codeLookupResult.code.partner.type}</p>
+                          <p className="text-sm text-stone-600 mt-1">{codeLookupResult.code.partner.email}</p>
+                          <Link 
+                            href={`/admin/partners?id=${codeLookupResult.code.partner.id}`}
+                            className="text-xs text-blue-600 hover:underline mt-2 inline-block"
+                          >
+                            View Partner →
+                          </Link>
+                        </div>
+                      ) : (
+                        <p className="text-stone-500 italic">Not assigned to any partner</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Usage Info - Memorial or Order */}
+                {codeLookupResult.code.isUsed && (
+                  <div className="p-4 border-t border-stone-200 bg-green-50">
+                    <h5 className="text-sm font-semibold text-stone-500 uppercase mb-3">
+                      {codeLookupResult.type === 'activation' ? 'Memorial Created' : 'Order Placed'}
+                    </h5>
+                    
+                    {/* Activation Code - Memorial Info */}
+                    {codeLookupResult.type === 'activation' && codeLookupResult.code.memorial && (
+                      <div className="bg-white rounded-lg p-3 border border-green-200">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <p className="font-medium text-stone-800">{codeLookupResult.code.memorial.deceasedName}</p>
+                            <p className="text-sm text-stone-500">
+                              {codeLookupResult.code.memorial.deceasedType === 'pet' ? '🐾 Pet' : '👤 Human'}
+                              {codeLookupResult.code.memorial.isPublished ? ' • Published' : ' • Draft'}
+                            </p>
+                            <p className="text-xs text-stone-400 mt-1">Slug: {codeLookupResult.code.memorial.slug}</p>
+                          </div>
+                          <Link 
+                            href={`/memorial/${codeLookupResult.code.memorial.slug}`}
+                            target="_blank"
+                            className="text-sm text-blue-600 hover:underline"
+                          >
+                            View Memorial →
+                          </Link>
+                        </div>
+                        {codeLookupResult.code.memorial.customer && (
+                          <div className="mt-3 pt-3 border-t border-stone-100">
+                            <p className="text-sm text-stone-600">
+                              <strong>Customer:</strong> {codeLookupResult.code.memorial.customer.name}
+                            </p>
+                            <p className="text-sm text-stone-600">{codeLookupResult.code.memorial.customer.email}</p>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Referral Code - Order Info */}
+                    {codeLookupResult.type === 'referral' && codeLookupResult.code.order && (
+                      <div className="bg-white rounded-lg p-3 border border-green-200">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <p className="font-medium text-stone-800">Order #{codeLookupResult.code.order.orderNumber}</p>
+                            <p className="text-sm text-stone-500">
+                              ${(codeLookupResult.code.order.totalAmount / 100).toFixed(2)} NZD
+                              <span className={`ml-2 px-2 py-0.5 rounded text-xs ${
+                                codeLookupResult.code.order.status === 'completed' ? 'bg-green-100 text-green-800' :
+                                codeLookupResult.code.order.status === 'paid' ? 'bg-blue-100 text-blue-800' :
+                                'bg-yellow-100 text-yellow-800'
+                              }`}>
+                                {codeLookupResult.code.order.status}
+                              </span>
+                            </p>
+                            <p className="text-xs text-stone-400 mt-1">
+                              {formatDateTime(codeLookupResult.code.order.createdAt)}
+                            </p>
+                          </div>
+                          <Link 
+                            href={`/admin/orders?search=${codeLookupResult.code.order.orderNumber}`}
+                            className="text-sm text-blue-600 hover:underline"
+                          >
+                            View Order →
+                          </Link>
+                        </div>
+                        {codeLookupResult.code.order.customer && (
+                          <div className="mt-3 pt-3 border-t border-stone-100">
+                            <p className="text-sm text-stone-600">
+                              <strong>Customer:</strong> {codeLookupResult.code.order.customer.name}
+                            </p>
+                            <p className="text-sm text-stone-600">{codeLookupResult.code.order.customer.email}</p>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Activity History for Referral Codes - shown regardless of isUsed status */}
+                {codeLookupResult.type === 'referral' && codeLookupResult.code.activityHistory && codeLookupResult.code.activityHistory.length > 0 && (
+                  <div className="p-4 border-t border-stone-200">
+                    <h4 className="text-sm font-semibold text-stone-500 uppercase mb-3 flex items-center gap-2">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      ASSIGNMENT HISTORY
+                        </h4>
+                        <div className="bg-white rounded-lg border border-stone-200 overflow-hidden">
+                          <div className="divide-y divide-stone-100">
+                            {codeLookupResult.code.activityHistory.map((activity: { id: string; activityType: string; fromPartnerName: string | null; toPartnerName: string | null; performedByAdmin: boolean; notes: string | null; createdAt: string }) => (
+                              <div key={activity.id} className="p-3 hover:bg-stone-50">
+                                <div className="flex justify-between items-start">
+                                  <div className="flex-1">
+                                    <div className="flex items-center gap-2">
+                                      <span className={`px-2 py-0.5 rounded text-xs font-medium ${
+                                        activity.activityType === 'created' ? 'bg-green-100 text-green-800' :
+                                        activity.activityType === 'transferred' ? 'bg-blue-100 text-blue-800' :
+                                        activity.activityType === 'assigned' ? 'bg-purple-100 text-purple-800' :
+                                        activity.activityType === 'unassigned' ? 'bg-orange-100 text-orange-800' :
+                                        activity.activityType === 'used' ? 'bg-emerald-100 text-emerald-800' :
+                                        'bg-stone-100 text-stone-800'
+                                      }`}>
+                                        {activity.activityType.charAt(0).toUpperCase() + activity.activityType.slice(1)}
+                                      </span>
+                                      {activity.performedByAdmin && (
+                                        <span className="px-1.5 py-0.5 rounded text-xs bg-amber-100 text-amber-700">Admin</span>
+                                      )}
+                                    </div>
+                                    <div className="mt-1 text-sm text-stone-600">
+                                      {activity.activityType === 'created' && activity.toPartnerName && (
+                                        <span>Created for <strong>{activity.toPartnerName}</strong></span>
+                                      )}
+                                      {activity.activityType === 'created' && !activity.toPartnerName && (
+                                        <span>Code created (unassigned)</span>
+                                      )}
+                                      {activity.activityType === 'transferred' && (
+                                        <span>
+                                          {activity.fromPartnerName || 'Unassigned'} → <strong>{activity.toPartnerName || 'Unassigned'}</strong>
+                                        </span>
+                                      )}
+                                      {activity.activityType === 'assigned' && (
+                                        <span>Assigned to <strong>{activity.toPartnerName}</strong></span>
+                                      )}
+                                      {activity.activityType === 'unassigned' && (
+                                        <span>Unassigned from <strong>{activity.fromPartnerName}</strong></span>
+                                      )}
+                                      {activity.activityType === 'used' && (
+                                        <span>Code redeemed</span>
+                                      )}
+                                    </div>
+                                    {activity.notes && (
+                                      <p className="mt-1 text-xs text-stone-500 italic">{activity.notes}</p>
+                                    )}
+                                  </div>
+                                  <div className="text-right text-xs text-stone-400 whitespace-nowrap ml-3">
+                                    <div>{formatDateOnly(activity.createdAt)}</div>
+                                    <div>{formatTimeWithZone(activity.createdAt)}</div>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                )}
+
+                {/* Share History for Referral Codes */}
+                {codeLookupResult.type === 'referral' && codeLookupResult.code.shareHistory && codeLookupResult.code.shareHistory.length > 0 && (
+                  <div className="p-4 border-t border-stone-200 bg-cyan-50">
+                    <h4 className="text-sm font-semibold text-stone-500 uppercase mb-3 flex items-center gap-2">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                      </svg>
+                      SHARED VIA EMAIL
+                    </h4>
+                    <div className="bg-white rounded-lg border border-cyan-200 overflow-hidden">
+                      <div className="divide-y divide-stone-100">
+                        {codeLookupResult.code.shareHistory.map((share: { id: string; recipientEmail: string; recipientName: string | null; message: string | null; sentAt: string }) => (
+                          <div key={share.id} className="p-3 hover:bg-stone-50">
+                            <div className="flex justify-between items-start">
+                              <div className="flex-1">
+                                <p className="font-medium text-stone-800">
+                                  {share.recipientName || share.recipientEmail}
+                                </p>
+                                {share.recipientName && (
+                                  <p className="text-sm text-stone-500">{share.recipientEmail}</p>
+                                )}
+                                {share.message && (
+                                  <p className="mt-1 text-xs text-stone-500 italic">&quot;{share.message}&quot;</p>
+                                )}
+                              </div>
+                              <div className="text-right text-xs text-stone-400 whitespace-nowrap ml-3">
+                                <div>{formatDateOnly(share.sentAt)}</div>
+                                <div>{formatTimeWithZone(share.sentAt)}</div>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Activity History for Activation Codes - shown regardless of isUsed status */}
+                {codeLookupResult.type === 'activation' && codeLookupResult.code.activityHistory && codeLookupResult.code.activityHistory.length > 0 && (
+                  <div className="p-4 border-t border-stone-200">
+                    <h4 className="text-sm font-semibold text-stone-500 uppercase mb-3 flex items-center gap-2">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          ASSIGNMENT HISTORY
+                        </h4>
+                        <div className="bg-white rounded-lg border border-stone-200 overflow-hidden">
+                          <div className="divide-y divide-stone-100">
+                            {codeLookupResult.code.activityHistory.map((activity: { id: string; activityType: string; fromPartnerName: string | null; toPartnerName: string | null; performedByAdmin: boolean; notes: string | null; createdAt: string }) => (
+                              <div key={activity.id} className="p-3 hover:bg-stone-50">
+                                <div className="flex justify-between items-start">
+                                  <div className="flex-1">
+                                    <div className="flex items-center gap-2">
+                                      <span className={`px-2 py-0.5 rounded text-xs font-medium ${
+                                        activity.activityType === 'created' ? 'bg-green-100 text-green-800' :
+                                        activity.activityType === 'transferred' ? 'bg-blue-100 text-blue-800' :
+                                        activity.activityType === 'assigned' ? 'bg-purple-100 text-purple-800' :
+                                        activity.activityType === 'unassigned' ? 'bg-orange-100 text-orange-800' :
+                                        activity.activityType === 'used' ? 'bg-emerald-100 text-emerald-800' :
+                                        'bg-stone-100 text-stone-800'
+                                      }`}>
+                                        {activity.activityType.charAt(0).toUpperCase() + activity.activityType.slice(1)}
+                                      </span>
+                                      {activity.performedByAdmin && (
+                                        <span className="px-1.5 py-0.5 rounded text-xs bg-amber-100 text-amber-700">Admin</span>
+                                      )}
+                                    </div>
+                                    <div className="mt-1 text-sm text-stone-600">
+                                      {activity.activityType === 'created' && activity.toPartnerName && (
+                                        <span>Created for <strong>{activity.toPartnerName}</strong></span>
+                                      )}
+                                      {activity.activityType === 'created' && !activity.toPartnerName && (
+                                        <span>Code created (unassigned)</span>
+                                      )}
+                                      {activity.activityType === 'transferred' && (
+                                        <span>
+                                          {activity.fromPartnerName || 'Unassigned'} → <strong>{activity.toPartnerName || 'Unassigned'}</strong>
+                                        </span>
+                                      )}
+                                      {activity.activityType === 'assigned' && (
+                                        <span>Assigned to <strong>{activity.toPartnerName}</strong></span>
+                                      )}
+                                      {activity.activityType === 'unassigned' && (
+                                        <span>Unassigned from <strong>{activity.fromPartnerName}</strong></span>
+                                      )}
+                                      {activity.activityType === 'used' && (
+                                        <span>Code activated</span>
+                                      )}
+                                    </div>
+                                    {activity.notes && (
+                                      <p className="mt-1 text-xs text-stone-500 italic">{activity.notes}</p>
+                                    )}
+                                  </div>
+                                  <div className="text-right text-xs text-stone-400 whitespace-nowrap ml-3">
+                                    <div>{formatDateOnly(activity.createdAt)}</div>
+                                    <div>{formatTimeWithZone(activity.createdAt)}</div>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                )}
+              </div>
+            )}
+
+            {/* Help text */}
+            <div className="mt-6 p-4 bg-stone-50 rounded-lg">
+              <h4 className="font-medium text-stone-800 mb-2">Code Formats</h4>
+              <ul className="text-sm text-stone-600 space-y-1">
+                <li><strong>Activation Codes:</strong> MQR-XX-XXXXXX (e.g., MQR-5N-XLRHG9)</li>
+                <li><strong>Referral Codes:</strong> REF-XXXXX (e.g., REF-ABC12)</li>
+              </ul>
+            </div>
+          </div>
+        )}
+
+        {/* Partner Search Tab */}
+        {activeTab === 'partner-search' && (
+          <div className="bg-white rounded-xl shadow p-6">
+            <h3 className="text-lg font-bold text-stone-800 mb-2">Search Partners</h3>
+            <p className="text-sm text-stone-600 mb-4">
+              Search for partners by name, email, or business name. Use <code className="bg-stone-100 px-1 rounded">*</code> as a wildcard.
+            </p>
+            
+            <form onSubmit={handlePartnerSearch} className="mb-6">
+              <div className="flex gap-2 flex-wrap">
+                <input
+                  type="text"
+                  value={partnerSearchQuery}
+                  onChange={(e) => setPartnerSearchQuery(e.target.value)}
+                  placeholder="Enter partner name or email..."
+                  className="flex-1 min-w-[200px] max-w-lg px-4 py-2 border rounded-lg focus:ring-2 focus:ring-stone-500 focus:border-transparent"
+                />
+                <button
+                  type="submit"
+                  disabled={isSearchingPartners}
+                  className="px-6 py-2 bg-stone-800 text-white rounded-lg hover:bg-stone-700 disabled:opacity-50"
+                >
+                  {isSearchingPartners ? 'Searching...' : 'Search'}
+                </button>
+                <button
+                  type="button"
+                  onClick={loadAllPartners}
+                  disabled={isLoadingAllPartners}
+                  className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 disabled:opacity-50"
+                >
+                  {isLoadingAllPartners ? 'Loading...' : 'Show All'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPartnerSearchQuery('');
+                    setPartnerSearchResults([]);
+                    setPartnerSearchError('');
+                    setAllPartners([]);
+                  }}
+                  className="px-4 py-2 bg-stone-200 text-stone-700 rounded-lg hover:bg-stone-300"
+                >
+                  Clear
+                </button>
+              </div>
+            </form>
+
+            {/* All Partners Dropdown */}
+            {allPartners.length > 0 && (
+              <div className="mb-6 p-4 bg-stone-50 rounded-lg">
+                <div className="flex justify-between items-center mb-3">
+                  <h4 className="font-medium text-stone-800">All Partners ({allPartners.length})</h4>
+                  <button
+                    onClick={() => setAllPartners([])}
+                    className="text-sm text-stone-500 hover:text-stone-700"
+                  >
+                    Close
+                  </button>
+                </div>
+                <div className="max-h-64 overflow-y-auto space-y-1">
+                  {allPartners.map((partner) => (
+                    <button
+                      key={partner.id}
+                      onClick={() => selectPartner(partner)}
+                      className="w-full text-left px-3 py-2 rounded hover:bg-white flex items-center justify-between group"
+                    >
+                      <span>
+                        <span className="font-medium text-stone-800">{partner.partner_name}</span>
+                        <span className="text-stone-500 ml-2 text-sm">{partner.contact_email}</span>
+                      </span>
+                      <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${
+                        partner.status === 'active' ? 'bg-green-100 text-green-700' :
+                        partner.status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
+                        'bg-stone-100 text-stone-700'
+                      }`}>
+                        {partner.status}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {partnerSearchError && (
+              <div className="mb-4 p-4 bg-red-50 text-red-700 rounded-lg">
+                {partnerSearchError}
+              </div>
+            )}
+
+            {partnerSearchResults.length > 0 && (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left">
+                  <thead>
+                    <tr className="border-b text-stone-500 text-sm">
+                      <th className="py-3 pr-4">Partner Name</th>
+                      <th className="py-3 pr-4">Email</th>
+                      <th className="py-3 pr-4">Type</th>
+                      <th className="py-3 pr-4">Status</th>
+                      <th className="py-3 pr-4">Joined</th>
+                      <th className="py-3">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {partnerSearchResults.map((partner) => (
+                      <tr key={partner.id} className="border-b hover:bg-stone-50">
+                        <td className="py-3 pr-4 font-medium">{partner.partner_name}</td>
+                        <td className="py-3 pr-4 text-stone-600">{partner.contact_email}</td>
+                        <td className="py-3 pr-4">
+                          <span className="px-2 py-1 text-xs font-medium bg-stone-100 text-stone-700 rounded-full capitalize">
+                            {partner.partner_type}
+                          </span>
+                        </td>
+                        <td className="py-3 pr-4">
+                          <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                            partner.status === 'active' ? 'bg-green-100 text-green-700' :
+                            partner.status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
+                            partner.status === 'suspended' ? 'bg-red-100 text-red-700' :
+                            'bg-stone-100 text-stone-700'
+                          }`}>
+                            {partner.status}
+                          </span>
+                        </td>
+                        <td className="py-3 pr-4 text-stone-600 whitespace-nowrap">
+                          <div>{formatDateOnly(partner.created_at)}</div>
+                          <div className="text-xs">{formatTimeWithZone(partner.created_at)}</div>
+                        </td>
+                        <td className="py-3">
+                          <Link
+                            href={`/admin/partners?id=${partner.id}`}
+                            className="text-amber-700 hover:text-amber-900 font-medium"
+                          >
+                            View Partner →
+                          </Link>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            {partnerSearchResults.length === 0 && partnerSearchQuery && !isSearchingPartners && !partnerSearchError && (
+              <div className="text-center py-8 text-stone-500">
+                No partners found matching &quot;{partnerSearchQuery}&quot;
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Missing Banking Tab */}
+        {activeTab === 'missing-banking' && (
+          <div className="bg-white rounded-xl shadow p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className="text-lg font-bold text-stone-800">Partners Missing Banking Details</h3>
+                <p className="text-sm text-stone-600">
+                  Active partners who haven&apos;t completed their banking information for payouts.
+                </p>
+              </div>
+              <button
+                onClick={fetchMissingBanking}
+                disabled={isLoadingMissingBanking}
+                className="px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 disabled:opacity-50"
+              >
+                {isLoadingMissingBanking ? 'Loading...' : 'Refresh'}
+              </button>
+            </div>
+
+            {missingBankingError && (
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+                {missingBankingError}
+              </div>
+            )}
+
+            {isLoadingMissingBanking && partnersMissingBanking.length === 0 ? (
+              <div className="text-center py-12 text-stone-500">
+                <div className="animate-spin inline-block w-6 h-6 border-2 border-amber-600 border-t-transparent rounded-full mb-2"></div>
+                <p>Loading partners...</p>
+              </div>
+            ) : partnersMissingBanking.length === 0 ? (
+              <div className="text-center py-12">
+                <div className="text-4xl mb-3">✅</div>
+                <p className="text-stone-600 font-medium">All active partners have complete banking details!</p>
+              </div>
+            ) : (
+              <>
+                <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                  <p className="text-amber-800 font-medium">
+                    ⚠️ {partnersMissingBanking.length} partner{partnersMissingBanking.length !== 1 ? 's' : ''} missing banking details
+                  </p>
+                  <p className="text-sm text-amber-700 mt-1">
+                    These partners won&apos;t receive commission payouts until they add their banking information.
+                  </p>
+                </div>
+
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead className="bg-stone-50">
+                      <tr>
+                        <th className="text-left p-3 font-medium text-stone-700">Partner</th>
+                        <th className="text-left p-3 font-medium text-stone-700">Type</th>
+                        <th className="text-left p-3 font-medium text-stone-700">Missing Fields</th>
+                        <th className="text-center p-3 font-medium text-stone-700">Codes</th>
+                        <th className="text-left p-3 font-medium text-stone-700">Joined</th>
+                        <th className="text-left p-3 font-medium text-stone-700">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-stone-100">
+                      {partnersMissingBanking.map((partner) => (
+                        <tr key={partner.id} className="hover:bg-stone-50">
+                          <td className="p-3">
+                            <div className="font-medium text-stone-800">{partner.partnerName}</div>
+                            <div className="text-xs text-stone-500">{partner.email}</div>
+                          </td>
+                          <td className="p-3">
+                            <span className={`inline-block px-2 py-1 rounded text-xs font-medium ${
+                              partner.partnerType === 'wholesale' 
+                                ? 'bg-blue-100 text-blue-800' 
+                                : 'bg-purple-100 text-purple-800'
+                            }`}>
+                              {partner.partnerType}
+                            </span>
+                          </td>
+                          <td className="p-3">
+                            <div className="flex flex-wrap gap-1">
+                              {!partner.bankingStatus.hasName && (
+                                <span className="px-2 py-0.5 bg-red-100 text-red-700 text-xs rounded">Bank Name</span>
+                              )}
+                              {!partner.bankingStatus.hasAccountName && (
+                                <span className="px-2 py-0.5 bg-red-100 text-red-700 text-xs rounded">Account Name</span>
+                              )}
+                              {!partner.bankingStatus.hasAccountNumber && (
+                                <span className="px-2 py-0.5 bg-red-100 text-red-700 text-xs rounded">Account Number</span>
+                              )}
+                            </div>
+                          </td>
+                          <td className="p-3 text-center">
+                            <div className="text-stone-800">
+                              {partner.assignedCodesCount > 0 && (
+                                <span className="text-blue-600" title="Assigned (unused)">
+                                  {partner.assignedCodesCount}
+                                </span>
+                              )}
+                              {partner.assignedCodesCount > 0 && partner.usedCodesCount > 0 && ' / '}
+                              {partner.usedCodesCount > 0 && (
+                                <span className="text-green-600" title="Used">
+                                  {partner.usedCodesCount}
+                                </span>
+                              )}
+                              {partner.assignedCodesCount === 0 && partner.usedCodesCount === 0 && (
+                                <span className="text-stone-400">—</span>
+                              )}
+                            </div>
+                            {(partner.assignedCodesCount > 0 || partner.usedCodesCount > 0) && (
+                              <div className="text-[10px] text-stone-400">assigned / used</div>
+                            )}
+                          </td>
+                          <td className="p-3 text-stone-600 whitespace-nowrap">
+                            <div>{formatDateOnly(partner.createdAt)}</div>
+                            <div className="text-xs">{formatTimeWithZone(partner.createdAt)}</div>
+                          </td>
+                          <td className="p-3">
+                            <Link
+                              href={`/admin/partners?id=${partner.id}`}
+                              className="text-blue-600 hover:underline text-sm"
+                            >
+                              View Partner →
+                            </Link>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </>
+            )}
+
+            {/* Info box */}
+            <div className="mt-6 p-4 bg-stone-50 rounded-lg">
+              <h4 className="font-medium text-stone-800 mb-2">About Banking Details</h4>
+              <ul className="text-sm text-stone-600 space-y-1">
+                <li>• Partners need <strong>Bank Name</strong>, <strong>Account Name</strong>, and <strong>Account Number</strong> to receive payouts</li>
+                <li>• Partners are reminded to add banking details when purchasing codes and when codes are activated</li>
+                <li>• You can contact partners directly to remind them to complete their profile</li>
+              </ul>
+            </div>
+          </div>
+        )}
+
+        {/* Mobile Navigation */}
+        <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t p-4">
+          <div className="grid grid-cols-4 gap-2 text-center text-xs">
+            <Link href="/admin/dashboard" className="py-2 text-stone-600">Dashboard</Link>
+            <Link href="/admin/partners" className="py-2 text-stone-600">Partners</Link>
+            <Link href="/admin/orders" className="py-2 text-stone-600">Orders</Link>
+            <Link href="/admin/tools" className="py-2 text-stone-800 font-bold">Tools</Link>
+          </div>
+        </div>
+      </main>
+    </div>
+  );
+}

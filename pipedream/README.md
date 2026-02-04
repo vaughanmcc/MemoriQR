@@ -884,9 +884,82 @@ curl -X POST https://eo7epxu5aypc0vj.m.pipedream.net \
 
 ---
 
+## Workflow: Expiry Reminders & Renewal Confirmation
+
+**Purpose:** Send automated expiry reminder emails and renewal confirmation emails.
+
+### Email Type: `expiry_reminder`
+
+Sent by the `/api/cron/expiry-reminders` endpoint daily.
+
+#### Incoming Payload
+```json
+{
+  "type": "expiry_reminder",
+  "reminder_type": "90_days" | "30_days" | "7_days" | "grace_period",
+  "to": "customer@example.com",
+  "customer_name": "John Smith",
+  "deceased_name": "Max",
+  "memorial_slug": "max-2024",
+  "memorial_url": "https://memoriqr.co.nz/memorial/max-2024",
+  "renew_url": "https://memoriqr.co.nz/renew?token=abc123...",
+  "days_until_expiry": 90,
+  "is_grace_period": false,
+  "grace_days_remaining": null
+}
+```
+
+#### Email Templates by Reminder Type
+
+**90-day reminder:**
+- Subject: `Your memorial for [Name] will expire in 90 days`
+- Tone: Informational, no urgency
+
+**30-day reminder:**
+- Subject: `Reminder: [Name]'s memorial hosting expires soon`
+- Tone: Friendly reminder
+
+**7-day reminder:**
+- Subject: `Action needed: [Name]'s memorial expires in 7 days`
+- Tone: Urgent, clear call-to-action
+
+**Grace period reminder:**
+- Subject: `⚠️ [Name]'s memorial has expired - renew to restore access`
+- Tone: Urgent, explain grace period, one-click renewal link
+
+### Email Type: `renewal_confirmation`
+
+Sent after successful renewal payment via Stripe webhook.
+
+#### Incoming Payload
+```json
+{
+  "type": "renewal_confirmation",
+  "customer_email": "customer@example.com",
+  "customer_name": "John Smith",
+  "deceased_name": "Max",
+  "memorial_slug": "max-2024",
+  "memorial_url": "https://memoriqr.co.nz/memorial/max-2024",
+  "extension_type": "5_year",
+  "is_lifetime": false,
+  "new_expires_at": "2031-01-15T00:00:00Z",
+  "amount_paid": 99,
+  "currency": "NZD"
+}
+```
+
+#### Email Template
+- Subject: `Memorial renewed for [Name]`
+- Content: Confirmation of renewal, new expiry date, receipt amount, link to view memorial
+
+---
+
 ## Deployment Checklist
 
 - [ ] Verify webhook URL in `.env.local` matches Pipedream trigger
 - [ ] Add Gmail account connection in Pipedream
 - [ ] Test contact form end-to-end
 - [ ] Set up production webhook URL in `.env.production` / Vercel
+- [ ] Add CRON_SECRET environment variable to Vercel
+- [ ] Configure expiry reminder email templates in Pipedream
+- [ ] Configure renewal confirmation email template in Pipedream

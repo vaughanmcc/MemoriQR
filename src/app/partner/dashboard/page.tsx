@@ -3,17 +3,24 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { PartnerHeader } from '@/components/layout/PartnerHeader'
+import { formatDateOnly, formatTimeWithZone } from '@/lib/utils'
+import { useSessionExtension } from '@/lib/useSessionExtension'
 import { 
   LayoutDashboard, 
   QrCode, 
   DollarSign, 
   Download, 
-  LogOut, 
   TrendingUp,
   Package,
   CheckCircle,
   Clock,
-  ChevronRight
+  ChevronRight,
+  Tag,
+  Settings,
+  HelpCircle,
+  AlertTriangle,
+  Send
 } from 'lucide-react'
 
 interface DashboardData {
@@ -23,6 +30,9 @@ interface DashboardData {
     type: string
     email: string
     commissionRate: number
+    discountPercent: number
+    freeShipping: boolean
+    hasBankingDetails: boolean
   }
   stats: {
     totalCodes: number
@@ -32,6 +42,8 @@ interface DashboardData {
     pendingCommission: number
     paidCommission: number
     recentActivations: number
+    totalReferralCodes: number
+    usedReferralCodes: number
   }
   recentBatches: any[]
   recentCommissions: any[]
@@ -43,6 +55,9 @@ export default function PartnerDashboardPage() {
   const [data, setData] = useState<DashboardData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+
+  // Extend session while user is active
+  useSessionExtension()
 
   useEffect(() => {
     fetchDashboard()
@@ -101,41 +116,57 @@ export default function PartnerDashboardPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <header className="bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center gap-4">
-              <Link href="/" className="text-2xl font-serif text-primary-700">
-                MemoriQR
-              </Link>
-              <span className="text-gray-300">|</span>
-              <span className="text-gray-600">Partner Portal</span>
-            </div>
-
-            <div className="flex items-center gap-4">
-              <span className="text-sm text-gray-600">{partner.name}</span>
-              <button
-                onClick={handleLogout}
-                className="flex items-center gap-1 text-gray-500 hover:text-gray-700 text-sm"
-              >
-                <LogOut className="h-4 w-4" />
-                Logout
-              </button>
-            </div>
-          </div>
-        </div>
-      </header>
+      <PartnerHeader partnerName={partner.name} />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Welcome */}
         <div className="mb-8">
-          <h1 className="text-2xl font-bold text-gray-900">
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
             Welcome back, {partner.name}
           </h1>
-          <p className="text-gray-600">
-            Your commission rate: <strong>{partner.commissionRate}%</strong>
-          </p>
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-gray-600 text-lg">
+            <span>
+              Commission: <strong>{partner.commissionRate}%</strong>
+            </span>
+            {partner.discountPercent > 0 && (
+              <span>
+                Product Discount: <strong>{partner.discountPercent}%</strong>
+              </span>
+            )}
+            {partner.freeShipping && (
+              <span className="inline-flex items-center gap-1 text-green-600">
+                <Package className="h-4 w-4" />
+                <strong>Free Shipping</strong>
+              </span>
+            )}
+          </div>
         </div>
+
+        {/* Banking Details Reminder */}
+        {!partner.hasBankingDetails && (
+          <div className="mb-8 bg-amber-50 border border-amber-200 rounded-xl p-4">
+            <div className="flex items-start gap-3">
+              <div className="flex-shrink-0">
+                <AlertTriangle className="h-6 w-6 text-amber-600" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-medium text-amber-800 text-lg">Banking Details Required</h3>
+                <p className="text-base text-amber-700 mt-1">
+                  To receive commission payouts, please add your banking details in Settings. 
+                  We need your bank name, account name, and account number.
+                </p>
+                <Link
+                  href="/partner/settings"
+                  className="inline-flex items-center gap-1 mt-3 text-base font-medium text-amber-800 hover:text-amber-900"
+                >
+                  <Settings className="h-4 w-4" />
+                  Go to Settings
+                  <ChevronRight className="h-4 w-4" />
+                </Link>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
@@ -145,13 +176,15 @@ export default function PartnerDashboardPage() {
             subtitle={`${stats.usedCodes} used of ${stats.totalCodes} total`}
             icon={<QrCode className="h-6 w-6 text-primary-600" />}
             color="primary"
+            href="/partner/codes"
           />
           <StatCard
-            title="Activations (30 days)"
+            title="Referrals (30 days)"
             value={stats.recentActivations}
-            subtitle="Recent code activations"
+            subtitle={`${stats.usedReferralCodes} used of ${stats.totalReferralCodes} total`}
             icon={<TrendingUp className="h-6 w-6 text-green-600" />}
             color="green"
+            href="/partner/referrals"
           />
           <StatCard
             title="Pending Commission"
@@ -170,7 +203,7 @@ export default function PartnerDashboardPage() {
         </div>
 
         {/* Quick Actions */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <Link
             href="/partner/codes"
             className="bg-white rounded-xl shadow-sm p-6 hover:shadow-md transition-shadow flex items-center justify-between"
@@ -180,8 +213,40 @@ export default function PartnerDashboardPage() {
                 <QrCode className="h-6 w-6 text-primary-600" />
               </div>
               <div>
-                <h3 className="font-medium text-gray-900">Activation Codes</h3>
-                <p className="text-sm text-gray-500">View & request codes</p>
+                <h3 className="font-medium text-gray-900 text-lg">Activation Codes</h3>
+                <p className="text-base text-gray-500">Pre-paid codes</p>
+              </div>
+            </div>
+            <ChevronRight className="h-5 w-5 text-gray-400" />
+          </Link>
+
+          <Link
+            href="/partner/referrals"
+            className="bg-white rounded-xl shadow-sm p-6 hover:shadow-md transition-shadow flex items-center justify-between"
+          >
+            <div className="flex items-center gap-4">
+              <div className="bg-purple-100 rounded-lg p-3">
+                <Tag className="h-6 w-6 text-purple-600" />
+              </div>
+              <div>
+                <h3 className="font-medium text-gray-900 text-lg">Referral Codes</h3>
+                <p className="text-base text-gray-500">Referral codes</p>
+              </div>
+            </div>
+            <ChevronRight className="h-5 w-5 text-gray-400" />
+          </Link>
+
+          <Link
+            href="/partner/referrals?tab=share"
+            className="bg-white rounded-xl shadow-sm p-6 hover:shadow-md transition-shadow flex items-center justify-between"
+          >
+            <div className="flex items-center gap-4">
+              <div className="bg-cyan-100 rounded-lg p-3">
+                <Send className="h-6 w-6 text-cyan-600" />
+              </div>
+              <div>
+                <h3 className="font-medium text-gray-900 text-lg">Share Code</h3>
+                <p className="text-base text-gray-500">Email a referral code</p>
               </div>
             </div>
             <ChevronRight className="h-5 w-5 text-gray-400" />
@@ -196,8 +261,8 @@ export default function PartnerDashboardPage() {
                 <DollarSign className="h-6 w-6 text-green-600" />
               </div>
               <div>
-                <h3 className="font-medium text-gray-900">Commissions</h3>
-                <p className="text-sm text-gray-500">View earnings & payouts</p>
+                <h3 className="font-medium text-gray-900 text-lg">Commissions</h3>
+                <p className="text-base text-gray-500">Earnings & payouts</p>
               </div>
             </div>
             <ChevronRight className="h-5 w-5 text-gray-400" />
@@ -212,8 +277,40 @@ export default function PartnerDashboardPage() {
                 <Download className="h-6 w-6 text-blue-600" />
               </div>
               <div>
-                <h3 className="font-medium text-gray-900">Marketing Materials</h3>
-                <p className="text-sm text-gray-500">Download brochures & assets</p>
+                <h3 className="font-medium text-gray-900 text-lg">Materials</h3>
+                <p className="text-base text-gray-500">Download assets</p>
+              </div>
+            </div>
+            <ChevronRight className="h-5 w-5 text-gray-400" />
+          </Link>
+
+          <Link
+            href="/partner/settings"
+            className="bg-white rounded-xl shadow-sm p-6 hover:shadow-md transition-shadow flex items-center justify-between"
+          >
+            <div className="flex items-center gap-4">
+              <div className="bg-gray-100 rounded-lg p-3">
+                <Settings className="h-6 w-6 text-gray-600" />
+              </div>
+              <div>
+                <h3 className="font-medium text-gray-900 text-lg">Settings</h3>
+                <p className="text-base text-gray-500">Banking & payouts</p>
+              </div>
+            </div>
+            <ChevronRight className="h-5 w-5 text-gray-400" />
+          </Link>
+
+          <Link
+            href="/partner/faq"
+            className="bg-white rounded-xl shadow-sm p-6 hover:shadow-md transition-shadow flex items-center justify-between"
+          >
+            <div className="flex items-center gap-4">
+              <div className="bg-amber-100 rounded-lg p-3">
+                <HelpCircle className="h-6 w-6 text-amber-600" />
+              </div>
+              <div>
+                <h3 className="font-medium text-gray-900 text-lg">FAQ</h3>
+                <p className="text-base text-gray-500">Common questions</p>
               </div>
             </div>
             <ChevronRight className="h-5 w-5 text-gray-400" />
@@ -222,7 +319,7 @@ export default function PartnerDashboardPage() {
 
         {/* Monthly Chart */}
         <div className="bg-white rounded-xl shadow-sm p-6 mb-8">
-          <h2 className="text-lg font-medium text-gray-900 mb-4">Activations & Earnings</h2>
+          <h2 className="text-xl font-medium text-gray-900 mb-4">Activations & Earnings</h2>
           <div className="h-64 flex items-end justify-between gap-2">
             {monthlyStats.map((month) => (
               <div key={month.month} className="flex-1 flex flex-col items-center">
@@ -248,20 +345,20 @@ export default function PartnerDashboardPage() {
           <div className="flex justify-center gap-6 mt-4">
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 bg-primary-200 rounded" />
-              <span className="text-sm text-gray-600">Commission ($)</span>
+              <span className="text-base text-gray-600">Commission ($)</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 bg-green-400 rounded" />
-              <span className="text-sm text-gray-600">Activations</span>
+              <span className="text-base text-gray-600">Activations</span>
             </div>
           </div>
         </div>
 
         {/* Recent Activity */}
         <div className="bg-white rounded-xl shadow-sm p-6">
-          <h2 className="text-lg font-medium text-gray-900 mb-4">Recent Activations</h2>
+          <h2 className="text-xl font-medium text-gray-900 mb-4">Recent Activations</h2>
           {recentCommissions.length === 0 ? (
-            <p className="text-gray-500 text-center py-8">No activations yet</p>
+            <p className="text-gray-500 text-center py-8 text-lg">No activations yet</p>
           ) : (
             <div className="divide-y">
               {recentCommissions.map((commission: any) => (
@@ -271,10 +368,10 @@ export default function PartnerDashboardPage() {
                       <CheckCircle className="h-4 w-4 text-green-600" />
                     </div>
                     <div>
-                      <p className="font-medium text-gray-900">
+                      <p className="font-medium text-gray-900 text-lg">
                         {commission.memorial?.deceased_name || 'Memorial'}
                       </p>
-                      <p className="text-sm text-gray-500">
+                      <p className="text-base text-gray-500">
                         Code: {commission.activation_code}
                       </p>
                     </div>
@@ -283,9 +380,10 @@ export default function PartnerDashboardPage() {
                     <p className="font-medium text-green-600">
                       +${Number(commission.commission_amount).toFixed(2)}
                     </p>
-                    <p className="text-xs text-gray-500">
-                      {new Date(commission.earned_at).toLocaleDateString('en-NZ')}
-                    </p>
+                    <div className="text-xs text-gray-500">
+                      <div>{formatDateOnly(commission.earned_at)}</div>
+                      <div>{formatTimeWithZone(commission.earned_at)}</div>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -302,13 +400,15 @@ function StatCard({
   value, 
   subtitle, 
   icon, 
-  color 
+  color,
+  href
 }: { 
   title: string
   value: string | number
   subtitle: string
   icon: React.ReactNode
   color: 'primary' | 'green' | 'yellow' | 'blue'
+  href?: string
 }) {
   const bgColors = {
     primary: 'bg-primary-50',
@@ -317,16 +417,33 @@ function StatCard({
     blue: 'bg-blue-50'
   }
 
-  return (
-    <div className="bg-white rounded-xl shadow-sm p-6">
+  const content = (
+    <>
       <div className="flex items-center justify-between mb-4">
-        <span className="text-sm font-medium text-gray-500">{title}</span>
+        <span className="text-base font-medium text-gray-500">{title}</span>
         <div className={`${bgColors[color]} rounded-lg p-2`}>
           {icon}
         </div>
       </div>
       <p className="text-3xl font-bold text-gray-900">{value}</p>
-      <p className="text-sm text-gray-500 mt-1">{subtitle}</p>
+      <p className="text-base text-gray-500 mt-1">{subtitle}</p>
+    </>
+  )
+
+  if (href) {
+    return (
+      <Link href={href} className="bg-white rounded-xl shadow-sm p-6 block hover:shadow-md hover:bg-gray-50 transition-all cursor-pointer group">
+        {content}
+        <div className="flex items-center justify-end mt-2 text-sm text-primary-600 opacity-0 group-hover:opacity-100 transition-opacity">
+          View details <ChevronRight className="h-4 w-4 ml-1" />
+        </div>
+      </Link>
+    )
+  }
+
+  return (
+    <div className="bg-white rounded-xl shadow-sm p-6">
+      {content}
     </div>
   )
 }

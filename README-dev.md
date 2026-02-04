@@ -1,174 +1,248 @@
-# MemoriQR
+# MemoriQR Developer Guide
 
 Digital memorial service creating lasting tributes for pets and people through NFC tags and QR-engraved Metalphoto® plates.
 
-## 🌟 Features
+## 🌟 Product Features
 
 - **NFC Tags** - Tap-to-view technology, no app required
 - **QR Plates** - Metalphoto® anodised aluminium, sub-surface printed
 - **Digital Memorials** - Curated photo galleries (20/40/60 photos by tier)
 - **Flexible Hosting** - 5, 10, or 25-year prepaid plans
-- **Local Service** - Based in Auckland, NZ with fast shipping
+- **Partner Program** - Wholesale and lead-gen referral options
 
-## 🚀 Getting Started
+## 🚀 Quick Start
 
 ### Prerequisites
 
 - Node.js 18+
-- npm or pnpm
-- Supabase account (create 2 projects: dev + prod)
-- Stripe account
-- Vercel account (for deployment)
+- Supabase account (2 projects: dev + prod)
+- Stripe account (test + live keys)
+- Vercel account
+- Pipedream account (for email workflows)
 
 ### Installation
 
 ```bash
-# Install dependencies
 npm install
-
-# Copy environment variables
 cp .env.example .env.local
-
-# Fill in your environment variables in .env.local
+# Fill in environment variables
 ```
 
-### Environment Setup
+### Development Workflow
 
-#### Development vs Production
-
-| Environment | Supabase | Stripe | URL |
-|-------------|----------|--------|-----|
-| **Local Dev** | Dev project | Test keys (`sk_test_`) | localhost:3000 |
-| **Vercel Preview** | Dev project | Test keys | *.vercel.app |
-| **Production** | Prod project | Live keys (`sk_live_`) | memoriqr.co.nz |
-
-#### Environment Files
-
-- `.env.local` - Your local development (gitignored, copy from .env.example)
-- `.env.development` - Default dev values (committed)
-- `.env.production` - Production template (actual values in Vercel)
-
-### Environment Variables
-
-```env
-# Supabase
-NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
-SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
-
-# Stripe (use sk_test_ for dev, sk_live_ for prod)
-NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=your_stripe_publishable_key
-STRIPE_SECRET_KEY=your_stripe_secret_key
-STRIPE_WEBHOOK_SECRET=your_stripe_webhook_secret
-
-# Email (Pipedream webhook to Hostinger SMTP)
-PIPEDREAM_WEBHOOK_URL=your_pipedream_webhook_url
-
-# App
-NEXT_PUBLIC_SITE_URL=http://localhost:3000
-```
-
-### Database Setup
-
-1. Create a new Supabase project (one for dev, one for prod)
-2. Run the migration in Supabase SQL Editor:
+**⚠️ IMPORTANT: Push to Vercel for testing - avoid local dev server**
 
 ```bash
-# Copy contents of supabase/migrations/001_initial_schema.sql
-# Paste into Supabase SQL Editor and run
+git add . && git commit -m "your changes" && git push
+# Wait for Vercel deployment, then test at dev.memoriqr.co.nz
 ```
 
-### Development
-
+If local testing needed:
 ```bash
-# Start development server
-npm run dev
+npm run dev                    # localhost:3000
+stripe listen --forward-to localhost:3000/api/webhooks/stripe
 ```
 
-Open [http://localhost:3000](http://localhost:3000) to view the site.
+## 🔧 Tech Stack
 
-### Deployment with Vercel
-
-1. Connect your GitHub repo to Vercel
-2. Set environment variables in Vercel dashboard
-3. Preview deployments auto-created for each PR
-4. Production deploys from `main` branch
+| Component | Technology |
+|-----------|------------|
+| Framework | Next.js 14 (App Router) |
+| Database | Supabase (PostgreSQL) |
+| Payments | Stripe |
+| Styling | Tailwind CSS |
+| Images | Cloudinary |
+| Videos | YouTube (unlisted) |
+| Email | Pipedream → Gmail SMTP |
+| Hosting | Vercel |
 
 ## 📁 Project Structure
 
 ```
 src/
-├── app/                    # Next.js App Router pages
+├── app/                    # Next.js App Router
 │   ├── api/               # API routes
 │   │   ├── checkout/      # Stripe checkout
 │   │   ├── webhooks/      # Stripe webhooks
-│   │   ├── activate/      # Activation validation
+│   │   ├── activate/      # Code activation
 │   │   ├── memorial/      # Memorial CRUD
+│   │   ├── partner/       # Partner portal APIs
+│   │   ├── admin/         # Admin APIs
 │   │   └── renew/         # Renewal handling
-│   ├── memorial/[slug]/   # Memorial display page
-│   ├── order/             # Order flow
-│   ├── activate/          # Tag activation
+│   ├── memorial/[slug]/   # Public memorial pages
+│   ├── partner/           # Partner portal pages
+│   ├── admin/             # Admin dashboard pages
+│   ├── order/             # Customer checkout
+│   ├── activate/          # Code activation flow
 │   └── renew/             # Renewal flow
 ├── components/            # React components
 │   ├── layout/           # Header, Footer
 │   ├── home/             # Homepage sections
 │   ├── memorial/         # Memorial display
 │   ├── order/            # Order form
-│   ├── activate/         # Activation form
+│   ├── activate/         # Activation wizard
 │   └── renew/            # Renewal form
-├── lib/                  # Utility functions
+├── lib/                  # Utilities
 │   ├── supabase/        # Supabase clients
 │   ├── stripe.ts        # Stripe config
 │   ├── pricing.ts       # Pricing logic
 │   └── utils.ts         # Helpers
 └── types/               # TypeScript types
-    ├── database.ts      # Supabase types
-    └── index.ts         # App types
+
+pipedream/               # Email handler code (copy to Pipedream)
+├── email-handler.js     # Main workflow handler
+├── referral-redeemed-handler.js
+├── partner-codes-notification-handler.js
+└── README.md            # Pipedream setup guide
+
+supabase/
+└── migrations/          # SQL migrations (001-020)
+
+scripts/                 # Utility scripts
 ```
 
-## 🔧 Tech Stack
+## 🔑 Environment Variables
 
-- **Framework:** Next.js 14 (App Router)
-- **Database:** Supabase (PostgreSQL)
-- **Payments:** Stripe
-- **Styling:** Tailwind CSS
-- **Image Hosting:** Cloudinary
-- **Video Hosting:** YouTube (unlisted)
-- **Email:** SendGrid
+```bash
+# Supabase
+NEXT_PUBLIC_SUPABASE_URL=https://xxxxx.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbG...
+SUPABASE_SERVICE_ROLE_KEY=eyJhbG...
+
+# Stripe (use sk_test_ for dev)
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_...
+STRIPE_SECRET_KEY=sk_test_...
+STRIPE_WEBHOOK_SECRET=whsec_...
+
+# Pipedream Webhooks
+PIPEDREAM_WEBHOOK_URL=https://eo7epxu5aypc0vj.m.pipedream.net
+PIPEDREAM_REFERRAL_WEBHOOK_URL=https://eo5xpf69y0qbaul.m.pipedream.net
+PIPEDREAM_PARTNER_CODES_WEBHOOK_URL=https://eop33i8rs8xu5av.m.pipedream.net
+
+# App URLs
+NEXT_PUBLIC_SITE_URL=https://dev.memoriqr.co.nz
+NEXT_PUBLIC_BASE_URL=https://dev.memoriqr.co.nz
+NEXT_PUBLIC_APP_URL=https://dev.memoriqr.co.nz
+
+# Admin
+ADMIN_PASSWORD=your-admin-password
+```
+
+## 📧 Email System (Pipedream)
+
+Three Pipedream workflows handle emails:
+
+### 1. Main Workflow (`PIPEDREAM_WEBHOOK_URL`)
+Handles most emails:
+- `contact_form` - Website contact submissions
+- `order_confirmation` - Order placed
+- `memorial_created` - Memorial ready notification
+- `partner_welcome` - New partner approved
+- `partner_terms_updated` - Discount/commission changed
+- `admin_new_order` - Alert admin of new order
+- `admin_new_partner_application` - New partner application
+
+### 2. Referral Redeemed (`PIPEDREAM_REFERRAL_WEBHOOK_URL`)
+- `referral_redeemed` - Partner commission notification
+
+### 3. Partner Codes (`PIPEDREAM_PARTNER_CODES_WEBHOOK_URL`)
+- `referral_codes_generated` - Lead gen codes ready
+- `partner_codes_generated` - Wholesale codes ready
+
+### 4. Commission Approved (`PIPEDREAM_COMMISSION_WEBHOOK_URL`)
+- `commission_approved` - Partner commission approved for payout
+
+### 5. Security Change (`PIPEDREAM_SECURITY_WEBHOOK_URL`)
+- `security_change` - Bank account or email changed alert
+
+See [pipedream/README.md](pipedream/README.md) for setup instructions.
+
+## 💼 Partner System
+
+### Partner Types
+`vet`, `pet_store`, `crematorium`, `groomer`, `breeder`, `shelter`, `funeral_home`, `cemetery`, `hospice`, `other`
+
+### Code Types
+1. **Wholesale Activation Codes** (`MQR-5N-XXXXXX`)
+   - Partner buys at wholesale, sells to customers
+   - Generated via Admin → Codes
+
+2. **Lead Gen Referral Codes** (`REF-XXXXX`)
+   - Customer gets discount, partner gets commission
+   - Generated via Admin → Referrals
+
+### Partner Portal Routes
+- `/partner/login` - Email verification login
+- `/partner/dashboard` - Stats, codes, commissions
+- `/partner/settings` - Profile, banking, notifications
+- `/partner/faq` - Help documentation
+- `/partner/codes` - View assigned codes
+- `/partner/referrals` - View referral codes, request more
+- `/partner/commissions` - Commission history and payouts
+- `/partner/materials` - Download marketing materials
+
+## 🛠️ Admin Routes
+
+- `/admin` - Login
+- `/admin/dashboard` - Overview
+- `/admin/orders` - Order management
+- `/admin/codes` - Generate wholesale codes
+- `/admin/referrals` - Generate referral codes
+- `/admin/partners` - Partner management
+- `/admin/commissions` - Payout workflow
+- `/admin/tools` - Search, resend emails, memorial management
+- `/admin/memorials` - Memorial management
 
 ## 📊 Database Schema
 
-See [supabase/migrations/001_initial_schema.sql](supabase/migrations/001_initial_schema.sql) for the complete schema including:
-
-- `customers` - Customer information
-- `memorial_records` - Memorial data and content
+Key tables:
+- `customers` - Customer info
+- `memorial_records` - Memorial content
 - `orders` - Purchase orders
-- `retail_activation_codes` - Partner activation codes
-- `partners` - Retail partners (vets, crematoriums)
-- `supplier_orders` - Production orders
-- `activity_log` - Analytics and tracking
-- `pricing_history` - Price management
+- `retail_activation_codes` - Wholesale codes
+- `referral_codes` - Lead gen codes
+- `referral_code_requests` - Partner code requests
+- `partners` - Partner accounts
+- `partner_sessions` - Login sessions
+- `partner_commissions` - Commission tracking
+
+See `supabase/migrations/` for full schema.
 
 ## 🚢 Deployment
 
-### Vercel (Recommended)
-
-1. Push to GitHub
-2. Import to Vercel
-3. Add environment variables
-4. Deploy
+### Vercel Setup
+1. Connect GitHub repo
+2. Set environment variables (separate for Preview vs Production)
+3. Preview deploys from `preview-smoke` branch
+4. Production deploys from `main` branch
 
 ### Stripe Webhooks
-
-Set up webhook endpoint in Stripe Dashboard:
-- URL: `https://your-domain.com/api/webhooks/stripe`
+Configure in Stripe Dashboard:
+- **Dev:** `https://dev.memoriqr.co.nz/api/webhooks/stripe`
+- **Prod:** `https://memoriqr.co.nz/api/webhooks/stripe`
 - Events: `checkout.session.completed`, `checkout.session.expired`
 
-## 📄 License
+## 🧪 Testing
 
-Proprietary - All rights reserved
+### Test Stripe Payments
+Use Stripe test cards:
+- Success: `4242 4242 4242 4242`
+- Decline: `4000 0000 0000 0002`
 
-## 📞 Support
+### Test Email Workflows
+```bash
+# Test referral code notification
+curl -X POST https://eop33i8rs8xu5av.m.pipedream.net \
+  -H "Content-Type: application/json" \
+  -d '{"type":"referral_codes_generated","to":"test@example.com",...}'
+```
 
-- Email: hello@memoriqr.co.nz
-- Location: Auckland, New Zealand
+## 📝 Current Development
+
+**Branch:** `preview-smoke` → https://dev.memoriqr.co.nz
+
+See [docs/preview-smoke-summary.md](docs/preview-smoke-summary.md) for pending features.
+
+---
+
+*Last updated: February 1, 2026*

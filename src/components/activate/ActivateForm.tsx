@@ -17,10 +17,10 @@ export function ActivateForm() {
     e.preventDefault()
     setError('')
 
-    const cleanCode = code.toUpperCase().replace(/[^A-Z0-9]/g, '')
+    const cleanCode = code.toUpperCase()
     
     if (!validateActivationCode(cleanCode)) {
-      setError('Please enter a valid 8-character activation code.')
+      setError('Please enter a valid activation code (e.g., MQR-XX-XXXXXX)')
       return
     }
 
@@ -60,9 +60,9 @@ export function ActivateForm() {
               setCode(e.target.value.toUpperCase())
               setError('')
             }}
-            placeholder="e.g., ABC12345"
+            placeholder="e.g., MQR-XX-XXXXXX"
             className="input text-center text-xl tracking-widest uppercase"
-            maxLength={10}
+            maxLength={20}
             autoComplete="off"
             autoFocus
           />

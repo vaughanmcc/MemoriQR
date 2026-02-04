@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { cookies } from 'next/headers'
 import { createAdminClient } from '@/lib/supabase/server'
 import { TIER_LIMITS } from '@/lib/pricing'
 import { getYouTubeId } from '@/lib/utils'
@@ -10,10 +11,19 @@ interface MemorialRecord {
   hosting_duration: HostingDuration
 }
 
+// Check if the request is from an authenticated admin
+async function isAdminRequest(): Promise<boolean> {
+  const cookieStore = await cookies()
+  const session = cookieStore.get('admin-session')?.value
+  const correctPassword = process.env.ADMIN_PASSWORD
+  return !!correctPassword && session === correctPassword
+}
+
 // POST - Add video to memorial
 export async function POST(request: NextRequest) {
   try {
     const contentType = request.headers.get('content-type') || ''
+    const isAdmin = await isAdminRequest()
     
     const supabase = createAdminClient()
     let token: string
@@ -58,7 +68,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Edit token is required' }, { status: 400 })
     }
 
-    if (!sessionToken) {
+    // Admin users can bypass session verification
+    if (!sessionToken && !isAdmin) {
       return NextResponse.json({ error: 'Session expired. Please refresh the page and verify your email again.' }, { status: 401 })
     }
 
@@ -79,18 +90,21 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid edit token. Please use the original edit link from your email.' }, { status: 403 })
     }
 
-    // Verify session token is valid and not expired
-    const { data: session, error: sessionError } = await supabase
-      .from('edit_verification_codes')
-      .select('*')
-      .eq('memorial_id', memorial.id)
-      .eq('code', `SESSION:${sessionToken}`)
-      .is('used_at', null)
-      .gt('expires_at', new Date().toISOString())
-      .single()
+    // Admin users bypass session verification
+    if (!isAdmin) {
+      // Verify session token is valid and not expired
+      const { data: session, error: sessionError } = await supabase
+        .from('edit_verification_codes')
+        .select('*')
+        .eq('memorial_id', memorial.id)
+        .eq('code', `SESSION:${sessionToken}`)
+        .is('used_at', null)
+        .gt('expires_at', new Date().toISOString())
+        .single()
 
-    if (sessionError || !session) {
-      return NextResponse.json({ error: 'Session expired. Please refresh the page and verify your email again.' }, { status: 401 })
+      if (sessionError || !session) {
+        return NextResponse.json({ error: 'Session expired. Please refresh the page and verify your email again.' }, { status: 401 })
+      }
     }
 
     // Check video limit
@@ -205,12 +219,14 @@ export async function DELETE(request: NextRequest) {
   try {
     const body = await request.json()
     const { token, session, videoId } = body
+    const isAdmin = await isAdminRequest()
 
     if (!token || !videoId) {
       return NextResponse.json({ error: 'Token and videoId are required' }, { status: 400 })
     }
 
-    if (!session) {
+    // Admin users can bypass session verification
+    if (!session && !isAdmin) {
       return NextResponse.json({ error: 'Session expired. Please refresh the page and verify your email again.' }, { status: 401 })
     }
 
@@ -229,18 +245,21 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid edit token. Please use the original edit link from your email.' }, { status: 403 })
     }
 
-    // Verify session token is valid and not expired
-    const { data: sessionData, error: sessionError } = await supabase
-      .from('edit_verification_codes')
-      .select('*')
-      .eq('memorial_id', memorial.id)
-      .eq('code', `SESSION:${session}`)
-      .is('used_at', null)
-      .gt('expires_at', new Date().toISOString())
-      .single()
+    // Admin users bypass session verification
+    if (!isAdmin) {
+      // Verify session token is valid and not expired
+      const { data: sessionData, error: sessionError } = await supabase
+        .from('edit_verification_codes')
+        .select('*')
+        .eq('memorial_id', memorial.id)
+        .eq('code', `SESSION:${session}`)
+        .is('used_at', null)
+        .gt('expires_at', new Date().toISOString())
+        .single()
 
-    if (sessionError || !sessionData) {
-      return NextResponse.json({ error: 'Session expired. Please refresh the page and verify your email again.' }, { status: 401 })
+      if (sessionError || !sessionData) {
+        return NextResponse.json({ error: 'Session expired. Please refresh the page and verify your email again.' }, { status: 401 })
+      }
     }
 
     const currentVideos = (memorial.videos_json || []) as any[]

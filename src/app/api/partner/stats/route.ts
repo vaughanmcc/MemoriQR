@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/server'
 import { cookies } from 'next/headers'
 
+export const dynamic = 'force-dynamic'
+
 // Helper to get authenticated partner
 async function getAuthenticatedPartner() {
   const cookieStore = cookies()
@@ -69,13 +71,21 @@ export async function GET(request: NextRequest) {
     const paidCommission = commissionsData?.filter(c => c.status === 'paid')
       .reduce((sum, c) => sum + Number(c.commission_amount), 0) || 0
 
-    // Get recent activations (last 30 days)
+    // Get recent activations (last 30 days) - now uses referral codes instead
     const thirtyDaysAgo = new Date()
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
 
-    const recentActivations = codesData?.filter(c => 
+    // Get referral codes for this partner
+    const { data: referralCodesData } = await supabase
+      .from('referral_codes')
+      .select('code, is_used, used_at')
+      .eq('partner_id', partner.id)
+
+    const recentActivations = referralCodesData?.filter(c => 
       c.is_used && c.used_at && new Date(c.used_at) > thirtyDaysAgo
     ).length || 0
+    const totalReferralCodes = referralCodesData?.length || 0
+    const usedReferralCodes = referralCodesData?.filter(c => c.is_used).length || 0
 
     // Get code batches
     const { data: batchesData } = await supabase
@@ -99,13 +109,19 @@ export async function GET(request: NextRequest) {
     // Monthly breakdown for chart
     const monthlyStats = getMonthlyStats(commissionsData || [])
 
+    // Check if partner has banking details
+    const hasBankingDetails = !!(partner.bank_name && partner.bank_account_name && partner.bank_account_number)
+
     return NextResponse.json({
       partner: {
         id: partner.id,
         name: partner.partner_name,
         type: partner.partner_type,
         email: partner.contact_email,
-        commissionRate: partner.commission_rate
+        commissionRate: partner.default_commission_percent ?? partner.commission_rate ?? 15,
+        discountPercent: partner.default_discount_percent ?? 0,
+        freeShipping: partner.default_free_shipping ?? false,
+        hasBankingDetails
       },
       stats: {
         totalCodes,
@@ -114,7 +130,9 @@ export async function GET(request: NextRequest) {
         totalEarned,
         pendingCommission,
         paidCommission,
-        recentActivations
+        recentActivations,
+        totalReferralCodes,
+        usedReferralCodes
       },
       recentBatches: batchesData || [],
       recentCommissions: recentCommissions || [],

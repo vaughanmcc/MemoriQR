@@ -11,6 +11,7 @@ const navigation = [
   { name: 'FAQ', href: '/#faq' },
   { name: 'About', href: '/about' },
   { name: 'Contact', href: '/contact' },
+  { name: 'Partners', href: '/partners' },
 ]
 
 export function Header() {
@@ -18,13 +19,13 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-sm border-b border-gray-100">
-      <nav className="container-wide flex items-center justify-between py-4">
+      <nav className="container-wide flex items-center justify-between py-5">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2">
           <img 
             src="/logo.png" 
             alt="MemoriQR" 
-            className="h-16 md:h-20 w-auto"
+            className="h-20 md:h-24 w-auto"
           />
         </Link>
 
@@ -34,7 +35,7 @@ export function Header() {
             <Link
               key={item.name}
               href={item.href}
-              className="text-sm font-medium text-gray-600 hover:text-primary-600 transition-colors"
+              className="text-base font-medium text-gray-600 hover:text-primary-600 transition-colors"
             >
               {item.name}
             </Link>
@@ -45,11 +46,17 @@ export function Header() {
         <div className="hidden md:flex items-center gap-4">
           <Link
             href="/activate"
-            className="text-sm font-medium text-gray-600 hover:text-primary-600 transition-colors"
+            className="text-base font-medium text-gray-600 hover:text-primary-600 transition-colors"
           >
             Activate Tag
           </Link>
-          <Link href="/order" className="btn-primary text-sm py-2 px-4">
+          <Link
+            href="/renew"
+            className="text-base font-medium text-gray-600 hover:text-primary-600 transition-colors"
+          >
+            Renew Hosting
+          </Link>
+          <Link href="/order" className="btn-primary text-base py-2.5 px-5">
             Get Started
           </Link>
         </div>
@@ -89,6 +96,13 @@ export function Header() {
               onClick={() => setMobileMenuOpen(false)}
             >
               Activate Tag
+            </Link>
+            <Link
+              href="/renew"
+              className="block text-base font-medium text-gray-600 hover:text-primary-600"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              Renew Hosting
             </Link>
             <Link
               href="/order"

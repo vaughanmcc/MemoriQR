@@ -3,8 +3,8 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Header } from '@/components/layout/Header'
-import { Footer } from '@/components/layout/Footer'
+import { PartnerHeader } from '@/components/layout/PartnerHeader'
+import { useSessionExtension } from '@/lib/useSessionExtension'
 
 interface Partner {
   business_name: string
@@ -159,6 +159,9 @@ export default function PartnerMaterialsPage() {
   const [partner, setPartner] = useState<Partner | null>(null)
   const [selectedCategory, setSelectedCategory] = useState<string>('all')
 
+  // Extend session while user is active
+  useSessionExtension()
+
   useEffect(() => {
     async function checkSession() {
       try {
@@ -215,34 +218,33 @@ export default function PartnerMaterialsPage() {
 
   if (loading) {
     return (
-      <>
-        <Header />
-        <main className="min-h-screen bg-gray-50 pt-24 pb-16">
+      <div className="min-h-screen bg-gray-50">
+        <PartnerHeader />
+        <main className="py-8">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex justify-center items-center h-64">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600"></div>
             </div>
           </div>
         </main>
-        <Footer />
-      </>
+      </div>
     )
   }
 
   return (
-    <>
-      <Header />
-      <main className="min-h-screen bg-gray-50 pt-24 pb-16">
+    <div className="min-h-screen bg-gray-50">
+      <PartnerHeader />
+      <main className="py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Header */}
+          {/* Page Header */}
           <div className="mb-8">
-            <nav className="text-sm mb-4">
+            <nav className="text-base mb-4">
               <Link href="/partner/dashboard" className="text-emerald-600 hover:text-emerald-700">
                 ← Back to Dashboard
               </Link>
             </nav>
             <h1 className="text-3xl font-bold text-gray-900">Marketing Materials</h1>
-            <p className="text-gray-600 mt-2">
+            <p className="text-gray-600 text-lg mt-2">
               Download brochures, logos, and promotional materials for your business
             </p>
           </div>
@@ -256,9 +258,9 @@ export default function PartnerMaterialsPage() {
                 </svg>
               </div>
               <div>
-                <p className="text-emerald-100 text-sm">Official Partner</p>
+                <p className="text-emerald-100 text-base">Official Partner</p>
                 <h2 className="text-xl font-bold">{partner?.business_name}</h2>
-                <p className="text-emerald-100 text-sm">{partner?.contact_name}</p>
+                <p className="text-emerald-100 text-base">{partner?.contact_name}</p>
               </div>
             </div>
           </div>
@@ -294,15 +296,15 @@ export default function PartnerMaterialsPage() {
                       {getTypeIcon(item.type)}
                     </div>
                     <div className="flex-grow min-w-0">
-                      <h3 className="font-semibold text-gray-900 mb-1">{item.name}</h3>
-                      <p className="text-sm text-gray-500 mb-3">{item.description}</p>
+                      <h3 className="font-semibold text-gray-900 text-lg mb-1">{item.name}</h3>
+                      <p className="text-base text-gray-500 mb-3">{item.description}</p>
                       <div className="flex items-center justify-between">
-                        <span className="text-xs text-gray-400 uppercase">
+                        <span className="text-sm text-gray-400 uppercase">
                           {item.type} • {item.size}
                         </span>
                         <button
                           onClick={() => handleDownload(item)}
-                          className="inline-flex items-center px-3 py-1.5 bg-emerald-600 text-white text-sm font-medium rounded hover:bg-emerald-700 transition-colors"
+                          className="inline-flex items-center px-3 py-1.5 bg-emerald-600 text-white text-base font-medium rounded hover:bg-emerald-700 transition-colors"
                         >
                           <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
@@ -328,8 +330,8 @@ export default function PartnerMaterialsPage() {
                 </div>
               </div>
               <div className="flex-grow">
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Need Custom Materials?</h3>
-                <p className="text-gray-600">
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">Need Custom Materials?</h3>
+                <p className="text-gray-600 text-lg">
                   We can create co-branded materials featuring your business logo and contact information. 
                   Contact us to discuss your requirements.
                 </p>
@@ -347,8 +349,8 @@ export default function PartnerMaterialsPage() {
 
           {/* Brand Guidelines */}
           <div className="mt-8 bg-blue-50 border border-blue-200 rounded-lg p-6">
-            <h3 className="text-lg font-semibold text-blue-900 mb-3">Brand Usage Guidelines</h3>
-            <ul className="text-sm text-blue-800 space-y-2">
+            <h3 className="text-xl font-semibold text-blue-900 mb-3">Brand Usage Guidelines</h3>
+            <ul className="text-base text-blue-800 space-y-2">
               <li>✓ Use the provided logos without modification</li>
               <li>✓ Maintain clear space around logos (minimum 10% of logo height)</li>
               <li>✓ Use full color logo on light backgrounds, white logo on dark backgrounds</li>
@@ -356,14 +358,13 @@ export default function PartnerMaterialsPage() {
               <li>✗ Do not change the logo colors</li>
               <li>✗ Do not add effects like shadows or gradients to the logo</li>
             </ul>
-            <p className="text-sm text-blue-700 mt-4">
+            <p className="text-base text-blue-700 mt-4">
               For complete brand guidelines, please contact{' '}
               <a href="mailto:partners@memoriqr.co.nz" className="underline">partners@memoriqr.co.nz</a>
             </p>
           </div>
         </div>
       </main>
-      <Footer />
-    </>
+    </div>
   )
 }

@@ -136,9 +136,17 @@ function getOrnamentalFrameStyle(memorial: Memorial): string {
 
 interface MemorialPageProps {
   memorial: Memorial
+  isInGracePeriod?: boolean
+  gracePeriodDaysRemaining?: number
+  isEditable?: boolean
 }
 
-export function MemorialPage({ memorial }: MemorialPageProps) {
+export function MemorialPage({ 
+  memorial, 
+  isInGracePeriod = false,
+  gracePeriodDaysRemaining,
+  isEditable = true
+}: MemorialPageProps) {
   const photos = (memorial.photos_json as unknown as MemorialPhoto[]) || []
   const videos = (memorial.videos_json as unknown as MemorialVideo[]) || []
   const dateRange = formatDateRange(memorial.birth_date, memorial.death_date)
@@ -154,6 +162,24 @@ export function MemorialPage({ memorial }: MemorialPageProps) {
       className="min-h-screen"
       style={{ backgroundColor: theme.bg }}
     >
+      {/* Grace Period Banner */}
+      {isInGracePeriod && (
+        <div className="bg-amber-50 border-b border-amber-200 py-2 px-4 text-center text-sm">
+          <span className="text-amber-800">
+            ⚠️ Hosting has expired. 
+            {gracePeriodDaysRemaining !== undefined && gracePeriodDaysRemaining > 0 && (
+              <> Memorial will go offline in {gracePeriodDaysRemaining} days. </>
+            )}
+            <a 
+              href={`/renew?slug=${memorial.memorial_slug}`}
+              className="font-medium underline hover:no-underline ml-1"
+            >
+              Renew now
+            </a>
+          </span>
+        </div>
+      )}
+
       {/* Decorative top border */}
       <div 
         className="h-2 w-full"

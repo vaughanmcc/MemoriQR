@@ -178,6 +178,9 @@ export interface Database {
           paid_at: string | null
           shipped_at: string | null
           completed_at: string | null
+          referral_code: string | null
+          referral_discount: number | null
+          partner_commission_id: string | null
         }
         Insert: {
           id?: string
@@ -201,6 +204,9 @@ export interface Database {
           paid_at?: string | null
           shipped_at?: string | null
           completed_at?: string | null
+          referral_code?: string | null
+          referral_discount?: number | null
+          partner_commission_id?: string | null
         }
         Update: {
           id?: string
@@ -224,43 +230,218 @@ export interface Database {
           paid_at?: string | null
           shipped_at?: string | null
           completed_at?: string | null
+          referral_code?: string | null
+          referral_discount?: number | null
+          partner_commission_id?: string | null
         }
       }
       partners: {
         Row: {
           id: string
-          partner_name: string
-          partner_type: 'vet' | 'crematorium' | 'funeral_home' | 'pet_store'
+          partner_name: string | null
+          business_name: string | null
+          contact_name: string | null
+          email: string | null
+          phone: string | null
+          partner_type: string
           contact_email: string | null
           contact_phone: string | null
           address: Json | null
           commission_rate: number
-          api_key: string
+          api_key: string | null
           is_active: boolean
+          status: string | null
+          website: string | null
+          application_message: Json | null
+          approved_at: string | null
+          rejected_at: string | null
+          suspended_reason: string | null
+          suspended_at: string | null
+          default_discount_percent: number | null
+          default_commission_percent: number | null
+          default_free_shipping: boolean | null
+          bank_account_name: string | null
+          bank_account_number: string | null
+          bank_name: string | null
+          payout_email: string | null
           created_at: string
         }
         Insert: {
           id?: string
-          partner_name: string
-          partner_type: 'vet' | 'crematorium' | 'funeral_home' | 'pet_store'
+          partner_name?: string | null
+          business_name?: string | null
+          contact_name?: string | null
+          email?: string | null
+          phone?: string | null
+          partner_type?: string
           contact_email?: string | null
           contact_phone?: string | null
           address?: Json | null
           commission_rate?: number
-          api_key?: string
+          api_key?: string | null
           is_active?: boolean
+          status?: string | null
+          website?: string | null
+          application_message?: Json | null
+          approved_at?: string | null
+          rejected_at?: string | null
+          suspended_reason?: string | null
+          suspended_at?: string | null
+          default_discount_percent?: number | null
+          default_commission_percent?: number | null
+          default_free_shipping?: boolean | null
+          bank_account_name?: string | null
+          bank_account_number?: string | null
+          bank_name?: string | null
+          payout_email?: string | null
           created_at?: string
         }
         Update: {
           id?: string
-          partner_name?: string
-          partner_type?: 'vet' | 'crematorium' | 'funeral_home' | 'pet_store'
+          partner_name?: string | null
+          business_name?: string | null
+          contact_name?: string | null
+          email?: string | null
+          phone?: string | null
+          partner_type?: string
           contact_email?: string | null
           contact_phone?: string | null
           address?: Json | null
           commission_rate?: number
-          api_key?: string
+          api_key?: string | null
           is_active?: boolean
+          status?: string | null
+          website?: string | null
+          application_message?: Json | null
+          approved_at?: string | null
+          rejected_at?: string | null
+          suspended_reason?: string | null
+          suspended_at?: string | null
+          default_discount_percent?: number | null
+          default_commission_percent?: number | null
+          default_free_shipping?: boolean | null
+          bank_account_name?: string | null
+          bank_account_number?: string | null
+          bank_name?: string | null
+          payout_email?: string | null
+          created_at?: string
+        }
+      }
+      referral_codes: {
+        Row: {
+          id: string
+          code: string
+          partner_id: string
+          batch_id: string | null
+          batch_name: string | null
+          discount_percent: number
+          commission_percent: number
+          free_shipping: boolean
+          is_used: boolean
+          used_at: string | null
+          order_id: string | null
+          expires_at: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          code: string
+          partner_id: string
+          batch_id?: string | null
+          batch_name?: string | null
+          discount_percent?: number
+          commission_percent?: number
+          free_shipping?: boolean
+          is_used?: boolean
+          used_at?: string | null
+          order_id?: string | null
+          expires_at?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          code?: string
+          partner_id?: string
+          batch_id?: string | null
+          batch_name?: string | null
+          discount_percent?: number
+          commission_percent?: number
+          free_shipping?: boolean
+          is_used?: boolean
+          used_at?: string | null
+          order_id?: string | null
+          expires_at?: string | null
+          created_at?: string
+        }
+      }
+      partner_commissions: {
+        Row: {
+          id: string
+          partner_id: string
+          // Original activation-based fields (migration 005)
+          activation_code: string | null
+          memorial_id: string | null
+          order_value: number
+          commission_rate: number
+          // New referral-based fields (migration 010)
+          referral_code_id: string | null
+          order_id: string | null
+          order_total: number | null
+          discount_amount: number | null
+          commission_percent: number | null
+          // Common fields
+          commission_amount: number
+          status: 'pending' | 'approved' | 'paid' | 'cancelled'
+          payout_id: string | null
+          payout_reference: string | null
+          earned_at: string
+          approved_at: string | null
+          paid_at: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          partner_id: string
+          // Original activation-based fields
+          activation_code?: string | null
+          memorial_id?: string | null
+          order_value?: number
+          commission_rate?: number
+          // New referral-based fields
+          referral_code_id?: string | null
+          order_id?: string | null
+          order_total?: number | null
+          discount_amount?: number | null
+          commission_percent?: number | null
+          // Common fields
+          commission_amount: number
+          status?: 'pending' | 'approved' | 'paid' | 'cancelled'
+          payout_id?: string | null
+          payout_reference?: string | null
+          earned_at?: string
+          approved_at?: string | null
+          paid_at?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          partner_id?: string
+          activation_code?: string | null
+          memorial_id?: string | null
+          order_value?: number
+          commission_rate?: number
+          referral_code_id?: string | null
+          order_id?: string | null
+          order_total?: number | null
+          discount_amount?: number | null
+          commission_percent?: number | null
+          commission_amount?: number
+          status?: 'pending' | 'approved' | 'paid' | 'cancelled'
+          payout_id?: string | null
+          payout_reference?: string | null
+          earned_at?: string
+          approved_at?: string | null
+          paid_at?: string | null
           created_at?: string
         }
       }
@@ -275,6 +456,9 @@ export interface Database {
           used_at: string | null
           created_at: string
           expires_at: string | null
+          variant_code: string | null
+          retail_price: number | null
+          batch_id: string | null
         }
         Insert: {
           activation_code: string
@@ -286,6 +470,9 @@ export interface Database {
           used_at?: string | null
           created_at?: string
           expires_at?: string | null
+          variant_code?: string | null
+          retail_price?: number | null
+          batch_id?: string | null
         }
         Update: {
           activation_code?: string
@@ -297,6 +484,9 @@ export interface Database {
           used_at?: string | null
           created_at?: string
           expires_at?: string | null
+          variant_code?: string | null
+          retail_price?: number | null
+          batch_id?: string | null
         }
       }
       supplier_orders: {
@@ -332,6 +522,100 @@ export interface Database {
           supplier_order_ref?: string | null
           created_at?: string
           completed_at?: string | null
+        }
+      }
+      referral_code_activity_log: {
+        Row: {
+          id: string
+          referral_code_id: string | null
+          code: string
+          activity_type: 'created' | 'transferred' | 'used' | 'expired'
+          performed_by_partner_id: string | null
+          performed_by_admin: boolean
+          from_partner_id: string | null
+          to_partner_id: string | null
+          from_partner_name: string | null
+          to_partner_name: string | null
+          notes: string | null
+          metadata: Json
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          referral_code_id?: string | null
+          code: string
+          activity_type: 'created' | 'transferred' | 'used' | 'expired'
+          performed_by_partner_id?: string | null
+          performed_by_admin?: boolean
+          from_partner_id?: string | null
+          to_partner_id?: string | null
+          from_partner_name?: string | null
+          to_partner_name?: string | null
+          notes?: string | null
+          metadata?: Json
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          referral_code_id?: string | null
+          code?: string
+          activity_type?: 'created' | 'transferred' | 'used' | 'expired'
+          performed_by_partner_id?: string | null
+          performed_by_admin?: boolean
+          from_partner_id?: string | null
+          to_partner_id?: string | null
+          from_partner_name?: string | null
+          to_partner_name?: string | null
+          notes?: string | null
+          metadata?: Json
+          created_at?: string
+        }
+      }
+      activation_code_activity_log: {
+        Row: {
+          id: string
+          activation_code_id: string | null
+          code: string
+          activity_type: 'created' | 'assigned' | 'unassigned' | 'transferred' | 'used'
+          performed_by_partner_id: string | null
+          performed_by_admin: boolean
+          from_partner_id: string | null
+          to_partner_id: string | null
+          from_partner_name: string | null
+          to_partner_name: string | null
+          notes: string | null
+          metadata: Json
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          activation_code_id?: string | null
+          code: string
+          activity_type: 'created' | 'assigned' | 'unassigned' | 'transferred' | 'used'
+          performed_by_partner_id?: string | null
+          performed_by_admin?: boolean
+          from_partner_id?: string | null
+          to_partner_id?: string | null
+          from_partner_name?: string | null
+          to_partner_name?: string | null
+          notes?: string | null
+          metadata?: Json
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          activation_code_id?: string | null
+          code?: string
+          activity_type?: 'created' | 'assigned' | 'unassigned' | 'transferred' | 'used'
+          performed_by_partner_id?: string | null
+          performed_by_admin?: boolean
+          from_partner_id?: string | null
+          to_partner_id?: string | null
+          from_partner_name?: string | null
+          to_partner_name?: string | null
+          notes?: string | null
+          metadata?: Json
+          created_at?: string
         }
       }
       activity_log: {
@@ -450,6 +734,9 @@ export interface Database {
           shipped_at: string | null
           notes: string | null
           created_at: string
+          stripe_session_id: string | null
+          stripe_payment_intent_id: string | null
+          paid_at: string | null
         }
         Insert: {
           id?: string
@@ -467,6 +754,9 @@ export interface Database {
           shipped_at?: string | null
           notes?: string | null
           created_at?: string
+          stripe_session_id?: string | null
+          stripe_payment_intent_id?: string | null
+          paid_at?: string | null
         }
         Update: {
           id?: string
@@ -484,53 +774,9 @@ export interface Database {
           shipped_at?: string | null
           notes?: string | null
           created_at?: string
-        }
-      }
-      partner_commissions: {
-        Row: {
-          id: string
-          partner_id: string
-          activation_code: string | null
-          memorial_id: string | null
-          order_value: number
-          commission_rate: number
-          commission_amount: number
-          status: 'pending' | 'approved' | 'paid' | 'cancelled'
-          payout_id: string | null
-          earned_at: string
-          approved_at: string | null
-          paid_at: string | null
-          created_at: string
-        }
-        Insert: {
-          id?: string
-          partner_id: string
-          activation_code?: string | null
-          memorial_id?: string | null
-          order_value: number
-          commission_rate: number
-          commission_amount: number
-          status?: 'pending' | 'approved' | 'paid' | 'cancelled'
-          payout_id?: string | null
-          earned_at?: string
-          approved_at?: string | null
+          stripe_session_id?: string | null
+          stripe_payment_intent_id?: string | null
           paid_at?: string | null
-          created_at?: string
-        }
-        Update: {
-          id?: string
-          partner_id?: string
-          activation_code?: string | null
-          memorial_id?: string | null
-          order_value?: number
-          commission_rate?: number
-          commission_amount?: number
-          status?: 'pending' | 'approved' | 'paid' | 'cancelled'
-          payout_id?: string | null
-          earned_at?: string
-          approved_at?: string | null
-          paid_at?: string | null
-          created_at?: string
         }
       }
       partner_payouts: {

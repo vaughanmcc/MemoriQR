@@ -30,6 +30,65 @@ export function formatTimeAgo(date: string | Date): string {
   return formatDistanceToNow(d, { addSuffix: true })
 }
 
+/**
+ * Format date with time and timezone for admin/partner displays
+ * Output: "27/01/2026, 07:25 am NZDT"
+ */
+export function formatDateTime(date: string | Date): string {
+  const d = typeof date === 'string' ? new Date(date) : date
+  return d.toLocaleString('en-NZ', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true,
+    timeZoneName: 'short'
+  })
+}
+
+/**
+ * Format date only (no time) for admin/partner displays
+ * Output: "27/01/2026"
+ * Displays in user's local browser timezone
+ */
+export function formatDateOnly(date: string | Date): string {
+  const d = typeof date === 'string' ? new Date(date) : date
+  return d.toLocaleDateString('en-NZ', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric'
+  })
+}
+
+/**
+ * Format time with timezone for admin/partner displays
+ * Output: "07:25 am NZDT"
+ * Displays in user's local browser timezone
+ */
+export function formatTimeWithZone(date: string | Date): string {
+  const d = typeof date === 'string' ? new Date(date) : date
+  return d.toLocaleTimeString('en-NZ', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true,
+    timeZoneName: 'short'
+  })
+}
+
+/**
+ * Format date and time for multi-line display
+ * Returns { date: "27/01/2026", time: "07:25 am NZDT" }
+ * Displays in user's local browser timezone
+ */
+export function formatDateTimeParts(date: string | Date): { date: string; time: string } {
+  const d = typeof date === 'string' ? new Date(date) : date
+  return {
+    date: formatDateOnly(d),
+    time: formatTimeWithZone(d)
+  }
+}
+
 export function generateSlug(name: string): string {
   const base = name
     .toLowerCase()
@@ -44,9 +103,24 @@ export function generateSlug(name: string): string {
 }
 
 export function validateActivationCode(code: string): boolean {
-  // Activation codes are 8 alphanumeric characters
-  return /^[A-Z0-9]{8}$/i.test(code)
+  // Support multiple formats:
+  // 1. Old format: 8 alphanumeric chars (e.g., ABCD1234)
+  // 2. Retail format: MQR-XXB-XXXXXX (e.g., MQR-10B-ABC123) - 14 chars with hyphens
+  // 3. Partner format: MQR-XX-XXXXXX (e.g., MQR-3P-RZG83K) - 13 chars with hyphens
+  const cleanCode = code.replace(/-/g, '').toUpperCase()
+  
+  // Old 8-char format
+  if (/^[A-Z0-9]{8}$/.test(cleanCode)) return true
+  
+  // Retail format: MQR + 2-3 digits + B/N/Q + 6 alphanumeric
+  if (/^MQR\d{1,3}[BNQ][A-Z0-9]{6}$/.test(cleanCode)) return true
+  
+  // Partner format: MQR + 2 alphanumeric + 6 alphanumeric (total 11 after MQR)
+  if (/^MQR[A-Z0-9]{2}[A-Z0-9]{6}$/.test(cleanCode)) return true
+  
+  return false
 }
+
 
 export function sanitizeText(text: string): string {
   return text
@@ -76,4 +150,18 @@ export function getYouTubeId(url: string): string | null {
 
 export function getYouTubeThumbnail(videoId: string): string {
   return `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`
+}
+
+// Generate a simple opt-out token for partner notification emails
+export function generateOptOutToken(partnerId: string): string {
+  const secret = process.env.ADMIN_PASSWORD || 'memori-secret'
+  // Simple hash - in production you'd use a proper HMAC
+  const str = `${partnerId}-${secret}-optout`
+  let hash = 0
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i)
+    hash = ((hash << 5) - hash) + char
+    hash = hash & hash // Convert to 32bit integer
+  }
+  return Math.abs(hash).toString(36)
 }

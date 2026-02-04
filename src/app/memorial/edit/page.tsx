@@ -126,10 +126,9 @@ function EditPageContent() {
     // Check for session token: URL param first, then localStorage
     const effectiveSessionToken = sessionToken || getStoredSession(token)
 
-    // If we have a session token, verify it and load memorial data
-    if (effectiveSessionToken) {
-      setVerificationStep('verified')
-      fetch(`/api/memorial/edit?token=${token}&session=${effectiveSessionToken}`)
+    // Function to load memorial data with the API
+    const loadMemorialWithSession = (session: string) => {
+      fetch(`/api/memorial/edit?token=${token}&session=${session}`)
         .then((res) => res.json())
         .then((data) => {
           if (data.error) {
@@ -144,6 +143,7 @@ function EditPageContent() {
             setSelectedFrame(data.memorial.frame || 'classic-ornate')
             setPhotos(data.memorial.photos || [])
             setVideos(data.memorial.videos || [])
+            setVerificationStep('verified')
           }
           setLoading(false)
         })
@@ -152,10 +152,36 @@ function EditPageContent() {
           setVerificationStep('send')
           setLoading(false)
         })
+    }
+
+    // If we have a session token, verify it and load memorial data
+    if (effectiveSessionToken) {
+      setVerificationStep('verified')
+      loadMemorialWithSession(effectiveSessionToken)
     } else {
-      // No session token, need to verify via email
-      setVerificationStep('send')
-      setLoading(false)
+      // No session token - first try admin bypass (API will check admin cookie)
+      fetch(`/api/memorial/edit?token=${token}`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.error) {
+            // Not an admin or admin bypass failed, need to verify via email
+            setVerificationStep('send')
+          } else {
+            // Admin bypass worked - load memorial directly
+            setMemorial(data.memorial)
+            setMemorialText(data.memorial.memorialText || '')
+            setSelectedTheme(data.memorial.theme || 'classic')
+            setSelectedFrame(data.memorial.frame || 'classic-ornate')
+            setPhotos(data.memorial.photos || [])
+            setVideos(data.memorial.videos || [])
+            setVerificationStep('verified')
+          }
+          setLoading(false)
+        })
+        .catch(() => {
+          setVerificationStep('send')
+          setLoading(false)
+        })
     }
   }, [token, sessionToken, getStoredSession, clearStoredSession])
 
@@ -687,11 +713,8 @@ function EditPageContent() {
     if (!memorial || !token) return
 
     // Get session token from URL or localStorage
+    // For admins, session token may be null but the API will use cookie-based auth
     const effectiveSessionToken = sessionToken || getStoredSession(token)
-    if (!effectiveSessionToken) {
-      setError('Session expired. Please refresh the page and verify your email again.')
-      return
-    }
 
     setSaving(true)
     setError('')
@@ -703,7 +726,7 @@ function EditPageContent() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           token,
-          session: effectiveSessionToken,
+          session: effectiveSessionToken, // May be null for admin bypass
           memorialText,
           theme: selectedTheme,
           frame: selectedFrame,

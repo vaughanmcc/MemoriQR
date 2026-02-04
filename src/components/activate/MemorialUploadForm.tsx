@@ -18,6 +18,7 @@ import {
 import type { HostingDuration, ProductType } from '@/types/database'
 import { SPECIES_OPTIONS } from '@/types'
 import { TIER_LIMITS } from '@/lib/pricing'
+import { AddressAutocomplete } from '@/components/shared/AddressAutocomplete'
 
 // Normalize species value - moved outside component to avoid stale closures
 const speciesOptionsArray = SPECIES_OPTIONS as readonly string[]
@@ -348,13 +349,31 @@ export function MemorialUploadForm({
   const { species: normalizedInitialSpecies, speciesOther: normalizedInitialSpeciesOther } =
     normalizeSpeciesValue(initialSpecies)
 
-  // Change step and scroll to form section for better UX
+  // Change step and scroll to top for better UX
   const goToStep = (newStep: number) => {
     setStep(newStep)
-    setTimeout(() => {
-      formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-    }, 0)
   }
+
+  useEffect(() => {
+    // Always scroll to the top of the form container to show title and progress
+    const scrollToTarget = () => {
+      const target = formRef.current
+      
+      if (target) {
+        const top = target.getBoundingClientRect().top + window.scrollY
+        // Offset by 100px to account for header and give breathing room
+        window.scrollTo({ top: Math.max(top - 100, 0), behavior: 'smooth' })
+      } else {
+        window.scrollTo({ top: 0, behavior: 'smooth' })
+      }
+    }
+
+    // Small delay to allow React to render the new step content
+    const timeout = window.setTimeout(scrollToTarget, 50)
+    return () => {
+      window.clearTimeout(timeout)
+    }
+  }, [step])
 
   // Form state - use lazy initializers to ensure hydration matches
   const [deceasedName, setDeceasedName] = useState(() => initialName || '')
@@ -371,6 +390,15 @@ export function MemorialUploadForm({
     setTodayLocalISO(new Date().toLocaleDateString('en-CA'))
   }, [])
   const [contactEmail, setContactEmail] = useState(initialEmail || '')
+  
+  // Shipping address for retail activations (product ships after activation)
+  const [shippingName, setShippingName] = useState('')
+  const [shippingLine1, setShippingLine1] = useState('')
+  const [shippingLine2, setShippingLine2] = useState('')
+  const [shippingCity, setShippingCity] = useState('')
+  const [shippingPostalCode, setShippingPostalCode] = useState('')
+  const [shippingCountry, setShippingCountry] = useState('New Zealand')
+  
   const [photos, setPhotos] = useState<File[]>([])
   const [photosPreviews, setPhotosPreviews] = useState<string[]>([])
   const [profilePhotoIndex, setProfilePhotoIndex] = useState(0)
@@ -699,6 +727,18 @@ export function MemorialUploadForm({
       formData.append('frame', selectedFrame)
       if (contactEmail) formData.append('contactEmail', contactEmail)
 
+      // Shipping address for retail activations
+      if (activationType === 'retail' && shippingName && shippingLine1) {
+        formData.append('shippingName', shippingName)
+        formData.append('shippingAddress', JSON.stringify({
+          line1: shippingLine1,
+          line2: shippingLine2 || '',
+          city: shippingCity,
+          postal_code: shippingPostalCode,
+          country: shippingCountry,
+        }))
+      }
+
       photos.forEach((photo) => {
         formData.append('photos', photo)
       })
@@ -900,11 +940,105 @@ export function MemorialUploadForm({
               </div>
             )}
 
+            {/* Shipping address for retail activations - product ships after memorial is created */}
+            {activationType === 'retail' && (
+              <div className="border-t pt-6 mt-6">
+                <h3 className="font-medium text-gray-900 mb-4 flex items-center">
+                  📦 Shipping Address
+                  <span className="ml-2 text-sm font-normal text-gray-500">
+                    (We'll mail your {productType === 'both' ? 'QR plate and NFC tag' : productType === 'qr_only' ? 'QR plate' : 'NFC tag'} here)
+                  </span>
+                </h3>
+                
+                <div className="space-y-4">
+                  <div>
+                    <label className="label">Full Name (for shipping)</label>
+                    <input
+                      type="text"
+                      value={shippingName}
+                      onChange={(e) => setShippingName(e.target.value)}
+                      className="input"
+                      placeholder="John Smith"
+                      required
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="label">Address Line 1</label>
+                    <AddressAutocomplete
+                      value={shippingLine1}
+                      onChange={(value) => setShippingLine1(value)}
+                      onAddressSelect={(address) => {
+                        setShippingLine1(address.line1)
+                        if (address.line2) setShippingLine2(address.line2)
+                        setShippingCity(address.city)
+                        setShippingPostalCode(address.postalCode)
+                        if (address.country === 'AU') setShippingCountry('Australia')
+                        else if (address.country === 'NZ') setShippingCountry('New Zealand')
+                      }}
+                      placeholder="Start typing your address..."
+                      required
+                      countries={['nz', 'au']}
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="label">Address Line 2 (optional)</label>
+                    <input
+                      type="text"
+                      value={shippingLine2}
+                      onChange={(e) => setShippingLine2(e.target.value)}
+                      className="input"
+                      placeholder="Apartment, suite, unit, etc."
+                    />
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="label">City / Town</label>
+                      <input
+                        type="text"
+                        value={shippingCity}
+                        onChange={(e) => setShippingCity(e.target.value)}
+                        className="input"
+                        placeholder="Auckland"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="label">Postcode</label>
+                      <input
+                        type="text"
+                        value={shippingPostalCode}
+                        onChange={(e) => setShippingPostalCode(e.target.value)}
+                        className="input"
+                        placeholder="1010"
+                        required
+                      />
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <label className="label">Country</label>
+                    <select
+                      value={shippingCountry}
+                      onChange={(e) => setShippingCountry(e.target.value)}
+                      className="input"
+                    >
+                      <option value="New Zealand">New Zealand</option>
+                      <option value="Australia">Australia</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            )}
+
             <button
-              onClick={() => setStep(2)}
+              onClick={() => goToStep(2)}
               disabled={
                 !deceasedName
                 || (activationType === 'retail' && !initialEmail && !contactEmail)
+                || (activationType === 'retail' && (!shippingName || !shippingLine1 || !shippingCity || !shippingPostalCode))
                 || (deceasedType === 'pet' && (!species || (species === 'Other' && !speciesOther.trim())))
               }
               className="btn-primary w-full"
@@ -916,7 +1050,7 @@ export function MemorialUploadForm({
 
         {/* Step 2: Photos */}
         {step === 2 && (
-          <div className="space-y-6">
+          <div id="upload-section" tabIndex={-1} className="space-y-6 outline-none">
             <div>
               <div className="flex items-center justify-between mb-2">
                 <label className="label mb-0">Upload Photos</label>
@@ -1012,11 +1146,11 @@ export function MemorialUploadForm({
             )}
 
             <div className="flex gap-4">
-              <button onClick={() => setStep(1)} className="btn-outline flex-1">
+              <button onClick={() => goToStep(1)} className="btn-outline flex-1">
                 Back
               </button>
               <button
-                onClick={() => setStep(3)}
+                onClick={() => goToStep(3)}
                 disabled={photos.length === 0}
                 className="btn-primary flex-1"
               >
