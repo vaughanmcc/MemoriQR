@@ -232,7 +232,7 @@ export function generateInvoiceHTML(invoice: InvoiceData): string {
       border-bottom: 2px solid #8B7355;
     }
     .logo {
-      height: 50px;
+      height: 80px;
       width: auto;
     }
     .invoice-title {
