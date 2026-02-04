@@ -69,48 +69,26 @@ git push origin main
 
 ---
 
-## Step 3: Create Pipedream Workflows (10 minutes)
+## Step 3: Copy Pipedream Webhook URLs (2 minutes)
 
-### 3a. Commission Approved Email
+> ✅ **All Pipedream workflows already exist from dev setup!**
 
+Your existing workflows work for both dev and prod (they're stateless).
+
+| Handler File | Workflow Name | Env Variable |
+|--------------|---------------|--------------|
+| `email-handler.js` | MemoriQR Supabase Webhook WF | `PIPEDREAM_WEBHOOK_URL` |
+| `partner-codes-notification-handler.js` | MemoriQR Partner Order Notification | `PIPEDREAM_PARTNER_CODES_WEBHOOK_URL` |
+| `referral-redeemed-handler.js` | Referral_Redeemed_WF | `PIPEDREAM_REFERRAL_WEBHOOK_URL` |
+| `commission-approved-handler.js` | MemoriQR Commission Approved | `PIPEDREAM_COMMISSION_WEBHOOK_URL` |
+| `security-change-handler.js` | MemoriQR Security Alerts | `PIPEDREAM_SECURITY_WEBHOOK_URL` |
+
+**To get webhook URLs:**
 1. Go to **Pipedream** → **Projects** → **MemoriQR Supabase webhook**
-2. Click **New Workflow**
-3. Name: `Commission Approved Email`
-4. Trigger: **HTTP / Webhook** → **New Requests**
-5. Add step: **Node.js** → **Run Node Code**
-6. Copy code from: `pipedream/commission-approved-handler.js`
-7. Add step: **Gmail** → **Send Email**
-   - To: `{{steps.code.$return_value.to}}`
-   - Subject: `{{steps.code.$return_value.subject}}`
-   - Body: `{{steps.code.$return_value.htmlBody}}`
-   - Reply-To: `info@memoriqr.co.nz`
-8. **Deploy**
-9. Copy webhook URL
+2. Click each workflow
+3. Copy the **Webhook URL** from the trigger step
 
-- [ ] Webhook URL: `https://eo_______________.m.pipedream.net`
-
-### 3b. Security Change Email
-
-1. **New Workflow**
-2. Name: `Security Change Alert`
-3. Trigger: **HTTP / Webhook**
-4. Add step: **Node.js** → Copy from: `pipedream/security-change-handler.js`
-5. Add step: **Gmail** → Send Email (same config as above)
-6. **Deploy**
-7. Copy webhook URL
-
-- [ ] Webhook URL: `https://eo_______________.m.pipedream.net`
-
-### 3c. Renewal Reminder Email (if not already created)
-
-1. **New Workflow**
-2. Name: `Renewal Reminder`
-3. Trigger: **HTTP / Webhook**
-4. Configure for renewal reminder emails
-5. **Deploy**
-6. Copy webhook URL
-
-- [ ] Webhook URL: `https://eo_______________.m.pipedream.net`
+- [ ] **Webhook URLs copied**
 
 ---
 
@@ -118,13 +96,17 @@ git push origin main
 
 Go to **Vercel** → **MemoriQR** → **Settings** → **Environment Variables**
 
-**Add these for PRODUCTION only:**
+**Copy these from Preview to Production environment:**
 
-| Variable | Value |
-|----------|-------|
-| `PIPEDREAM_COMMISSION_WEBHOOK_URL` | (from step 3a) |
-| `PIPEDREAM_SECURITY_WEBHOOK_URL` | (from step 3b) |
-| `PIPEDREAM_RENEWAL_WEBHOOK_URL` | (from step 3c) |
+| Variable | Where to find |
+|----------|---------------|
+| `PIPEDREAM_WEBHOOK_URL` | MemoriQR Supabase Webhook WF |
+| `PIPEDREAM_PARTNER_CODES_WEBHOOK_URL` | MemoriQR Partner Order Notification |
+| `PIPEDREAM_REFERRAL_WEBHOOK_URL` | Referral_Redeemed_WF |
+| `PIPEDREAM_COMMISSION_WEBHOOK_URL` | MemoriQR Commission Approved |
+| `PIPEDREAM_SECURITY_WEBHOOK_URL` | MemoriQR Security Alerts |
+
+> **Tip:** In Vercel, filter by "Preview" environment to see current values, then add them for "Production".
 
 - [ ] **Environment variables added**
 
