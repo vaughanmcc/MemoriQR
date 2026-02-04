@@ -90,12 +90,12 @@ export async function PATCH(
         .eq('id', id)
         .single()
 
-      if (order && (order.product_type === 'qr_only' || order.product_type === 'both')) {
-        // Find oldest available inventory batch (FIFO)
+      // Helper function to deduct from inventory
+      const deductInventory = async (productType: string) => {
         const { data: inventory } = await supabase
           .from('inventory')
           .select('id, quantity_in_stock, quantity_reserved')
-          .eq('product_type', 'qr_tags')
+          .eq('product_type', productType)
           .gt('quantity_in_stock', 0)
           .order('created_at', { ascending: true })
           .limit(1)
@@ -105,13 +105,11 @@ export async function PATCH(
           const quantity_before = inventory.quantity_in_stock
           const quantity_after = quantity_before - 1
 
-          // Update inventory
           await supabase
             .from('inventory')
             .update({ quantity_in_stock: quantity_after })
             .eq('id', inventory.id)
 
-          // Log movement
           await supabase
             .from('inventory_movements')
             .insert({
@@ -124,6 +122,17 @@ export async function PATCH(
               reason: 'Order shipped',
               performed_by: 'system',
             })
+        }
+      }
+
+      if (order) {
+        // Deduct QR tags for qr_only or both
+        if (order.product_type === 'qr_only' || order.product_type === 'both') {
+          await deductInventory('qr_tags')
+        }
+        // Deduct NFC tags for nfc_only or both
+        if (order.product_type === 'nfc_only' || order.product_type === 'both') {
+          await deductInventory('nfc_tags')
         }
       }
     } else if (action === 'mark_completed') {
