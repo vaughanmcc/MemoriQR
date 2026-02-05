@@ -19,7 +19,7 @@ export default function TermsPage() {
           
           <div className="prose prose-lg max-w-none">
             <p className="text-gray-500 mb-8">
-              Last updated: January 2026
+              Last updated: February 2026
             </p>
 
             <h2>1. Agreement to Terms</h2>
@@ -83,6 +83,11 @@ export default function TermsPage() {
 
             <h2>6. Physical Products</h2>
             <p>
+              <strong>Custom Products:</strong> Each MemoriQR product is custom-engraved with a 
+              unique code immediately upon order. Products cannot be cancelled, returned, or 
+              reused once created.
+            </p>
+            <p>
               <strong>Quality:</strong> Our QR plates are made from Metalphoto® anodised aluminium 
               with sub-surface printing, providing 20+ years of UV resistance and an 8 micron 
               protective anodic layer. They are designed for permanent outdoor use. 
@@ -92,19 +97,29 @@ export default function TermsPage() {
               <strong>Shipping:</strong> We ship within New Zealand and Australia. Delivery times 
               are estimates and may vary.
             </p>
-            <p>
-              <strong>Defects:</strong> If you receive a defective product, contact us within 30 
-              days for a replacement.
-            </p>
 
-            <h2>7. Refunds</h2>
+            <h2>7. Refunds and Replacements</h2>
             <p>
-              <strong>Before Shipping:</strong> Full refund available within 30 days if your 
-              product has not shipped.
+              <strong>No Refunds:</strong> Due to the custom nature of our products (each item 
+              is engraved with a unique code immediately upon order), we cannot offer refunds 
+              or accept returns. Once an order is placed, it cannot be cancelled.
             </p>
             <p>
-              <strong>After Shipping:</strong> Refunds for defective products only. Memorial 
-              hosting fees are non-refundable once the memorial has been activated and published.
+              <strong>Free Replacement - Defects:</strong> If your product arrives damaged or 
+              doesn't function as intended (QR won't scan, NFC won't read), we'll send a free 
+              replacement at no cost. Contact us within 30 days of delivery with photos of the 
+              defective product.
+            </p>
+            <p>
+              <strong>Free Replacement - Lost Shipments:</strong> If your order is lost in 
+              transit and tracking confirms non-delivery, we'll send a free replacement.
+            </p>
+            <p>
+              <strong>Hosting Renewals:</strong> Renewal payments are non-refundable once processed.
+            </p>
+            <p>
+              <strong>Consumer Guarantees:</strong> Nothing in this policy limits your rights 
+              under the New Zealand Consumer Guarantees Act 1993.
             </p>
 
             <h2>8. Limitation of Liability</h2>
