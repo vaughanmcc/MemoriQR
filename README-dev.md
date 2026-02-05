@@ -118,7 +118,7 @@ STRIPE_WEBHOOK_SECRET=whsec_...
 PIPEDREAM_WEBHOOK_URL=https://eo7epxu5aypc0vj.m.pipedream.net
 PIPEDREAM_REFERRAL_WEBHOOK_URL=https://eo5xpf69y0qbaul.m.pipedream.net
 PIPEDREAM_PARTNER_CODES_WEBHOOK_URL=https://eop33i8rs8xu5av.m.pipedream.net
-PIPEDREAM_RENEWAL_WEBHOOK_URL=https://eo7epxu5aypc0vj.m.pipedream.net  # Same as main webhook
+PIPEDREAM_RENEWAL_WEBHOOK_URL=https://eo88prg1g5dm60a.m.pipedream.net
 
 # App URLs
 NEXT_PUBLIC_SITE_URL=https://dev.memoriqr.co.nz
@@ -142,23 +142,25 @@ Handles most emails:
 - `partner_terms_updated` - Discount/commission changed
 - `admin_new_order` - Alert admin of new order
 - `admin_new_partner_application` - New partner application
+
+### 2. Renewal Emails (`PIPEDREAM_RENEWAL_WEBHOOK_URL`)
 - `expiry_reminder` - Hosting expiry reminders (90/30/7 days, grace period)
 - `renewal_confirmation` - Successful renewal confirmation
 
-### 2. Referral Redeemed (`PIPEDREAM_REFERRAL_WEBHOOK_URL`)
+### 3. Referral Redeemed (`PIPEDREAM_REFERRAL_WEBHOOK_URL`)
 - `referral_redeemed` - Partner commission notification
 
-### 3. Partner Codes (`PIPEDREAM_PARTNER_CODES_WEBHOOK_URL`)
+### 4. Partner Codes (`PIPEDREAM_PARTNER_CODES_WEBHOOK_URL`)
 - `referral_codes_generated` - Lead gen codes ready
 - `partner_codes_generated` - Wholesale codes ready
 
-### 4. Commission Approved (`PIPEDREAM_COMMISSION_WEBHOOK_URL`)
+### 5. Commission Approved (`PIPEDREAM_COMMISSION_WEBHOOK_URL`)
 - `commission_approved` - Partner commission approved for payout
 
-### 5. Security Change (`PIPEDREAM_SECURITY_WEBHOOK_URL`)
+### 6. Security Change (`PIPEDREAM_SECURITY_WEBHOOK_URL`)
 - `security_change` - Bank account or email changed alert
 
-### 6. Low Stock Alert (`PIPEDREAM_LOW_STOCK_WEBHOOK_URL`)
+### 7. Low Stock Alert (`PIPEDREAM_LOW_STOCK_WEBHOOK_URL`)
 - `low_stock_alert` - Alert admin when inventory drops below threshold
 
 See [pipedream/README.md](pipedream/README.md) for setup instructions.
