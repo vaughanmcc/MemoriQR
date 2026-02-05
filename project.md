@@ -107,13 +107,14 @@ Partners can receive emails for:
 ## Pipedream Email Workflows
 
 | Workflow | Env Var | Purpose |
-|----------|---------|---------|
+|----------|---------|--------|
 | Main Handler | `PIPEDREAM_WEBHOOK_URL` | Contact form, order emails, memorial emails, partner emails |
 | Referral Redeemed | `PIPEDREAM_REFERRAL_WEBHOOK_URL` | Commission notification when referral used |
 | Partner Codes | `PIPEDREAM_PARTNER_CODES_WEBHOOK_URL` | Codes generated notification |
 | Commission Approved | `PIPEDREAM_COMMISSION_WEBHOOK_URL` | Notify partner when commissions approved |
 | Security Change | `PIPEDREAM_SECURITY_WEBHOOK_URL` | Alert partner when bank/email changed |
 | Low Stock Alert | `PIPEDREAM_LOW_STOCK_WEBHOOK_URL` | Alert admin when inventory is low |
+| Renewal Reminders | `PIPEDREAM_RENEWAL_WEBHOOK_URL` | Expiry reminders & renewal confirmations (uses main handler) |
 ## Documentation
 
 - [Business Plan](docs/business-plan.md) - Pricing, costs, strategy
@@ -140,6 +141,7 @@ NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=
 PIPEDREAM_WEBHOOK_URL=https://eo7epxu5aypc0vj.m.pipedream.net
 PIPEDREAM_REFERRAL_WEBHOOK_URL=https://eo5xpf69y0qbaul.m.pipedream.net
 PIPEDREAM_PARTNER_CODES_WEBHOOK_URL=https://eop33i8rs8xu5av.m.pipedream.net
+PIPEDREAM_RENEWAL_WEBHOOK_URL=https://eo7epxu5aypc0vj.m.pipedream.net  # Same as main
 PIPEDREAM_COMMISSION_WEBHOOK_URL=<your-webhook-url>
 PIPEDREAM_SECURITY_WEBHOOK_URL=<your-webhook-url>
 
