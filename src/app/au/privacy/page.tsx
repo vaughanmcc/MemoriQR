@@ -1,4 +1,5 @@
 import { Metadata } from 'next'
+import Link from 'next/link'
 import { Header } from '@/components/layout/Header'
 import { Footer } from '@/components/layout/Footer'
 
@@ -21,6 +22,15 @@ export default function AUPrivacyPage() {
             <p className="text-gray-500 mb-8">
               Last Updated: February 2026
             </p>
+
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-8">
+              <p className="text-blue-800 mb-0">
+                Looking for a quick overview?{' '}
+                <Link href="/au/privacy-summary" className="text-blue-600 hover:text-blue-800 underline">
+                  Read our Privacy Policy Summary →
+                </Link>
+              </p>
+            </div>
 
             <p className="mb-8">
               MemoriQR creates lasting physical memorials - engraved metal plates and NFC tags - that 
