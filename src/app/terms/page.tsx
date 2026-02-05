@@ -98,7 +98,7 @@ export default function TermsPage() {
               are estimates and may vary.
             </p>
 
-            <h2>7. Refunds and Replacements</h2>
+            <h2 id="refunds">7. Refunds and Replacements</h2>
             <p>
               <strong>No Refunds:</strong> Due to the custom nature of our products (each item 
               is engraved with a unique code immediately upon order), we cannot offer refunds 
