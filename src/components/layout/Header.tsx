@@ -19,13 +19,13 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-sm border-b border-gray-100">
-      <nav className="container-wide flex items-center justify-between py-5">
+      <nav className="container-wide flex items-center justify-between py-2">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2">
           <img 
             src="/logo.png" 
             alt="MemoriQR" 
-            className="h-20 md:h-24 w-auto"
+            className="h-12 md:h-14 w-auto"
           />
         </Link>
 
