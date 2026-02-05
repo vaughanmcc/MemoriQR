@@ -8,8 +8,18 @@
 
 export default defineComponent({
   async run({ steps, $ }) {
-    const body = steps.trigger.event.body;
+    // Handle different trigger formats - Pipedream may structure the event differently
+    const event = steps.trigger.event;
+    const body = event.body || event;
     const type = body.type;
+
+    // Debug: log what we received
+    console.log('Received type:', type);
+    console.log('Body keys:', Object.keys(body));
+
+    if (!type) {
+      $.flow.exit(`No type found in payload. Keys: ${Object.keys(body).join(', ')}`);
+    }
 
     // Expiry reminder emails (sent by daily cron)
     if (type === 'expiry_reminder') {
