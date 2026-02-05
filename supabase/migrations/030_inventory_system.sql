@@ -6,7 +6,7 @@ CREATE TABLE IF NOT EXISTS inventory (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   
   -- Product info
-  product_type TEXT NOT NULL CHECK (product_type IN ('qr', 'nfc', 'frames', 'packaging', 'other')),
+  product_type TEXT NOT NULL CHECK (product_type IN ('qr', 'nfc', 'packaging', 'other')),
   variant TEXT, -- e.g., 'small', 'large', 'oak', 'walnut'
   description TEXT,
   sku TEXT, -- optional internal SKU

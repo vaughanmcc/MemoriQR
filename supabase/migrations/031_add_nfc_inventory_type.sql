@@ -4,6 +4,7 @@
 -- Migrate any existing entries to new keys
 UPDATE inventory SET product_type = 'qr' WHERE product_type IN ('qr_tags', 'plates');
 UPDATE inventory SET product_type = 'nfc' WHERE product_type = 'nfc_tags';
+DELETE FROM inventory WHERE product_type = 'frames';
 
 -- Update the product_type constraint
 ALTER TABLE inventory 
@@ -11,4 +12,4 @@ ALTER TABLE inventory
 
 ALTER TABLE inventory 
   ADD CONSTRAINT inventory_product_type_check 
-  CHECK (product_type IN ('qr', 'nfc', 'frames', 'packaging', 'other'));
+  CHECK (product_type IN ('qr', 'nfc', 'packaging', 'other'));
