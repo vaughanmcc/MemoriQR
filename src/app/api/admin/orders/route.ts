@@ -41,6 +41,8 @@ export async function GET(request: NextRequest) {
         paid_at,
         shipped_at,
         completed_at,
+        nfc_programmed_at,
+        qr_printed_at,
         customer:customers(id, full_name, email, phone, shipping_address),
         memorial:memorial_records(id, memorial_slug, deceased_name, deceased_type)
       `)

@@ -43,6 +43,8 @@ interface Order {
   paid_at: string | null;
   shipped_at: string | null;
   completed_at: string | null;
+  nfc_programmed_at: string | null;
+  qr_printed_at: string | null;
   customer: Customer | null;
   memorial: Memorial | null;
 }
@@ -491,52 +493,48 @@ export default function AdminOrdersPage() {
                   <h4 className="font-semibold text-blue-900 mb-3">📋 Action Checklist</h4>
                   <div className="space-y-2">
                     {(selectedOrder.product_type === 'nfc_only' || selectedOrder.product_type === 'both') && (
-                      <label className="flex items-center gap-3 cursor-pointer group">
-                        <input
-                          type="checkbox"
-                          checked={checklist[`${selectedOrder.id}-nfc`] || false}
-                          onChange={(e) => setChecklist({ ...checklist, [`${selectedOrder.id}-nfc`]: e.target.checked })}
-                          className="sr-only"
-                        />
+                      <button
+                        onClick={() => !selectedOrder.nfc_programmed_at && handleAction(selectedOrder.id, 'mark_nfc_programmed')}
+                        disabled={!!selectedOrder.nfc_programmed_at || actionLoading}
+                        className="flex items-center gap-3 w-full text-left group"
+                      >
                         <span className={`w-6 h-6 rounded border-2 flex items-center justify-center transition-colors ${
-                          checklist[`${selectedOrder.id}-nfc`]
+                          selectedOrder.nfc_programmed_at
                             ? 'bg-green-500 border-green-500 text-white'
                             : 'border-blue-300 bg-white group-hover:border-blue-400'
                         }`}>
-                          {checklist[`${selectedOrder.id}-nfc`] && (
+                          {selectedOrder.nfc_programmed_at && (
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                             </svg>
                           )}
                         </span>
-                        <span className={`text-sm ${checklist[`${selectedOrder.id}-nfc`] ? 'text-green-700 line-through' : 'text-blue-800'}`}>
+                        <span className={`text-sm ${selectedOrder.nfc_programmed_at ? 'text-green-700 line-through' : 'text-blue-800'}`}>
                           Program NFC tag with memorial URL
                         </span>
-                      </label>
+                      </button>
                     )}
                     {(selectedOrder.product_type === 'qr_only' || selectedOrder.product_type === 'both') && (
-                      <label className="flex items-center gap-3 cursor-pointer group">
-                        <input
-                          type="checkbox"
-                          checked={checklist[`${selectedOrder.id}-qr`] || false}
-                          onChange={(e) => setChecklist({ ...checklist, [`${selectedOrder.id}-qr`]: e.target.checked })}
-                          className="sr-only"
-                        />
+                      <button
+                        onClick={() => !selectedOrder.qr_printed_at && handleAction(selectedOrder.id, 'mark_qr_printed')}
+                        disabled={!!selectedOrder.qr_printed_at || actionLoading}
+                        className="flex items-center gap-3 w-full text-left group"
+                      >
                         <span className={`w-6 h-6 rounded border-2 flex items-center justify-center transition-colors ${
-                          checklist[`${selectedOrder.id}-qr`]
+                          selectedOrder.qr_printed_at
                             ? 'bg-green-500 border-green-500 text-white'
                             : 'border-blue-300 bg-white group-hover:border-blue-400'
                         }`}>
-                          {checklist[`${selectedOrder.id}-qr`] && (
+                          {selectedOrder.qr_printed_at && (
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                             </svg>
                           )}
                         </span>
-                        <span className={`text-sm ${checklist[`${selectedOrder.id}-qr`] ? 'text-green-700 line-through' : 'text-blue-800'}`}>
+                        <span className={`text-sm ${selectedOrder.qr_printed_at ? 'text-green-700 line-through' : 'text-blue-800'}`}>
                           Print QR code for plate
                         </span>
-                      </label>
+                      </button>
                     )}
                     <label className="flex items-center gap-3 cursor-pointer group">
                       <input

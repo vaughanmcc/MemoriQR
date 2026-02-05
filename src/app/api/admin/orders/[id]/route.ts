@@ -40,6 +40,8 @@ export async function GET(
         paid_at,
         shipped_at,
         completed_at,
+        nfc_programmed_at,
+        qr_printed_at,
         customer:customers(id, full_name, email, phone, shipping_address),
         memorial:memorial_records(id, memorial_slug, deceased_name, deceased_type, is_published)
       `)
@@ -77,64 +79,77 @@ export async function PATCH(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const updates: Record<string, any> = {}
 
-    if (action === 'mark_shipped') {
+    // Helper function to deduct from inventory
+    const deductInventory = async (productType: string, reason: string) => {
+      const { data: inventory } = await supabase
+        .from('inventory')
+        .select('id, quantity_in_stock, quantity_reserved')
+        .eq('product_type', productType)
+        .gt('quantity_in_stock', 0)
+        .order('created_at', { ascending: true })
+        .limit(1)
+        .single()
+
+      if (inventory && inventory.quantity_in_stock > inventory.quantity_reserved) {
+        const quantity_before = inventory.quantity_in_stock
+        const quantity_after = quantity_before - 1
+
+        await supabase
+          .from('inventory')
+          .update({ quantity_in_stock: quantity_after })
+          .eq('id', inventory.id)
+
+        await supabase
+          .from('inventory_movements')
+          .insert({
+            inventory_id: inventory.id,
+            movement_type: 'shipped',
+            quantity: -1,
+            quantity_before,
+            quantity_after,
+            order_id: id,
+            reason,
+            performed_by: 'system',
+          })
+      }
+    }
+
+    if (action === 'mark_nfc_programmed') {
+      // Check if already programmed to prevent double deduction
+      const { data: order } = await supabase
+        .from('orders')
+        .select('nfc_programmed_at, product_type')
+        .eq('id', id)
+        .single()
+
+      if (order && !order.nfc_programmed_at) {
+        updates.nfc_programmed_at = new Date().toISOString()
+        // Deduct NFC tag from inventory
+        if (order.product_type === 'nfc_only' || order.product_type === 'both') {
+          await deductInventory('nfc', 'NFC tag programmed')
+        }
+      }
+    } else if (action === 'mark_qr_printed') {
+      // Check if already printed to prevent double deduction
+      const { data: order } = await supabase
+        .from('orders')
+        .select('qr_printed_at, product_type')
+        .eq('id', id)
+        .single()
+
+      if (order && !order.qr_printed_at) {
+        updates.qr_printed_at = new Date().toISOString()
+        // Deduct QR plate from inventory
+        if (order.product_type === 'qr_only' || order.product_type === 'both') {
+          await deductInventory('qr', 'QR plate printed')
+        }
+      }
+    } else if (action === 'mark_shipped') {
       updates.order_status = 'shipped'
       updates.shipped_at = new Date().toISOString()
       if (tracking_number) updates.tracking_number = tracking_number
       if (shipping_carrier) updates.shipping_carrier = shipping_carrier
-
-      // Deduct inventory for QR tags (qr_only or both products)
-      const { data: order } = await supabase
-        .from('orders')
-        .select('product_type')
-        .eq('id', id)
-        .single()
-
-      // Helper function to deduct from inventory
-      const deductInventory = async (productType: string) => {
-        const { data: inventory } = await supabase
-          .from('inventory')
-          .select('id, quantity_in_stock, quantity_reserved')
-          .eq('product_type', productType)
-          .gt('quantity_in_stock', 0)
-          .order('created_at', { ascending: true })
-          .limit(1)
-          .single()
-
-        if (inventory && inventory.quantity_in_stock > inventory.quantity_reserved) {
-          const quantity_before = inventory.quantity_in_stock
-          const quantity_after = quantity_before - 1
-
-          await supabase
-            .from('inventory')
-            .update({ quantity_in_stock: quantity_after })
-            .eq('id', inventory.id)
-
-          await supabase
-            .from('inventory_movements')
-            .insert({
-              inventory_id: inventory.id,
-              movement_type: 'shipped',
-              quantity: -1,
-              quantity_before,
-              quantity_after,
-              order_id: id,
-              reason: 'Order shipped',
-              performed_by: 'system',
-            })
-        }
-      }
-
-      if (order) {
-        // Deduct QR plates for qr_only or both
-        if (order.product_type === 'qr_only' || order.product_type === 'both') {
-          await deductInventory('qr')
-        }
-        // Deduct NFC tags for nfc_only or both
-        if (order.product_type === 'nfc_only' || order.product_type === 'both') {
-          await deductInventory('nfc')
-        }
-      }
+      // Inventory already deducted at print/program time
     } else if (action === 'mark_completed') {
       updates.order_status = 'completed'
       updates.completed_at = new Date().toISOString()
