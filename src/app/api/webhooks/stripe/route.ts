@@ -10,12 +10,14 @@ import { SupabaseClient } from '@supabase/supabase-js'
 // Force dynamic rendering for webhook
 export const dynamic = 'force-dynamic'
 
+// Main Notification Hub (email-handler.js)
 const PIPEDREAM_WEBHOOK_URL = process.env.PIPEDREAM_WEBHOOK_URL
-// Separate webhook for referral redemption emails (to avoid Pipedream code size limits)
-const PIPEDREAM_REFERRAL_WEBHOOK_URL = process.env.PIPEDREAM_REFERRAL_WEBHOOK_URL || PIPEDREAM_WEBHOOK_URL
-// Webhook for partner code notifications
+// Partner Notification Hub (partner-codes-notification-handler.js)
 const PIPEDREAM_PARTNER_CODES_WEBHOOK_URL = process.env.PIPEDREAM_PARTNER_CODES_WEBHOOK_URL || PIPEDREAM_WEBHOOK_URL
-// Webhook for renewal/expiry emails
+// Legacy env vars - all route to partner hub now
+const PIPEDREAM_REFERRAL_WEBHOOK_URL = process.env.PIPEDREAM_REFERRAL_WEBHOOK_URL || PIPEDREAM_PARTNER_CODES_WEBHOOK_URL
+const PIPEDREAM_COMMISSION_WEBHOOK_URL = process.env.PIPEDREAM_COMMISSION_WEBHOOK_URL || PIPEDREAM_PARTNER_CODES_WEBHOOK_URL
+// Renewal emails now handled by main hub
 const PIPEDREAM_RENEWAL_WEBHOOK_URL = process.env.PIPEDREAM_RENEWAL_WEBHOOK_URL || PIPEDREAM_WEBHOOK_URL
 
 // Generate a unique activation code

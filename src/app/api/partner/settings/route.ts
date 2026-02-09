@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { cookies, headers } from 'next/headers'
 import { createAdminClient } from '@/lib/supabase/server'
 
-// Pipedream webhook URL for security change notifications
-const PIPEDREAM_SECURITY_WEBHOOK_URL = process.env.PIPEDREAM_SECURITY_WEBHOOK_URL
+// Pipedream webhook URL for security change notifications (routes to Main Notification Hub)
+const PIPEDREAM_SECURITY_WEBHOOK_URL = process.env.PIPEDREAM_SECURITY_WEBHOOK_URL || process.env.PIPEDREAM_WEBHOOK_URL
 
 interface PartnerSession {
   partner_id: string

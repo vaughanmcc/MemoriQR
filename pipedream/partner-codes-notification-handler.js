@@ -1,22 +1,29 @@
 /**
- * Pipedream Email Handler - Partner Order Notifications
+ * Pipedream Email Handler - Partner Notification Hub
  * 
- * Handles partner notification emails for codes generated:
+ * Handles ALL partner-specific notification emails including codes,
+ * referrals, commissions, and redemptions.
+ * 
+ * Env var: PIPEDREAM_PARTNER_CODES_WEBHOOK_URL
+ * Last updated: February 2026
+ * 
+ * HANDLED EVENT TYPES:
  * - referral_codes_generated: Lead generation referral codes ready
  * - referral_codes_transferred: Referral codes transferred from another partner
  * - partner_codes_generated: Wholesale activation codes ready
  * - partner_codes_unassigned: Codes removed from partner
+ * - activation_codes_transferred: Activation codes transferred between partners
  * - activation_code_used: Customer used an activation code
  * - referral_code_request: Partner requests codes (admin notification)
  * - referral_request_submitted: Request confirmation (partner notification)
  * - referral_request_approved: Request approved (partner notification)
  * - referral_request_rejected: Request rejected (partner notification)
  * - referral_code_share: Partner shares a referral code with customer via email
+ * - referral_redeemed: Referral code used notification → partner (with opt-out)
+ * - commission_approved: Commission approved notification → partner
  * 
- * Use this in a SEPARATE Pipedream workflow with its own webhook URL.
- * Env var: PIPEDREAM_PARTNER_CODES_WEBHOOK_URL
- * 
- * Last updated: February 1, 2026
+ * SEPARATE WORKFLOW (Main Notification Hub - PIPEDREAM_WEBHOOK_URL):
+ * See: pipedream/email-handler.js
  */
 
 export default defineComponent({
@@ -40,7 +47,9 @@ export default defineComponent({
       'referral_request_submitted',
       'referral_request_approved',
       'referral_request_rejected',
-      'referral_code_share'
+      'referral_code_share',
+      'referral_redeemed',
+      'commission_approved'
     ];
     
     if (!body || !validTypes.includes(body.type)) {
@@ -643,6 +652,150 @@ Use Code & View Options →
 </div>
 </div>`,
         text: `${greeting},\n\n${partnerName} thought you might be interested in MemoriQR and has shared their referral code with you${benefitsDisplay}!\n\n${personalMessage ? `"${personalMessage}"\n— ${partnerName}\n\n` : ''}Your referral code: ${referralCode}\n${benefits ? `Benefits: ${benefits}\n` : ''}\nMemoriQR creates premium NFC tags and QR code plates that link to beautiful online memorials.\n\nUse your code here: ${orderUrl}\n\n---\nMemoriQR • memoriqr.co.nz`
+      };
+    }
+
+    // =====================================================
+    // REFERRAL REDEEMED (merged from referral-redeemed-handler.js)
+    // Notification to partner when their referral code is used
+    // =====================================================
+
+    if (body.type === 'referral_redeemed') {
+      const { 
+        to, 
+        businessName, 
+        referralCode, 
+        orderNumber, 
+        discountPercent,
+        commissionAmount,
+        orderTotal,
+        optOutUrl,
+        dashboardUrl,
+        hasBankingDetails,
+        settingsUrl
+      } = body;
+
+      const discountRowHtml = discountPercent > 0 
+        ? `<tr><td style="padding: 12px 20px; color: #6b7280; font-size: 14px;">Customer Discount:</td><td style="padding: 12px 20px; color: #111827; font-size: 14px; font-weight: 600;">${discountPercent}%</td></tr>`
+        : '';
+      
+      const discountRowText = discountPercent > 0 
+        ? `- Customer Discount: ${discountPercent}%\n` 
+        : '';
+
+      const bankingReminderHtml = hasBankingDetails === false ? `
+<div style="margin: 0 0 25px; background-color: #fef3c7; border: 2px solid #f59e0b; border-radius: 8px; padding: 20px;">
+<p style="color: #92400e; font-weight: bold; margin: 0 0 10px;">⚠️ Banking Details Required</p>
+<p style="color: #78350f; margin: 0; line-height: 1.5;">To receive commission payouts, please add your banking details in the Partner Portal.</p>
+<div style="text-align: center; margin-top: 15px;">
+<a href="${settingsUrl}" style="display: inline-block; background-color: #f59e0b; color: #fff; text-decoration: none; padding: 10px 25px; border-radius: 6px; font-size: 14px; font-weight: 600;">Add Banking Details</a>
+</div>
+</div>
+` : '';
+
+      const bankingReminderText = hasBankingDetails === false 
+        ? `\n⚠️ BANKING DETAILS REQUIRED\nTo receive commission payouts, please add your banking details: ${settingsUrl}\n` 
+        : '';
+
+      return {
+        to: to,
+        replyTo: 'partners@memoriqr.co.nz',
+        from_name: 'MemoriQR Partner Program',
+        subject: `🎉 Referral Code ${referralCode} Redeemed - $${commissionAmount} Commission Earned!`,
+        html: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; font-size: 18px; line-height: 1.6; color: #333;">
+<div style="background: linear-gradient(135deg, #059669 0%, #10b981 100%); padding: 30px; text-align: center; border-radius: 8px 8px 0 0;">
+<h1 style="color: #fff; margin: 0; font-size: 28px; font-weight: 300;">MemoriQR</h1>
+<p style="color: rgba(255,255,255,0.9); margin: 10px 0 0; font-size: 14px;">Partner Program</p>
+</div>
+
+<div style="padding: 40px 30px; background: #fff; border: 1px solid #ddd; border-top: none;">
+<h2 style="color: #333; margin: 0 0 20px; font-size: 24px; font-weight: 400;">Great News! 🎉</h2>
+
+<p style="color: #555; line-height: 1.6; margin: 0 0 25px;">Hi ${businessName},</p>
+
+<p style="color: #555; line-height: 1.6; margin: 0 0 25px;">One of your referral codes has just been used to place an order. Here are the details:</p>
+
+<table style="width: 100%; margin: 0 0 25px; background-color: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; border-collapse: collapse;">
+<tr><td style="padding: 12px 20px; color: #6b7280; font-size: 14px; width: 140px; border-bottom: 1px solid #e5e7eb;">Referral Code:</td><td style="padding: 12px 20px; color: #111827; font-size: 14px; font-weight: 600; border-bottom: 1px solid #e5e7eb;">${referralCode}</td></tr>
+<tr><td style="padding: 12px 20px; color: #6b7280; font-size: 14px; border-bottom: 1px solid #e5e7eb;">Order Number:</td><td style="padding: 12px 20px; color: #111827; font-size: 14px; font-weight: 600; border-bottom: 1px solid #e5e7eb;">${orderNumber}</td></tr>
+<tr><td style="padding: 12px 20px; color: #6b7280; font-size: 14px; border-bottom: 1px solid #e5e7eb;">Order Total:</td><td style="padding: 12px 20px; color: #111827; font-size: 14px; font-weight: 600; border-bottom: 1px solid #e5e7eb;">$${orderTotal} NZD</td></tr>
+${discountRowHtml}
+</table>
+
+<div style="margin: 0 0 25px; background-color: #ecfdf5; border: 2px solid #10b981; border-radius: 8px; padding: 25px; text-align: center;">
+<p style="color: #059669; margin: 0 0 5px; font-size: 14px; text-transform: uppercase; letter-spacing: 1px;">Your Commission</p>
+<p style="color: #047857; font-size: 36px; font-weight: bold; margin: 0;">$${commissionAmount}</p>
+<p style="color: #6b7280; margin: 10px 0 0; font-size: 14px;">Status: Pending</p>
+</div>
+
+${bankingReminderHtml}
+
+<p style="color: #555; line-height: 1.6; margin: 0 0 25px;">Your commission will be added to your next payout. You can view all your commissions and referral activity in your Partner Dashboard.</p>
+
+<div style="text-align: center; margin: 0 0 30px;">
+<a href="${dashboardUrl}" style="display: inline-block; background-color: #059669; color: #ffffff; padding: 14px 28px; border-radius: 6px; text-decoration: none; font-weight: 600; font-size: 14px;">View Partner Dashboard</a>
+</div>
+</div>
+
+<div style="background: #f5f5f0; padding: 25px 30px; text-align: center; border-radius: 0 0 8px 8px;">
+<p style="color: #888; font-size: 14px; margin: 0 0 10px;">You're receiving this because you're a MemoriQR Partner.</p>
+<p style="color: #888; font-size: 14px; margin: 0 0 10px;"><a href="${optOutUrl}" style="color: #059669; text-decoration: underline;">Unsubscribe from redemption notifications</a></p>
+<p style="color: #888; font-size: 14px; margin: 0;">© 2026 MemoriQR. All rights reserved.</p>
+</div>
+</div>`,
+        text: `Hi ${businessName},\n\nGreat news! One of your referral codes has just been used.\n\nDETAILS:\n- Referral Code: ${referralCode}\n- Order Number: ${orderNumber}\n- Order Total: $${orderTotal} NZD\n${discountRowText}${bankingReminderText}\nYOUR COMMISSION: $${commissionAmount}\nStatus: Pending\n\nView your Partner Dashboard: ${dashboardUrl}\n\n---\nTo stop receiving these notifications: ${optOutUrl}\n\n© 2026 MemoriQR. All rights reserved.`
+      };
+    }
+
+    // =====================================================
+    // COMMISSION APPROVED (merged from commission-approved-handler.js)
+    // =====================================================
+
+    if (body.type === 'commission_approved') {
+      const { to, data } = body;
+      const { partner_name, approved_amount, commission_count, dashboard_url } = data;
+
+      const formattedAmount = new Intl.NumberFormat('en-NZ', {
+        style: 'currency',
+        currency: 'NZD'
+      }).format(approved_amount);
+
+      const commissionText = commission_count === 1 ? 'commission' : 'commissions';
+
+      return {
+        to: to,
+        replyTo: 'info@memoriqr.co.nz',
+        from_name: 'MemoriQR Partner Program',
+        subject: `✅ Commission Approved - ${formattedAmount} Ready for Payout`,
+        html: `<div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; max-width: 600px; margin: 0 auto; font-size: 18px; line-height: 1.6; color: #333;">
+<div style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); padding: 40px 30px; text-align: center; border-radius: 8px 8px 0 0;">
+<div style="font-size: 48px; margin-bottom: 10px;">✅</div>
+<h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 700;">Commission Approved!</h1>
+</div>
+
+<div style="padding: 40px 30px; background: #fff; border: 1px solid #ddd; border-top: none;">
+<p style="color: #374151; font-size: 18px; line-height: 1.6; margin: 0 0 20px 0;">Hi ${partner_name},</p>
+
+<p style="color: #374151; font-size: 18px; line-height: 1.6; margin: 0 0 30px 0;">Great news! Your ${commissionText} ${commission_count === 1 ? 'has' : 'have'} been approved and ${commission_count === 1 ? 'is' : 'are'} ready for payout.</p>
+
+<div style="background-color: #ecfdf5; border: 2px solid #10b981; border-radius: 12px; padding: 25px; text-align: center; margin: 0 0 30px 0;">
+<div style="color: #065f46; font-size: 16px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">Approved Amount</div>
+<div style="color: #047857; font-size: 36px; font-weight: 700;">${formattedAmount}</div>
+<div style="color: #059669; font-size: 16px; margin-top: 8px;">${commission_count} ${commissionText}</div>
+</div>
+
+<p style="color: #6b7280; font-size: 16px; line-height: 1.6; margin: 0 0 30px 0;">This amount will be included in your next scheduled payout. You can view all your commission details in your partner dashboard.</p>
+
+<div style="text-align: center;">
+<a href="${dashboard_url}" style="display: inline-block; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 18px;">View Commission Details</a>
+</div>
+</div>
+
+<div style="background-color: #f9fafb; padding: 25px 30px; border-top: 1px solid #e5e7eb; text-align: center; border-radius: 0 0 8px 8px;">
+<p style="color: #6b7280; font-size: 15px; line-height: 1.5; margin: 0;">Thank you for being a MemoriQR partner!<br>Questions? Reply to this email or contact us at <a href="mailto:info@memoriqr.co.nz" style="color: #10b981;">info@memoriqr.co.nz</a></p>
+</div>
+</div>`,
+        text: `Commission Approved!\n\nHi ${partner_name},\n\nGreat news! Your ${commissionText} ${commission_count === 1 ? 'has' : 'have'} been approved and ${commission_count === 1 ? 'is' : 'are'} ready for payout.\n\nAPPROVED AMOUNT: ${formattedAmount}\nCOMMISSIONS: ${commission_count}\n\nThis amount will be included in your next scheduled payout.\n\nView your commission details: ${dashboard_url}\n\n---\nThank you for being a MemoriQR partner!\n\n© ${new Date().getFullYear()} MemoriQR. All rights reserved.`
       };
     }
   }

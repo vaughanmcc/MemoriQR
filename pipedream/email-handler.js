@@ -1,12 +1,14 @@
 /**
  * Pipedream Email Handler for MemoriQR
  * 
- * This is the single source of truth for the Pipedream workflow code.
- * Copy this code into your Pipedream workflow's Node.js step.
+ * MAIN NOTIFICATION HUB - This is the single source of truth for the
+ * Pipedream workflow code. Copy this code into your Pipedream workflow's
+ * Node.js step.
  * 
- * Last updated: January 25, 2026
+ * Env var: PIPEDREAM_WEBHOOK_URL
+ * Last updated: February 2026
  * 
- * MAIN WORKFLOW (MemoriQR Supabase Webhook WF):
+ * HANDLED EVENT TYPES:
  * - contact_form: Contact form submissions → info@memoriqr.co.nz
  * - order_confirmation: Order confirmation → customer email
  * - admin_order_notification: Fulfillment notification → memoriqr.global@gmail.com
@@ -21,16 +23,16 @@
  * - partner_approved: Approval notification → partner
  * - partner_rejected: Rejection notification → applicant
  * - partner_suspended: Suspension notification → partner
+ * - partner_reactivated: Reactivation notification → partner
+ * - partner_terms_updated: Terms updated notification → partner
  * - commission_payout_statement: Payout confirmation → partner
+ * - expiry_reminder: Memorial hosting expiry reminder → customer email
+ * - renewal_confirmation: Renewal payment confirmation → customer email
+ * - low_stock_alert: Inventory stock warning → admin email
+ * - security_change: Partner account security alert → partner email
  * 
- * SEPARATE WORKFLOW (Referral Redemption WF - PIPEDREAM_REFERRAL_WEBHOOK_URL):
- * - referral_redeemed: Referral code used notification → partner (with opt-out)
- *   See: pipedream/referral-redeemed-handler.js
- * 
- * SEPARATE WORKFLOW (Partner Codes Notification WF - PIPEDREAM_PARTNER_CODES_WEBHOOK_URL):
- * - referral_codes_generated: Lead gen codes ready → partner email
- * - partner_codes_generated: Wholesale activation codes ready → partner email
- *   See: pipedream/partner-codes-notification-handler.js
+ * SEPARATE WORKFLOW (Partner Notification Hub - PIPEDREAM_PARTNER_CODES_WEBHOOK_URL):
+ * See: pipedream/partner-codes-notification-handler.js
  */
 
 export default defineComponent({
@@ -650,16 +652,6 @@ ${notes ? `<div style="background: #f9f7f4; padding: 15px; border-radius: 8px; m
       };
     }
     
-    // NOTE: The following email types are handled by a SEPARATE Pipedream workflow:
-    // - referral_codes_generated (lead gen codes)
-    // - partner_codes_generated (wholesale activation codes)
-    // - referral_code_request (partner requests codes - admin notification)
-    // - referral_request_submitted (partner confirmation of request)
-    // - referral_request_approved (partner notification when approved)
-    // - referral_request_rejected (partner notification when rejected)
-    // See: pipedream/partner-codes-notification-handler.js
-    // Requires env var: PIPEDREAM_PARTNER_CODES_WEBHOOK_URL
-
     // Partner application notification (to admin)
     // Note: Data comes at root level (body.X), not nested (body.data.X)
     if (type === 'partner_application') {
@@ -1076,10 +1068,301 @@ ${changesList}
       };
     }
     
+    // =====================================================
+    // RENEWAL / EXPIRY EMAILS (merged from renewal-email-handler.js)
+    // =====================================================
+
+    // Expiry reminder emails (sent by daily cron - 90/30/7 days + grace)
+    if (type === 'expiry_reminder') {
+      const { 
+        reminder_type, 
+        to, 
+        customer_name, 
+        deceased_name, 
+        memorial_url, 
+        renew_url, 
+        days_until_expiry, 
+        is_grace_period, 
+        grace_days_remaining 
+      } = body;
+
+      let subject, urgencyColor, urgencyText, ctaText;
+      
+      switch (reminder_type) {
+        case '90_days':
+          subject = `Your memorial for ${deceased_name} will expire in 90 days`;
+          urgencyColor = '#4a7c59';
+          urgencyText = 'Coming up in 90 days';
+          ctaText = 'You have plenty of time, but you can renew early if you\'d like.';
+          break;
+        case '30_days':
+          subject = `Reminder: ${deceased_name}'s memorial hosting expires soon`;
+          urgencyColor = '#f0ad4e';
+          urgencyText = 'Expires in 30 days';
+          ctaText = 'We recommend renewing soon to ensure continuous access to the memorial.';
+          break;
+        case '7_days':
+          subject = `Urgent: ${deceased_name}'s memorial expires in 7 days`;
+          urgencyColor = '#e74c3c';
+          urgencyText = 'Only 7 days remaining';
+          ctaText = 'Please renew now to avoid interruption to the memorial.';
+          break;
+        case 'grace_period':
+          subject = `Action Required: ${deceased_name}'s memorial has expired`;
+          urgencyColor = '#8b0000';
+          urgencyText = `Grace period: ${grace_days_remaining} days left`;
+          ctaText = `The memorial is still accessible during the ${grace_days_remaining}-day grace period. Renew now to prevent permanent removal.`;
+          break;
+        default:
+          subject = `${deceased_name}'s memorial hosting reminder`;
+          urgencyColor = '#4a7c59';
+          urgencyText = '';
+          ctaText = '';
+      }
+
+      const daysText = is_grace_period 
+        ? `The memorial expired ${Math.abs(days_until_expiry)} days ago but is still viewable during the 30-day grace period.`
+        : `The memorial will expire in ${days_until_expiry} days.`;
+
+      return {
+        to: to,
+        replyTo: 'support@memoriqr.co.nz',
+        from_name: 'MemoriQR',
+        subject: subject,
+        html: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+<div style="background: linear-gradient(135deg, ${urgencyColor} 0%, ${urgencyColor}dd 100%); padding: 30px; text-align: center; border-radius: 8px 8px 0 0;">
+<h1 style="color: #fff; margin: 0; font-size: 22px;">Memorial Hosting ${is_grace_period ? 'Expired' : 'Reminder'}</h1>
+${urgencyText ? `<p style="color: #fff; margin: 10px 0 0 0; font-size: 14px;">${urgencyText}</p>` : ''}
+</div>
+
+<div style="padding: 30px; background: #fff; border: 1px solid #ddd; border-top: none;">
+<p style="color: #333; font-size: 16px;">Hi ${customer_name},</p>
+
+<p style="color: #555; line-height: 1.6;">${daysText}</p>
+
+<div style="background: #f9f9f9; border-radius: 8px; padding: 20px; margin: 25px 0; text-align: center;">
+<p style="color: #666; margin: 0 0 5px 0; font-size: 14px;">Memorial for</p>
+<p style="color: #333; margin: 0; font-size: 20px; font-weight: bold;">${deceased_name}</p>
+</div>
+
+<p style="color: #555; line-height: 1.6;">${ctaText}</p>
+
+<div style="text-align: center; margin: 30px 0;">
+<a href="${renew_url}" style="display: inline-block; background: ${urgencyColor}; color: #fff; padding: 14px 30px; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 16px;">Renew Now - $${is_grace_period ? '35' : '25'}/year</a>
+</div>
+
+<p style="color: #666; font-size: 14px; text-align: center;">
+<a href="${memorial_url}" style="color: ${urgencyColor};">View Memorial →</a>
+</p>
+
+<p style="color: #555; margin-top: 25px;">Thank you for choosing MemoriQR to honour ${deceased_name}'s memory.</p>
+
+<p style="color: #555;">Warm regards,<br><strong>The MemoriQR Team</strong></p>
+</div>
+
+<div style="background: #f5f5f0; padding: 20px; text-align: center; border-radius: 0 0 8px 8px;">
+<p style="color: #888; font-size: 12px; margin: 0;">Questions? Reply to this email or visit <a href="https://memoriqr.co.nz" style="color: #4a7c59;">memoriqr.co.nz</a></p>
+</div>
+</div>`,
+        text: `Hi ${customer_name},\n\n${daysText}\n\nMemorial for: ${deceased_name}\n\n${ctaText}\n\nRenew now: ${renew_url}\nView memorial: ${memorial_url}\n\nThank you for choosing MemoriQR to honour ${deceased_name}'s memory.\n\nWarm regards,\nThe MemoriQR Team`
+      };
+    }
+
+    // Renewal confirmation (after successful payment)
+    if (type === 'renewal_confirmation') {
+      const { 
+        customer_email, 
+        customer_name, 
+        deceased_name, 
+        memorial_url, 
+        extension_type, 
+        is_lifetime, 
+        new_expires_at, 
+        amount_paid, 
+        currency 
+      } = body;
+
+      const expiryDate = new Date(new_expires_at).toLocaleDateString('en-NZ', { 
+        day: 'numeric', 
+        month: 'long', 
+        year: 'numeric' 
+      });
+      
+      const extensionLabel = is_lifetime ? 'Lifetime' : extension_type === '5_year' ? '5 years' : '1 year';
+      const currencySymbol = currency === 'NZD' ? '$' : currency;
+
+      return {
+        to: customer_email,
+        replyTo: 'support@memoriqr.co.nz',
+        from_name: 'MemoriQR',
+        subject: `Memorial renewed for ${deceased_name}`,
+        html: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+<div style="background: linear-gradient(135deg, #4a7c59 0%, #3d6b4a 100%); padding: 30px; text-align: center; border-radius: 8px 8px 0 0;">
+<h1 style="color: #fff; margin: 0; font-size: 22px;">✓ Renewal Confirmed</h1>
+</div>
+
+<div style="padding: 30px; background: #fff; border: 1px solid #ddd; border-top: none;">
+<p style="color: #333; font-size: 16px;">Hi ${customer_name},</p>
+
+<p style="color: #555; line-height: 1.6;">Thank you for renewing the memorial for <strong>${deceased_name}</strong>. Your payment has been processed successfully.</p>
+
+<div style="background: #f9f9f9; border-radius: 8px; padding: 20px; margin: 25px 0;">
+<table style="width: 100%; border-collapse: collapse;">
+<tr>
+<td style="padding: 8px 0; color: #666;">Extension:</td>
+<td style="padding: 8px 0; color: #333; font-weight: bold; text-align: right;">${extensionLabel}</td>
+</tr>
+<tr>
+<td style="padding: 8px 0; color: #666;">${is_lifetime ? 'Status:' : 'New expiry date:'}</td>
+<td style="padding: 8px 0; color: #333; font-weight: bold; text-align: right;">${is_lifetime ? 'Lifetime hosting - never expires' : expiryDate}</td>
+</tr>
+<tr>
+<td style="padding: 8px 0; color: #666; border-top: 1px solid #ddd;">Amount paid:</td>
+<td style="padding: 8px 0; color: #333; font-weight: bold; text-align: right; border-top: 1px solid #ddd;">${currencySymbol}${amount_paid.toFixed(2)}</td>
+</tr>
+</table>
+</div>
+
+<div style="text-align: center; margin: 30px 0;">
+<a href="${memorial_url}" style="display: inline-block; background: #4a7c59; color: #fff; padding: 14px 30px; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 16px;">View Memorial</a>
+</div>
+
+<p style="color: #555; line-height: 1.6;">Thank you for continuing to honour ${deceased_name}'s memory with MemoriQR.</p>
+
+<p style="color: #555;">Warm regards,<br><strong>The MemoriQR Team</strong></p>
+</div>
+
+<div style="background: #f5f5f0; padding: 20px; text-align: center; border-radius: 0 0 8px 8px;">
+<p style="color: #888; font-size: 12px; margin: 0;">This is your receipt. Questions? Reply to this email.</p>
+</div>
+</div>`,
+        text: `Hi ${customer_name},\n\nThank you for renewing the memorial for ${deceased_name}. Your payment has been processed successfully.\n\nExtension: ${extensionLabel}\n${is_lifetime ? 'Status: Lifetime hosting - never expires' : `New expiry date: ${expiryDate}`}\nAmount paid: ${currencySymbol}${amount_paid.toFixed(2)}\n\nView memorial: ${memorial_url}\n\nThank you for continuing to honour ${deceased_name}'s memory with MemoriQR.\n\nWarm regards,\nThe MemoriQR Team`
+      };
+    }
+
+    // =====================================================
+    // LOW STOCK ALERT (merged from low-stock-alert-handler.js)
+    // =====================================================
+
+    if (type === 'low_stock_alert') {
+      const item = body.item;
+      
+      const subject = `⚠️ Low Stock Alert: ${item.product_type}${item.variant ? ` - ${item.variant}` : ''}`;
+      
+      return {
+        to: 'memoriqr.global@gmail.com',
+        replyTo: 'memoriqr.global@gmail.com',
+        from_name: 'MemoriQR Inventory',
+        subject: subject,
+        html: `<div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto;">
+<div style="background: #8B7355; color: white; padding: 20px; text-align: center;">
+<h1 style="margin: 0; font-size: 24px;">MemoriQR Low Stock Alert</h1>
+</div>
+
+<div style="padding: 30px; background: #fff;">
+<div style="background: #FEF3C7; border: 1px solid #F59E0B; border-radius: 8px; padding: 16px; margin-bottom: 20px;">
+<h2 style="margin: 0 0 10px; color: #92400E; font-size: 18px;">⚠️ Stock Level Warning</h2>
+<p style="margin: 0; color: #78350F;">One of your products has dropped below the minimum stock threshold.</p>
+</div>
+
+<table style="width: 100%; border-collapse: collapse;">
+<tr>
+<td style="padding: 10px 0; border-bottom: 1px solid #E5E7EB; color: #6B7280;">Product</td>
+<td style="padding: 10px 0; border-bottom: 1px solid #E5E7EB; font-weight: 600;">${item.product_type}${item.variant ? ` - ${item.variant}` : ''}</td>
+</tr>
+<tr>
+<td style="padding: 10px 0; border-bottom: 1px solid #E5E7EB; color: #6B7280;">Available Stock</td>
+<td style="padding: 10px 0; border-bottom: 1px solid #E5E7EB; font-weight: 600; color: #DC2626;">${item.quantity_available}</td>
+</tr>
+<tr>
+<td style="padding: 10px 0; border-bottom: 1px solid #E5E7EB; color: #6B7280;">Threshold</td>
+<td style="padding: 10px 0; border-bottom: 1px solid #E5E7EB;">${item.low_stock_threshold}</td>
+</tr>
+${item.supplier_name ? `<tr>
+<td style="padding: 10px 0; border-bottom: 1px solid #E5E7EB; color: #6B7280;">Supplier</td>
+<td style="padding: 10px 0; border-bottom: 1px solid #E5E7EB;">${item.supplier_name}</td>
+</tr>` : ''}
+</table>
+
+<div style="margin-top: 30px; text-align: center;">
+<a href="https://memoriqr.co.nz/admin/inventory" style="display: inline-block; background: #8B7355; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; font-weight: 600;">View Inventory</a>
+<a href="https://memoriqr.co.nz/admin/purchases" style="display: inline-block; background: #E5E7EB; color: #374151; padding: 12px 30px; text-decoration: none; border-radius: 6px; font-weight: 600; margin-left: 10px;">Create Purchase</a>
+</div>
+</div>
+
+<div style="padding: 20px; text-align: center; color: #9CA3AF; font-size: 12px;">
+<p>This is an automated alert from your MemoriQR inventory system.</p>
+</div>
+</div>`,
+        text: `LOW STOCK ALERT\n\nProduct: ${item.product_type}${item.variant ? ` - ${item.variant}` : ''}\nAvailable: ${item.quantity_available}\nThreshold: ${item.low_stock_threshold}\n${item.supplier_name ? `Supplier: ${item.supplier_name}\n` : ''}\nView inventory: https://memoriqr.co.nz/admin/inventory`
+      };
+    }
+
+    // =====================================================
+    // SECURITY CHANGE ALERT (merged from security-change-handler.js)
+    // =====================================================
+
+    if (type === 'security_change') {
+      const { to, data } = body;
+      const { partner_name, change_type, change_description, changed_at, ip_address } = data;
+
+      const changeTypeLabels = {
+        'bank_account': 'Bank Account Details',
+        'email': 'Contact Email Address',
+        'payout_email': 'Payout Email Address'
+      };
+
+      const changeLabel = changeTypeLabels[change_type] || 'Account Settings';
+      const formattedDate = new Date(changed_at).toLocaleString('en-NZ', {
+        timeZone: 'Pacific/Auckland',
+        dateStyle: 'full',
+        timeStyle: 'short'
+      });
+
+      return {
+        to: to,
+        replyTo: 'support@memoriqr.co.nz',
+        from_name: 'MemoriQR Security',
+        subject: `🔐 Security Alert: ${changeLabel} Changed on Your Account`,
+        html: `<div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; max-width: 600px; margin: 0 auto; font-size: 18px; line-height: 1.6; color: #333;">
+<div style="background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%); padding: 40px 30px; text-align: center; border-radius: 8px 8px 0 0;">
+<div style="font-size: 48px; margin-bottom: 10px;">🔐</div>
+<h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: 700;">Security Alert</h1>
+<p style="color: rgba(255,255,255,0.9); margin: 10px 0 0; font-size: 14px;">Your account details were changed</p>
+</div>
+
+<div style="padding: 40px 30px; background: #fff; border: 1px solid #ddd; border-top: none;">
+<p style="color: #374151; font-size: 18px; line-height: 1.6; margin: 0 0 20px 0;">Hi ${partner_name},</p>
+
+<p style="color: #374151; font-size: 18px; line-height: 1.6; margin: 0 0 30px 0;">We're writing to let you know that your <strong>${changeLabel}</strong> was recently changed on your MemoriQR Partner account.</p>
+
+<div style="background-color: #fef2f2; border: 2px solid #fecaca; border-radius: 12px; padding: 25px; margin: 0 0 30px 0;">
+<div style="color: #991b1b; font-size: 16px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 15px;">Change Details</div>
+<table style="width: 100%;">
+<tr><td style="color: #6b7280; font-size: 16px; padding: 5px 0;">What changed:</td><td style="color: #111827; font-size: 16px; font-weight: 600; padding: 5px 0;">${change_description}</td></tr>
+<tr><td style="color: #6b7280; font-size: 16px; padding: 5px 0;">When:</td><td style="color: #111827; font-size: 16px; font-weight: 600; padding: 5px 0;">${formattedDate}</td></tr>
+${ip_address ? `<tr><td style="color: #6b7280; font-size: 16px; padding: 5px 0;">IP Address:</td><td style="color: #111827; font-size: 16px; font-weight: 600; padding: 5px 0;">${ip_address}</td></tr>` : ''}
+</table>
+</div>
+
+<p style="color: #374151; font-size: 18px; line-height: 1.6; margin: 0 0 20px 0;"><strong>If you made this change:</strong> No action is needed. You can safely ignore this email.</p>
+
+<p style="color: #374151; font-size: 18px; line-height: 1.6; margin: 0 0 30px 0;"><strong>If you didn't make this change:</strong> Please contact us immediately at <a href="mailto:support@memoriqr.co.nz" style="color: #dc2626; font-weight: 600;">support@memoriqr.co.nz</a> to secure your account.</p>
+
+<div style="background-color: #fffbeb; border-left: 4px solid #f59e0b; padding: 15px 20px;">
+<p style="color: #92400e; font-size: 16px; line-height: 1.5; margin: 0;"><strong>⚠️ Important:</strong> MemoriQR will never ask for your password or full bank account details via email. If you receive a suspicious request, please report it to us.</p>
+</div>
+</div>
+
+<div style="background-color: #f9fafb; padding: 25px 30px; border-top: 1px solid #e5e7eb; text-align: center; border-radius: 0 0 8px 8px;">
+<p style="color: #6b7280; font-size: 15px; line-height: 1.5; margin: 0;">This is an automated security notification.<br>Contact us at <a href="mailto:support@memoriqr.co.nz" style="color: #059669;">support@memoriqr.co.nz</a> if you have any concerns.</p>
+</div>
+</div>`,
+        text: `SECURITY ALERT - Account Change\n\nHi ${partner_name},\n\nYour ${changeLabel} was recently changed on your MemoriQR Partner account.\n\nCHANGE DETAILS:\n- What changed: ${change_description}\n- When: ${formattedDate}\n${ip_address ? `- IP Address: ${ip_address}\n` : ''}\nIF YOU MADE THIS CHANGE:\nNo action is needed.\n\nIF YOU DIDN'T MAKE THIS CHANGE:\nPlease contact us immediately at support@memoriqr.co.nz\n\n© ${new Date().getFullYear()} MemoriQR. All rights reserved.`
+      };
+    }
+
     // Unknown type - skip
-    // NOTE: referral_redeemed is handled by a SEPARATE Pipedream workflow
-    // URL: https://eo5xpf69y0qbaul.m.pipedream.net
-    // This was moved out due to main workflow size limits in Pipedream
     $.flow.exit(`Unknown type: ${type}`);
   }
 });

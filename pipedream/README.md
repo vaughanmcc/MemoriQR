@@ -2,6 +2,68 @@
 
 This document describes the Pipedream workflows used by MemoriQR.
 
+## Architecture (2 Workflows)
+
+All email notifications are consolidated into **2 Pipedream workflows** to stay within plan limits.
+
+### Workflow 1: Main Notification Hub
+- **File:** `email-handler.js`
+- **Env var:** `PIPEDREAM_WEBHOOK_URL`
+- **Handles:** Customer-facing & admin notifications
+  - `contact_form` - Contact form → admin
+  - `order_confirmation` - Order confirmed → customer
+  - `admin_order_notification` - Fulfillment → admin
+  - `retail_fulfillment` - Scratch card activation → admin
+  - `memorial_created` - Memorial live → customer
+  - `edit_verification` - MFA code → customer
+  - `partner_login_code` - Partner OTP → partner
+  - `partner_code_request` - Batch request → admin
+  - `partner_codes_generated` - Codes ready → partner
+  - `partner_application` - New application → admin
+  - `partner_application_received` - Application confirmed → applicant
+  - `partner_approved` - Approval → partner
+  - `partner_rejected` - Rejection → applicant
+  - `partner_suspended` - Suspension → partner
+  - `partner_reactivated` - Reactivation → partner
+  - `partner_terms_updated` - Terms changed → partner
+  - `commission_payout_statement` - Payout → partner
+  - `expiry_reminder` - Hosting expiry (90/30/7/grace) → customer
+  - `renewal_confirmation` - Renewal receipt → customer
+  - `low_stock_alert` - Inventory warning → admin
+  - `security_change` - Account security alert → partner
+
+### Workflow 2: Partner Notification Hub
+- **File:** `partner-codes-notification-handler.js`
+- **Env var:** `PIPEDREAM_PARTNER_CODES_WEBHOOK_URL`
+- **Handles:** Partner code & commission notifications
+  - `referral_codes_generated` - Lead gen codes → partner
+  - `referral_codes_transferred` - Codes transferred → partner
+  - `partner_codes_generated` - Wholesale codes → partner
+  - `partner_codes_unassigned` - Codes removed → partner
+  - `activation_codes_transferred` - Codes transferred → partner
+  - `activation_code_used` - Code used → partner
+  - `referral_code_request` - Code request → admin
+  - `referral_request_submitted` - Request confirmation → partner
+  - `referral_request_approved` - Request approved → partner
+  - `referral_request_rejected` - Request rejected → partner
+  - `referral_code_share` - Share code → customer
+  - `referral_redeemed` - Code redeemed → partner (with opt-out)
+  - `commission_approved` - Commission approved → partner
+
+## Environment Variables
+
+| Variable | Routes to | Required |
+|----------|-----------|----------|
+| `PIPEDREAM_WEBHOOK_URL` | Main Notification Hub | **Yes** |
+| `PIPEDREAM_PARTNER_CODES_WEBHOOK_URL` | Partner Notification Hub | **Yes** |
+| `PIPEDREAM_COMMISSION_WEBHOOK_URL` | Falls back to Partner Hub | Optional (legacy) |
+| `PIPEDREAM_REFERRAL_WEBHOOK_URL` | Falls back to Partner Hub | Optional (legacy) |
+| `PIPEDREAM_SECURITY_WEBHOOK_URL` | Falls back to Main Hub | Optional (legacy) |
+| `PIPEDREAM_RENEWAL_WEBHOOK_URL` | Falls back to Main Hub | Optional (legacy) |
+
+> **Note:** Only `PIPEDREAM_WEBHOOK_URL` and `PIPEDREAM_PARTNER_CODES_WEBHOOK_URL` are required.
+> The legacy env vars are supported for backward compatibility but can be removed.
+
 ## Project Details
 
 - **Pipedream Project:** MemoriQR Supabase webhook
@@ -845,11 +907,13 @@ Use Pipedream's Gmail or SendGrid action:
 
 ---
 
-## Environment Variables
+## Old Environment Variables (Deprecated)
+
+> See the Architecture section at the top for current env var setup.
 
 | Variable | Description | Location |
 |----------|-------------|----------|
-| `PIPEDREAM_WEBHOOK_URL` | Contact form webhook endpoint | `.env.local`, `.env.production` |
+| `PIPEDREAM_WEBHOOK_URL` | Main Notification Hub webhook endpoint | `.env.local`, `.env.production` |
 
 ---
 
@@ -885,6 +949,9 @@ curl -X POST https://eo7epxu5aypc0vj.m.pipedream.net \
 ---
 
 ## Workflow: Expiry Reminders & Renewal Confirmation
+
+> **Note:** These email types are now handled by the Main Notification Hub (`email-handler.js`).
+> The standalone `renewal-email-handler.js` has been removed.
 
 **Purpose:** Send automated expiry reminder emails and renewal confirmation emails.
 

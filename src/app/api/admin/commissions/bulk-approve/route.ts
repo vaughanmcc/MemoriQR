@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/server'
 
-// Pipedream webhook URL for commission emails (separate workflow)
-const PIPEDREAM_COMMISSION_WEBHOOK_URL = process.env.PIPEDREAM_COMMISSION_WEBHOOK_URL
+// Pipedream webhook URL for commission emails (routes to Partner Notification Hub)
+const PIPEDREAM_COMMISSION_WEBHOOK_URL = process.env.PIPEDREAM_COMMISSION_WEBHOOK_URL || process.env.PIPEDREAM_PARTNER_CODES_WEBHOOK_URL
 
 // Helper to check admin session from request
 function checkAdminSession(request: NextRequest): boolean {
