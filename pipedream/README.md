@@ -6,6 +6,16 @@ This document describes the Pipedream workflows used by MemoriQR.
 
 All email notifications are consolidated into **2 Pipedream workflows** to stay within plan limits.
 
+### Migration Status
+- [x] Deleted `PIPEDREAM_REFERRAL_WEBHOOK_URL` workflow from Pipedream
+- [ ] Update Main Hub workflow code in Pipedream (copy from `email-handler.js`)
+- [ ] Update Partner Hub workflow code in Pipedream (copy from `partner-codes-notification-handler.js`)
+- [ ] Delete `PIPEDREAM_COMMISSION_WEBHOOK_URL` workflow from Pipedream
+- [ ] Delete `PIPEDREAM_SECURITY_WEBHOOK_URL` workflow from Pipedream
+- [ ] Delete `PIPEDREAM_RENEWAL_WEBHOOK_URL` workflow from Pipedream
+- [ ] Delete Low Stock Alert workflow from Pipedream
+- [ ] Remove legacy env vars from Vercel
+
 ### Workflow 1: Main Notification Hub
 - **File:** `email-handler.js`
 - **Env var:** `PIPEDREAM_WEBHOOK_URL`
